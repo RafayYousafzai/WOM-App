@@ -9,11 +9,16 @@
     "orientation": "portrait",
     "icon": "./assets/images/Icon.png",
     "scheme": "wordofmouth",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "associatedDomains": ["applinks:wom-panel.vercel.app"],
+      "associatedDomains": [
+        "applinks:wom-panel.vercel.app"
+      ],
       "supportsTablet": true,
       "bundleIdentifier": "com.wordofmouth.limited",
       "infoPlist": {
@@ -98,11 +103,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "1cb08e15-4d6d-48c1-87ce-1a4d49b3494b"
+        "projectId": "dca69f70-aefa-4293-bc55-250e5f875a75"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/1cb08e15-4d6d-48c1-87ce-1a4d49b3494b"
-    }
+    "updates": {}
   }
 }
