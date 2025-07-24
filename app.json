@@ -5,20 +5,15 @@
     },
     "name": "Word of Mouth",
     "slug": "word_of_mouth",
-    "version": "1.0.21",
+    "version": "1.0.22",
     "orientation": "portrait",
     "icon": "./assets/images/Icon.png",
     "scheme": "wordofmouth",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "associatedDomains": [
-        "applinks:wom-panel.vercel.app"
-      ],
+      "associatedDomains": ["applinks:wom-panel.vercel.app"],
       "supportsTablet": true,
       "bundleIdentifier": "com.wordofmouth.limited",
       "infoPlist": {
