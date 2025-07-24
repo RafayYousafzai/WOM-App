@@ -41,7 +41,10 @@
     "production": {
       "ios": {
         "appleId": "rafaykhan.mesh@gmail.com",
-        "ascAppId": "6744751812"
+        "ascAppId": "6744751812",
+        "ascApiKeyId": "Y4A20E79LFDL",
+        "ascApiKeyIssuerId": "27a9e513-55b1-4aea-9f36-1664f6093b2c",
+        "ascApiKeyPath": "/ApiKey_Y4A20E79LFDL.p8"
       },
       "android": {
         "serviceAccountKeyPath": "./credentials/google-service-account.json"
