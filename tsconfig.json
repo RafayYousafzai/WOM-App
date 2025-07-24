@@ -1,0 +1,40 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts",
+    "components/post-listing/comments/CommentSection.jsx",
+    "components/post-listing/EngagementBar.jsx",
+    "components/post-listing/AmenitiesSection.jsx",
+    "components/common/GooglePlacesInput.jsx",
+    "components/create-post/review/Step1ImageSelection.jsx",
+    "components/post-listing/PostHeader.jsx",
+    "components/camera/CameraScreen.jsx",
+    "app/(root)/camera.jsx",
+    "app/(root)/(tabs)/create-review.tsx",
+    "components/create-post/ErrorBoundary.jsx",
+    "components/PageSkeletons/ImageWithSkeleton.jsx",
+    "app/(auth)/sign-up.jsx",
+    "components/create-post/review/Step2DetailsInput.jsx",
+    "components/post-listing/PostCard.jsx",
+    "components/post-listing/PostContent.jsx",
+    "components/common/TagInputWithSuggestions.tsx",
+    "components/profile-view/AppleProfileSetup.jsx",
+    "components/search-feed/AllResultsList.jsx",
+    "context/globalContext.jsx"
+, "components/create-post/image-edit/image-preview-editor.tsx", "components/create-post/image-edit/image-carousel-with-transforms.tsx", "components/create-post/image-edit/enhanced-image-editor.jsx", "components/common/DietaryOptionTag.tsx"  ]
+}
