@@ -20,6 +20,9 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "channel": "preview"
     },
     "production": {
@@ -27,12 +30,21 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {
+        "simulator": false,
+        "autoIncrement": true
+      },
       "channel": "production"
     }
   },
   "submit": {
     "production": {
-      "ios": {}
+      "ios": {
+        "appleId": "rafaykhan.mesh@gmail.com"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./credentials/google-service-account.json"
+      }
     }
   }
 }
