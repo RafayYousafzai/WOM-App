@@ -36,5 +36,5 @@
     "components/profile-view/AppleProfileSetup.jsx",
     "components/search-feed/AllResultsList.jsx",
     "context/globalContext.jsx"
-, "components/create-post/image-edit/image-preview-editor.tsx", "components/create-post/image-edit/image-carousel-with-transforms.tsx", "components/create-post/image-edit/enhanced-image-editor.jsx", "components/common/DietaryOptionTag.tsx"  ]
+, "components/create-post/image-edit/image-preview-editor.tsx", "components/create-post/image-edit/image-carousel-with-transforms.tsx", "components/create-post/image-edit/enhanced-image-editor.jsx", "components/common/DietaryOptionTag.tsx", "lib/supabase/postUpdateActions.js", "components/post-listing/EditPost/EditPostHeader.jsx", "components/post-listing/EditPost/EditPostScreen.jsx", "app/(root)/edit-post.jsx"  ]
 }

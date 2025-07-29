@@ -1,5 +1,4 @@
 import { View } from "react-native";
-import { PostHeader } from "./PostHeader";
 import { RestaurantInfo } from "./RestaurantInfo";
 import { ImageCarousel } from "./ImageCarousel";
 import { PostContent } from "./PostContent";
@@ -36,26 +35,11 @@ export const PostCard = ({
   onShare,
   onDelete,
   onRestaurantPress,
-  isInModal = false, // Add this prop
+  isInModal = false,
 }) => {
   return (
     <View className="mb-4">
       <View className="mx-3 mb-2">
-        <PostHeader
-          username={anonymous ? "Anonymous" : username}
-          userAvatar={
-            anonymous
-              ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAXKkELt_XuteDLQY_HKcilbvgT3LDOm5WkQ&s"
-              : userAvatar
-          }
-          anonymous={anonymous}
-          postTimeAgo={postTimeAgo}
-          user_id={user_id}
-          post_id={post_id}
-          post_type={post_type}
-          onDelete={onDelete}
-        />
-
         {restaurantName && (
           <RestaurantInfo
             restaurantName={restaurantName}
@@ -64,17 +48,20 @@ export const PostCard = ({
             price={price}
             cuisine={cuisine}
             onRestaurantPress={onRestaurantPress}
-            isInModal={isInModal} // Pass the modal context
+            isInModal={isInModal}
           />
         )}
       </View>
+
       <ImageCarousel images={images} />
+
       <View className="mx-3">
         <PostContent
           title={post?.caption || post?.dish_name}
           description={post?.review}
           post_type={post_type}
         />
+
         {post?.all_tags.length > 0 && (
           <AmenitiesSection
             amenities={post?.all_tags}
@@ -83,7 +70,9 @@ export const PostCard = ({
             recommend_dsh={post?.recommend_dsh}
           />
         )}
+
         <PeoplesSection people={post?.people} />
+
         <EngagementBar
           likesCount={likesCount}
           isLiked={isLiked}
@@ -97,6 +86,7 @@ export const PostCard = ({
           description={description}
         />
       </View>
+
       <View className="border-b-gray-100 border-b mx-2 py-1" />
     </View>
   );

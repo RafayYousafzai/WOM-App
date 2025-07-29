@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 import { PostCard } from "./PostCard";
 import { PostListingSkeleton } from "../PageSkeletons/PostCardSkeleton";
@@ -7,6 +9,7 @@ import { useUser } from "@clerk/clerk-expo";
 import { toggleOwnReviewLike } from "../../lib/supabase/ownreviewsActions";
 import { toggleReviewLike } from "@/lib/supabase/reviewsActions";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
+import { EditPostHeader } from "./EditPost/EditPostHeader"; // Import the new header
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -44,7 +47,6 @@ export default function PostListing({
       );
       setEnrichedPosts(enriched);
     };
-
     enrichPosts();
   }, [posts, user]);
 
@@ -60,6 +62,7 @@ export default function PostListing({
     const isLiked =
       item.review_likes?.some((like) => like.user_id === user?.id) ||
       item.own_review_likes?.some((like) => like.user_id === user?.id);
+
     const likesCount = item?.likeCount?.[0]?.count || 0;
     const fullName = `${item.user.first_name} ${item.user.last_name}`;
     const description = item.recommend_dsh
@@ -70,34 +73,55 @@ export default function PostListing({
     const postType = item.caption ? "own_review" : "review";
 
     return (
-      <PostCard
-        post={item}
-        username={fullName}
-        userAvatar={item.user.image_url}
-        anonymous={item.anonymous}
-        postTimeAgo={formatDate(item.created_at)}
-        title={item.review || item.caption || ""}
-        user_id={item.user_id}
-        restaurantName={item.restaurant_name}
-        location={item.location?.address}
-        description={description}
-        rating={item.rating}
-        price={item.price}
-        cuisine={cuisine}
-        images={item.images}
-        likesCount={likesCount}
-        commentsCount={item?.commentsCount || 0}
-        isFavorited={item.isFavorited || false}
-        amenities={amenities}
-        isLiked={isLiked}
-        post_id={item.id.toString()}
-        post_type={postType}
-        onLike={() => handleLike(item)}
-        onComment={() => console.log("Comment")}
-        onFavorite={() => console.log("Favorite")}
-        onShare={() => console.log("Share")}
-        onRestaurantPress={() => console.log("Restaurant")}
-      />
+      <View className="mb-4">
+        {/* Header section */}
+        <View className="mx-3 mb-2">
+          <EditPostHeader
+            username={fullName}
+            userAvatar={item.user.image_url}
+            user_id={item.user_id}
+            postTimeAgo={formatDate(item.created_at)}
+            post_id={item.id.toString()}
+            post_type={postType}
+            anonymous={item.anonymous}
+            post={item}
+            onDelete={(postId) => {
+              console.log("Post deleted:", postId);
+              handleRefresh();
+            }}
+          />
+        </View>
+
+        {/* Post content */}
+        <PostCard
+          post={item}
+          username={fullName}
+          userAvatar={item.user.image_url}
+          anonymous={item.anonymous}
+          postTimeAgo={formatDate(item.created_at)}
+          title={item.review || item.caption || ""}
+          user_id={item.user_id}
+          restaurantName={item.restaurant_name}
+          location={item.location?.address}
+          description={description}
+          rating={item.rating}
+          price={item.price}
+          cuisine={cuisine}
+          images={item.images}
+          likesCount={likesCount}
+          commentsCount={item?.commentsCount || 0}
+          isFavorited={item.isFavorited || false}
+          amenities={amenities}
+          isLiked={isLiked}
+          post_id={item.id.toString()}
+          post_type={postType}
+          onLike={() => handleLike(item)}
+          onComment={() => console.log("Comment")}
+          onFavorite={() => console.log("Favorite")}
+          onShare={() => console.log("Share")}
+          onRestaurantPress={() => console.log("Restaurant")}
+        />
+      </View>
     );
   };
 
