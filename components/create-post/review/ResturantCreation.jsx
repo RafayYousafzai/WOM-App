@@ -17,6 +17,7 @@ import { restaurantSchema } from "@/lib/joi/restaurantSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import { useUpload } from "@/context/upload-context";
 import { uploadImages } from "@/utils/image-upload-compressed";
+import notifyPeoples from "@/utils/notification/notify_peoples";
 
 export default function RestaurantCreation({ setPostType }) {
   const { supabase } = useSupabase();
@@ -132,7 +133,13 @@ export default function RestaurantCreation({ setPostType }) {
             "Partial Upload",
             `${imageUrls.length} of ${restaurantData.images.length} images were uploaded. Continue?`,
             [
-              { text: "Cancel", style: "cancel", onPress: () => { throw new Error("Upload cancelled by user."); } },
+              {
+                text: "Cancel",
+                style: "cancel",
+                onPress: () => {
+                  throw new Error("Upload cancelled by user.");
+                },
+              },
               { text: "Continue", style: "default" },
             ]
           );
@@ -185,6 +192,7 @@ export default function RestaurantCreation({ setPostType }) {
 
       // Notify followers
       await notifyFollowers(supabase, user, insertedReview.id);
+      await notifyPeoples(user, submission.peoples);
 
       setUploadProgress(98);
       updateProgress(98, "Cleaning up...");
@@ -407,7 +415,6 @@ export default function RestaurantCreation({ setPostType }) {
             submission={{
               ...restaurantData,
               allTags: [
-                ...(peoplesTags || []),
                 ...(cuisineTags || []),
                 ...(dietaryTags || []),
                 ...(amenityTags || []),

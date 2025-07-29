@@ -453,7 +453,7 @@ export default function VisitProfileScreen() {
               }`}
             >
               <Feather
-                name="grid"
+                name="home"
                 size={22}
                 color={activeTab === "posts" ? "#f39f1e" : "#888"}
               />

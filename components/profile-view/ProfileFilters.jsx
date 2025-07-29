@@ -68,7 +68,7 @@ const ProfileFilters = ({
           }`}
         >
           <Feather
-            name="grid"
+            name="home"
             size={22}
             color={activeFilter === "own_reviews" ? "#f39f1e" : "#888"}
           />

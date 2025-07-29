@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import RenderStep2 from "./RenderStep2";
 import RenderStep3 from "./RenderStep3";
 import { postSchema } from "@/lib/joi/postSchema";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
@@ -23,6 +23,7 @@ import { useGlobal } from "@/context/globalContext";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import { useUpload } from "@/context/upload-context";
 import { uploadImages } from "@/utils/image-upload-compressed";
+import notifyPeoples from "@/utils/notification/notify_peoples";
 
 export default function PostCreation({ setPostType }) {
   const { supabase } = useSupabase();
@@ -146,7 +147,13 @@ export default function PostCreation({ setPostType }) {
             "Partial Upload",
             `${imageUrls.length} of ${postData.images.length} images were uploaded. Continue?`,
             [
-              { text: "Cancel", style: "cancel", onPress: () => { throw new Error("Upload cancelled by user."); } },
+              {
+                text: "Cancel",
+                style: "cancel",
+                onPress: () => {
+                  throw new Error("Upload cancelled by user.");
+                },
+              },
               { text: "Continue", style: "default" },
             ]
           );
@@ -168,6 +175,7 @@ export default function PostCreation({ setPostType }) {
 
       updateProgress(95, "Notifying followers...");
       await notifyFollowers(supabase, user);
+      await notifyPeoples(user, peopleTags);
 
       updateProgress(98, "Cleaning up...");
       await clearCurrentDraft();
@@ -347,7 +355,6 @@ export default function PostCreation({ setPostType }) {
             submission={{
               ...postData,
               allTags: [
-                ...peopleTags,
                 ...hashtags,
                 ...cuisineTags,
                 ...dietaryTags,

@@ -8,13 +8,20 @@ export const sendBulkPushNotifications = async (followers, title, body) => {
     return;
   }
 
+  // Split into chunks of 100 (Expo's recommended batch size)
+  const CHUNK_SIZE = 100;
+  const chunks = [];
+  for (let i = 0; i < validFollowers.length; i += CHUNK_SIZE) {
+    chunks.push(validFollowers.slice(i, i + CHUNK_SIZE));
+  }
+
   try {
-    for (const follower of validFollowers) {
-      const payload = {
+    for (const chunk of chunks) {
+      const messages = chunk.map((follower) => ({
         to: follower.token,
         title,
         body,
-      };
+      }));
 
       const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
@@ -22,16 +29,29 @@ export const sendBulkPushNotifications = async (followers, title, body) => {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(messages),
       });
 
-      if (!response.ok) {
-        console.warn(
-          `Failed to send notification to ${follower.username}. Status: ${response.status}`
-        );
+      const result = await response.json();
+
+      if (response.ok) {
+        // Check for individual errors in the response
+        if (result.data) {
+          result.data.forEach((receipt, index) => {
+            if (receipt.status === "error") {
+              console.warn(
+                `Failed to send notification to ${chunk[index].username}:`,
+                receipt.message
+              );
+            }
+          });
+        }
+      } else {
+        throw new Error(result.message || "Failed to send notifications");
       }
     }
   } catch (error) {
     console.error("Error sending bulk notifications:", error);
+    throw error;
   }
 };
