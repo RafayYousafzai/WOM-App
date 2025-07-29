@@ -4,6 +4,7 @@ import { RestaurantInfo } from "./RestaurantInfo";
 import { ImageCarousel } from "./ImageCarousel";
 import { PostContent } from "./PostContent";
 import { AmenitiesSection } from "./AmenitiesSection";
+import { PeoplesSection } from "./PeoplesSection";
 import { EngagementBar } from "./EngagementBar";
 
 export const PostCard = ({
@@ -82,13 +83,7 @@ export const PostCard = ({
             recommend_dsh={post?.recommend_dsh}
           />
         )}
-        {post?.people.length > 0 && (
-          <AmenitiesSection
-            spc={"@"}
-            amenities={post?.people}
-            post_type={post_type}
-          />
-        )}
+        <PeoplesSection people={post?.people} />
         <EngagementBar
           likesCount={likesCount}
           isLiked={isLiked}
