@@ -65,22 +65,31 @@ export const EditPostHeader = ({
     };
   }, [user_id, user, supabase]);
 
-  // Animation functions
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
+
+  const threeDotRef = useRef(null);
+  DropdownMenu;
   const showMenu = () => {
-    setMenuOpen(true);
-    Animated.parallel([
-      Animated.spring(scaleValue, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }),
-      Animated.timing(opacityValue, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (threeDotRef.current) {
+      threeDotRef.current.measure((fx, fy, width, height, px, py) => {
+        setMenuPosition({ top: py + height + 5, right: 16 }); // position menu below button
+        setMenuOpen(true);
+
+        Animated.parallel([
+          Animated.spring(scaleValue, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 8,
+          }),
+          Animated.timing(opacityValue, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    }
   };
 
   const hideMenu = () => {
@@ -370,8 +379,8 @@ export const EditPostHeader = ({
           <Animated.View
             style={{
               position: "absolute",
-              top: 140,
-              right: 16,
+              top: menuPosition.top,
+              right: menuPosition.right,
               transform: [{ scale: scaleValue }],
               opacity: opacityValue,
             }}
@@ -462,6 +471,7 @@ export const EditPostHeader = ({
 
         {isSignedIn && (
           <TouchableOpacity
+            ref={threeDotRef}
             onPress={showMenu}
             className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100"
             activeOpacity={0.7}
