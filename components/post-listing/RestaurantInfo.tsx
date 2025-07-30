@@ -45,18 +45,22 @@ export const RestaurantInfo: React.FC<RestaurantInfoProps> = ({
       onPress={handleLocationPress}
       activeOpacity={0.7}
     >
-      {/* Restaurant name */}
-      <Text className="font-medium text-base text-gray-900 mb-1">
-        {restaurantName}
-      </Text>
-
       {/* Info row */}
       <View className="flex-row items-center justify-between">
         {/* Left side: Location */}
         <View className="flex-row items-center flex-1 mr-4">
-          <Text className="text-gray-500 text-sm ml-1 flex-1" numberOfLines={1}>
-            {location}
-          </Text>
+          {(() => {
+            const [firstPart, ...rest] = location.split(",");
+            return (
+              <Text
+                className="text-gray-800 text-sm ml-1 flex-1"
+                numberOfLines={1}
+              >
+                <Text className="font-bold">{firstPart}</Text>
+                {rest.length > 0 && `,${rest.join(",")}`}
+              </Text>
+            );
+          })()}
         </View>
 
         {/* Right side: Rating, Price, Cuisine */}
