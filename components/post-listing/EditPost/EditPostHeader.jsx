@@ -1,6 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { useEffect, useState, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Pressable,
+  Animated,
+  Dimensions,
+} from "react-native";
 import { Avatar } from "react-native-paper";
 import { router } from "expo-router";
 import {
@@ -15,6 +24,8 @@ import { deleteReview } from "@/lib/supabase/reviewsActions";
 import { deleteOwnReview } from "@/lib/supabase/ownreviewsActions";
 import { blockUser } from "@/lib/supabase/user_blocks";
 import { useAuth } from "@clerk/clerk-expo";
+
+const { width } = Dimensions.get("window");
 
 export const EditPostHeader = ({
   username,
@@ -33,6 +44,10 @@ export const EditPostHeader = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const { isSignedIn } = useAuth();
 
+  // Animation values
+  const scaleValue = useRef(new Animated.Value(0)).current;
+  const opacityValue = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (!user || !user_id) return;
     let isMounted = true;
@@ -48,7 +63,43 @@ export const EditPostHeader = ({
     return () => {
       isMounted = false;
     };
-  }, [user_id, user, supabase]); // Updated dependency array
+  }, [user_id, user, supabase]);
+
+  // Animation functions
+  const showMenu = () => {
+    setMenuOpen(true);
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }),
+      Animated.timing(opacityValue, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const hideMenu = () => {
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }),
+      Animated.timing(opacityValue, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setMenuOpen(false);
+    });
+  };
 
   const handleFollow = async (e) => {
     if (anonymous) {
@@ -112,7 +163,7 @@ export const EditPostHeader = ({
   };
 
   const handleEdit = () => {
-    setMenuOpen(false);
+    hideMenu();
     // Navigate to edit screen with post data
     router.push({
       pathname: "/edit-post",
@@ -126,6 +177,7 @@ export const EditPostHeader = ({
 
   const handleDelete = async () => {
     const isReview = post_type === "review";
+    hideMenu();
     Alert.alert(
       "Delete Post",
       "Are you sure you want to delete this post? This action cannot be undone.",
@@ -133,7 +185,6 @@ export const EditPostHeader = ({
         {
           text: "Cancel",
           style: "cancel",
-          onPress: () => setMenuOpen(false),
         },
         {
           text: "Delete",
@@ -156,7 +207,7 @@ export const EditPostHeader = ({
             } catch (error) {
               console.error("Delete error:", error);
               Alert.alert("Error", "Failed to delete post. Please try again.", [
-                { text: "OK", onPress: () => setMenuOpen(false) },
+                { text: "OK" },
               ]);
             }
           },
@@ -166,6 +217,7 @@ export const EditPostHeader = ({
   };
 
   const handleBlockUser = async () => {
+    hideMenu();
     Alert.alert(
       "Block User",
       "Are you sure you want to block this user? They won't be able to interact with you.",
@@ -173,7 +225,6 @@ export const EditPostHeader = ({
         {
           text: "Cancel",
           style: "cancel",
-          onPress: () => setMenuOpen(false),
         },
         {
           text: "Block",
@@ -205,8 +256,6 @@ export const EditPostHeader = ({
                 "Something went wrong while blocking the user.",
                 [{ text: "OK" }]
               );
-            } finally {
-              setMenuOpen(false);
             }
           },
         },
@@ -215,6 +264,7 @@ export const EditPostHeader = ({
   };
 
   const handleReport = async () => {
+    hideMenu();
     Alert.alert(
       "Report Post",
       "Are you sure you want to report this post? It will be reviewed by our team.",
@@ -222,7 +272,6 @@ export const EditPostHeader = ({
         {
           text: "Cancel",
           style: "cancel",
-          onPress: () => setMenuOpen(false),
         },
         {
           text: "Report",
@@ -261,8 +310,6 @@ export const EditPostHeader = ({
                 "Failed to report the post. Please try again.",
                 [{ text: "OK" }]
               );
-            } finally {
-              setMenuOpen(false);
             }
           },
         },
@@ -270,101 +317,161 @@ export const EditPostHeader = ({
     );
   };
 
-  return (
-    <View className="flex-row justify-between items-center px-1 pt-3">
-      <TouchableOpacity
-        className="flex-row items-center flex-1"
-        onPress={handleProfilePress}
-        activeOpacity={0.7}
-      >
-        <Avatar.Image
-          size={36}
-          source={{ uri: userAvatar }}
-          className="bg-gray-100"
-        />
-        <View className="ml-3 flex-1">
-          <Text className="font-medium text-gray-900">{username}</Text>
-          <Text className="text-xs text-gray-500">{postTimeAgo}</Text>
-        </View>
-      </TouchableOpacity>
+  // Menu items for own posts
+  const ownPostMenuItems = [
+    {
+      icon: "edit-2",
+      label: "Edit Post",
+      onPress: handleEdit,
+      color: "#3B82F6",
+      backgroundColor: "#EFF6FF",
+    },
+    {
+      icon: "trash-2",
+      label: "Delete Post",
+      onPress: handleDelete,
+      color: "#EF4444",
+      backgroundColor: "#FEF2F2",
+      destructive: true,
+    },
+  ];
 
-      {isSignedIn && !anonymous && user?.id !== user_id && (
-        <View className="flex-row items-center">
+  // Menu items for other users' posts
+  const otherPostMenuItems = [
+    {
+      icon: "flag",
+      label: "Report Post",
+      onPress: handleReport,
+      color: "#F97316",
+      backgroundColor: "#FFF7ED",
+    },
+    {
+      icon: "user-x",
+      label: "Block User",
+      onPress: handleBlockUser,
+      color: "#EF4444",
+      backgroundColor: "#FEF2F2",
+      destructive: true,
+    },
+  ];
+
+  const menuItems =
+    user_id === user?.id ? ownPostMenuItems : otherPostMenuItems;
+
+  const DropdownMenu = () => (
+    <Modal
+      transparent
+      visible={menuOpen}
+      animationType="none"
+      onRequestClose={hideMenu}
+    >
+      <Pressable style={{ flex: 1 }} onPress={hideMenu} className="flex-1">
+        <View className="flex-1 relative">
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 140,
+              right: 16,
+              transform: [{ scale: scaleValue }],
+              opacity: opacityValue,
+            }}
+            className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+          >
+            {/* Dropdown Arrow */}
+            <View className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-gray-100 transform rotate-45" />
+
+            <View className="py-2 min-w-[200px]">
+              {menuItems.map((item, index) => (
+                <Pressable
+                  key={index}
+                  onPress={item.onPress}
+                  className="flex-row items-center px-2 py-2 mx-2 rounded-xl active:scale-95"
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed
+                      ? item.backgroundColor
+                      : "transparent",
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                  })}
+                >
+                  <View
+                    className="w-4 h-4 rounded-full items-center justify-center mr-3"
+                    style={{ backgroundColor: item.backgroundColor }}
+                  >
+                    <Feather name={item.icon} size={16} color={item.color} />
+                  </View>
+                  <Text
+                    className="text-sm font-medium flex-1"
+                    style={{ color: item.destructive ? item.color : "#1F2937" }}
+                  >
+                    {item.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </Animated.View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+
+  return (
+    <>
+      <View className="flex-row justify-between items-center px-1 pt-3">
+        <TouchableOpacity
+          className="flex-row items-center flex-1"
+          onPress={handleProfilePress}
+          activeOpacity={0.7}
+        >
+          <Avatar.Image
+            size={36}
+            source={{ uri: userAvatar }}
+            className="bg-gray-100"
+          />
+          <View className="ml-3 flex-1">
+            <Text className="font-medium text-gray-900">{username}</Text>
+            <Text className="text-xs text-gray-500">{postTimeAgo}</Text>
+          </View>
+        </TouchableOpacity>
+
+        {isSignedIn && !anonymous && user?.id !== user_id && (
+          <View className="flex-row items-center mr-2">
+            <TouchableOpacity
+              onPress={handleFollow}
+              className={`px-3 py-1.5 rounded-full ${
+                following ? "bg-gray-300" : "border border-gray-300"
+              }`}
+              activeOpacity={0.8}
+              style={{
+                shadowColor: following ? "transparent" : "#3B82F6",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.2,
+                shadowRadius: 2,
+                elevation: 2,
+              }}
+            >
+              <Text
+                className={`text-xs font-medium ${
+                  following ? "text-gray-700" : "text-black"
+                }`}
+              >
+                {following ? "Following" : "Follow"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isSignedIn && (
           <TouchableOpacity
-            onPress={handleFollow}
-            className={`px-3 py-1.5 rounded-full ${
-              following ? "bg-gray-300" : "border border-gray-300"
-            }`}
+            onPress={showMenu}
+            className="w-8 h-8 items-center justify-center rounded-full active:bg-gray-100"
             activeOpacity={0.7}
           >
-            <Text
-              className={`text-xs font-medium ${
-                following ? "text-gray-700" : "text-black"
-              }`}
-            >
-              {following ? "Following" : "Follow"}
-            </Text>
+            <Feather name="more-vertical" size={20} color="#666" />
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
 
-      {isSignedIn && (
-        <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)}>
-          <Feather name="more-vertical" size={20} color="#666" />
-        </TouchableOpacity>
-      )}
-
-      {menuOpen && (
-        <View className="absolute top-12 right-2 z-50 w-48 py-2">
-          {user_id === user?.id ? (
-            <View className="space-y-2">
-              <TouchableOpacity
-                onPress={handleEdit}
-                className="flex-row items-center px-4 py-3 bg-blue-500 rounded-xl mb-2"
-                activeOpacity={0.7}
-              >
-                <Feather name="edit-2" size={16} color="#fff" />
-                <Text className="ml-2 text-base text-white font-medium">
-                  Edit Post
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleDelete}
-                className="flex-row items-center px-4 py-3 bg-red-500 rounded-xl"
-                activeOpacity={0.7}
-              >
-                <Feather name="trash-2" size={16} color="#fff" />
-                <Text className="ml-2 text-base text-white font-medium">
-                  Delete Post
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <TouchableOpacity
-                onPress={handleReport}
-                className="flex-row items-center px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl mb-2"
-                activeOpacity={0.7}
-              >
-                <Feather name="flag" size={16} color="#f97316" />
-                <Text className="ml-2 text-base text-orange-500 font-medium">
-                  Report Post
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleBlockUser}
-                className="flex-row items-center px-4 py-3 bg-red-500 rounded-xl"
-                activeOpacity={0.7}
-              >
-                <Feather name="user-x" size={16} color="#fff" />
-                <Text className="ml-2 text-base text-white font-medium">
-                  Block User
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
-    </View>
+      <DropdownMenu />
+    </>
   );
 };
