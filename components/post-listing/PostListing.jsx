@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FlatList, Text, View } from "react-native";
 import { PostCard } from "./PostCard";
 import { PostListingSkeleton } from "../PageSkeletons/PostCardSkeleton";
@@ -9,7 +9,8 @@ import { useUser } from "@clerk/clerk-expo";
 import { toggleOwnReviewLike } from "../../lib/supabase/ownreviewsActions";
 import { toggleReviewLike } from "@/lib/supabase/reviewsActions";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
-import { EditPostHeader } from "./EditPost/EditPostHeader"; // Import the new header
+import { EditPostHeader } from "./EditPost/EditPostHeader";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -30,6 +31,17 @@ export default function PostListing({
   const { user } = useUser();
   const { isPostBookmarked } = useBookmarks();
   const [enrichedPosts, setEnrichedPosts] = useState([]);
+  const route = useRoute();
+  const navigation = useNavigation(); // Added navigation hook
+  const flatListRef = useRef(null);
+
+  useEffect(() => {
+    if (route.params?.scrollToTop) {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+
+      navigation.setParams({ scrollToTop: false });
+    }
+  }, [route.params?.scrollToTop, navigation]);
 
   useEffect(() => {
     const enrichPosts = async () => {
@@ -132,6 +144,7 @@ export default function PostListing({
 
     return (
       <FlatList
+        ref={flatListRef}
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}

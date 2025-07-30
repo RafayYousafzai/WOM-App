@@ -35,7 +35,6 @@ function CustomTabBar({ state, descriptors, navigation, theme }) {
       unfocusedIcon: "plus",
       special: true,
     },
-
     {
       key: "favorites",
       focusedImage: require("@/assets/icons/heart-outline.png"),
@@ -85,28 +84,42 @@ function CustomTabBar({ state, descriptors, navigation, theme }) {
               : "#888888";
 
             const onPress = () => {
-              if (
-                route.name === "create-review" &&
-                route.name === "favorites"
-              ) {
+              if (route.name === "home") {
+                // Check if home tab is already focused
+                if (isFocused) {
+                  // Navigate to home with scroll to top parameter
+                  navigation.navigate("home", { scrollToTop: true });
+                } else {
+                  // Just navigate to home normally
+                  navigation.navigate(route.name);
+                }
+                return; // Exit early for home tab
+              }
+
+              // Handle create-review and draft logic
+              if (route.name === "create-review") {
+                resetStates();
+
+                if (hasDishDraft || hasReviewDraft) {
+                  router.push("/draft-manager");
+                  return;
+                }
+              }
+
+              // Handle favorites
+              if (route.name === "favorites") {
                 resetStates();
               }
 
-              if (
-                (hasDishDraft || hasReviewDraft) &&
-                route.name === "create-review"
-              ) {
-                router.push("/draft-manager");
-              } else {
-                const event = navigation.emit({
-                  type: "tabPress",
-                  target: route.key,
-                  canPreventDefault: true,
-                });
+              // Default navigation behavior
+              const event = navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-                if (!isFocused && !event.defaultPrevented) {
-                  navigation.navigate(route.name);
-                }
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
               }
             };
 
@@ -227,7 +240,6 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: "row",
-
     height: 80,
     shadowRadius: 18,
     shadowOffset: {
