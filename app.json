@@ -20,7 +20,7 @@
         "ITSAppUsesNonExemptEncryption": false
       },
       "config": {
-        "googleMapsApiKey": "AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs"
+        "googleMapsApiKey": "AIzaSyDg8mHKCgXmniBiuEkGgcl3Rz5UYArQ67Q"
       }
     },
     "android": {
@@ -30,7 +30,7 @@
       },
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs"
+          "apiKey": "AIzaSyDg8mHKCgXmniBiuEkGgcl3Rz5UYArQ67Q"
         }
       },
       "package": "com.wordofmouth.limited",

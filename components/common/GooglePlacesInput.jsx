@@ -6,16 +6,8 @@ import {
   FlatList,
   Alert,
 } from "react-native";
-import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
-import {
-  Input,
-  InputField,
-  InputSlot,
-  InputIcon,
-  Text,
-  Spinner,
-  Modal,
-} from "@/components/ui";
+import { Ionicons } from "@expo/vector-icons";
+import { Input, InputField, Text, Spinner, Modal } from "@/components/ui";
 import LottieView from "lottie-react-native";
 
 const GoogleTextInput = ({ initialLocation, handlePress }) => {
@@ -26,6 +18,8 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
   const [selectedLocation, setSelectedLocation] = useState(
     initialLocation?.address || ""
   );
+
+  const API = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
   // Fetch autocomplete suggestions from Google Places API
   const fetchSuggestions = async (query) => {
@@ -39,13 +33,13 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
           query
-        )}&key=AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs&language=en`
+        )}&key=${API}&language=en`
       );
       const data = await response.json();
       if (data.status === "OK") {
         setSuggestions(data.predictions);
       } else {
-        console.error("Autocomplete API error:", data.status);
+        console.error("Autocomplete API error:", data);
         setSuggestions([]);
       }
     } catch (error) {
