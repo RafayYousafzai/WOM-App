@@ -67,7 +67,7 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
   const renderRating = (rating) => {
     const stars = [];
     const safeRating = Number(rating) || 0;
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 10; i++) {
       stars.push(
         <Ionicons
           key={i}
@@ -254,7 +254,7 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
                 <Text
                   className={classNames("text-3xl font-black text-purple-600")}
                 >
-                  {safeSubmission.rating}/5
+                  {safeSubmission.rating}/10
                 </Text>
               </Text>
               <Text className="text-gray-500 text-xs mt-1">

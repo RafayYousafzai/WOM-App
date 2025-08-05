@@ -24,6 +24,7 @@ import notifyFollowers from "@/utils/notification/notify_followers";
 import { useUpload } from "@/context/upload-context";
 import { uploadImages } from "@/utils/image-upload-compressed";
 import notifyPeoples from "@/utils/notification/notify_peoples";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function PostCreation({ setPostType }) {
   const { supabase } = useSupabase();
@@ -282,88 +283,90 @@ export default function PostCreation({ setPostType }) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="pb-4 px-6 mt-4 bg-white">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity
-            onPress={prevStep}
-            style={{
-              padding: 8,
-              borderRadius: 9999,
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-
-          <Text className="text-gray-800 text-xl font-bold">
-            {step === 1 ? "Add Details" : "Review & Share"}
-          </Text>
-
-          <Pressable
-            onPress={step === 2 ? handleShareWithLoading : nextStep}
-            disabled={step === 2 && (loading || isSharing)}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 9999,
-              backgroundColor:
-                step === 2 && (loading || isSharing) ? "#9ca3af" : "#ff8d39",
-              opacity: step === 2 && (loading || isSharing) ? 0.6 : 1,
-            }}
-          >
-            <Text
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="pb-4 px-6 mt-4 bg-white">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity
+              onPress={prevStep}
               style={{
-                fontWeight: "600",
-                fontSize: 14,
-                color: "#fff",
+                padding: 8,
+                borderRadius: 9999,
               }}
             >
-              {step === 2
-                ? loading
-                  ? "Posting..."
-                  : isSharing
-                  ? "Sharing..."
-                  : "Share"
-                : "Next"}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+              <Ionicons name="arrow-back" size={24} color="#000" />
+            </TouchableOpacity>
 
-      <ScrollView keyboardShouldPersistTaps="handled" className="flex-1">
-        {step === 1 ? (
-          <RenderStep2
-            postData={postData}
-            setPostData={setPostData}
-            handleChange={handleChange}
-            peopleTags={peopleTags}
-            setPeopleTags={setPeopleTags}
-            hashtags={hashtags}
-            setHashtags={setHashtags}
-            cuisineTags={cuisineTags}
-            setCuisineTags={setCuisineTags}
-            dietaryTags={dietaryTags}
-            setDietaryTags={setDietaryTags}
-            extraTags={extraTags}
-            setExtraTags={setExtraTags}
-            loading={loading}
-            validationErrors={validationErrors}
-          />
-        ) : (
-          <RenderStep3
-            handleSubmit={handleSubmit}
-            submission={{
-              ...postData,
-              allTags: [
-                ...hashtags,
-                ...cuisineTags,
-                ...dietaryTags,
-                ...extraTags,
-              ],
-            }}
-          />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+            <Text className="text-gray-800 text-xl font-bold">
+              {step === 1 ? "Add Details" : "Review & Share"}
+            </Text>
+
+            <Pressable
+              onPress={step === 2 ? handleShareWithLoading : nextStep}
+              disabled={step === 2 && (loading || isSharing)}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 9999,
+                backgroundColor:
+                  step === 2 && (loading || isSharing) ? "#9ca3af" : "#ff8d39",
+                opacity: step === 2 && (loading || isSharing) ? 0.6 : 1,
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  fontSize: 14,
+                  color: "#fff",
+                }}
+              >
+                {step === 2
+                  ? loading
+                    ? "Posting..."
+                    : isSharing
+                    ? "Sharing..."
+                    : "Share"
+                  : "Next"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <ScrollView keyboardShouldPersistTaps="handled" className="flex-1">
+          {step === 1 ? (
+            <RenderStep2
+              postData={postData}
+              setPostData={setPostData}
+              handleChange={handleChange}
+              peopleTags={peopleTags}
+              setPeopleTags={setPeopleTags}
+              hashtags={hashtags}
+              setHashtags={setHashtags}
+              cuisineTags={cuisineTags}
+              setCuisineTags={setCuisineTags}
+              dietaryTags={dietaryTags}
+              setDietaryTags={setDietaryTags}
+              extraTags={extraTags}
+              setExtraTags={setExtraTags}
+              loading={loading}
+              validationErrors={validationErrors}
+            />
+          ) : (
+            <RenderStep3
+              handleSubmit={handleSubmit}
+              submission={{
+                ...postData,
+                allTags: [
+                  ...hashtags,
+                  ...cuisineTags,
+                  ...dietaryTags,
+                  ...extraTags,
+                ],
+              }}
+            />
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }

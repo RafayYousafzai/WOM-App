@@ -1,117 +1,251 @@
-import { View, TouchableOpacity, Text, Animated } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useRef, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedGestureHandler,
+  runOnJS,
+  withSpring,
+  withTiming,
+  useDerivedValue,
+} from "react-native-reanimated";
+import { PanGestureHandler } from "react-native-gesture-handler";
 
 interface RatingStarsProps {
   rating: number;
   setRating: (rating: number) => void;
-  size?: number;
-  activeColor?: string;
-  inactiveColor?: string;
 }
 
-export function RatingStars({
-  rating,
-  setRating,
-  size = 32,
-  activeColor = "#F59E0B",
-  inactiveColor = "#D1D5DB",
-}: RatingStarsProps) {
-  // Animation values for each star
-  const starAnimations = [
-    useRef(new Animated.Value(rating >= 1 ? 1 : 0)).current,
-    useRef(new Animated.Value(rating >= 2 ? 1 : 0)).current,
-    useRef(new Animated.Value(rating >= 3 ? 1 : 0)).current,
-    useRef(new Animated.Value(rating >= 4 ? 1 : 0)).current,
-    useRef(new Animated.Value(rating >= 5 ? 1 : 0)).current,
-  ];
+const SLIDER_WIDTH = 280;
+const SLIDER_HEIGHT = 8;
+const HANDLE_SIZE = 24;
+const MAX_RATING = 10;
 
-  // Animation for the rating text
-  const textOpacity = useRef(new Animated.Value(rating > 0 ? 1 : 0)).current;
+export function RatingStars({ rating, setRating }: RatingStarsProps) {
+  const [inputValue, setInputValue] = useState(rating.toString());
 
-  // Update animations when rating changes
+  const translateX = useSharedValue((rating / MAX_RATING) * SLIDER_WIDTH);
+  const isActive = useSharedValue(false);
+  const isDragging = useSharedValue(false);
+
+  // Update position when rating prop changes
   useEffect(() => {
-    // Animate stars
-    [1, 2, 3, 4, 5].forEach((star) => {
-      Animated.spring(starAnimations[star - 1], {
-        toValue: rating >= star ? 1 : 0,
-        friction: 3,
-        tension: 40,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    // Animate text
-    Animated.timing(textOpacity, {
-      toValue: rating > 0 ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+    if (!isDragging.value) {
+      translateX.value = withSpring((rating / MAX_RATING) * SLIDER_WIDTH, {
+        damping: 20,
+        stiffness: 300,
+      });
+      setInputValue(rating.toString());
+    }
   }, [rating]);
 
-  // Get rating label
-  const getRatingLabel = () => {
-    switch (rating) {
-      case 1:
-        return "Poor";
-      case 2:
-        return "Fair";
-      case 3:
-        return "Good";
-      case 4:
-        return "Very Good";
-      case 5:
-        return "Excellent";
-      default:
-        return "";
-    }
-  };
+  // Only update JS rating when gesture ends
+  const updateRatingOnEnd = useCallback(
+    (newRating: number) => {
+      const rounded = Math.round(newRating * 10) / 10;
+      setRating(rounded);
+      setInputValue(rounded.toString());
+    },
+    [setRating]
+  );
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (event) => {
+      isActive.value = true;
+      isDragging.value = true;
+
+      // Move to tap point directly
+      const tappedX = Math.max(0, Math.min(SLIDER_WIDTH, event.x));
+      translateX.value = withSpring(tappedX, {
+        damping: 18,
+        stiffness: 250,
+      });
+    },
+    onActive: (event) => {
+      // Follow finger without reset
+      const posX = Math.max(0, Math.min(SLIDER_WIDTH, event.x));
+      translateX.value = posX;
+    },
+    onEnd: () => {
+      isActive.value = false;
+      isDragging.value = false;
+
+      // Snap to rating
+      const finalRating = (translateX.value / SLIDER_WIDTH) * MAX_RATING;
+      const rounded = Math.round(finalRating * 10) / 10;
+      const finalX = (rounded / MAX_RATING) * SLIDER_WIDTH;
+
+      translateX.value = withSpring(finalX, {
+        damping: 18,
+        stiffness: 250,
+      });
+
+      runOnJS(updateRatingOnEnd)(rounded);
+    },
+  });
+
+  // Handle style with smooth scaling
+  const handleStyle = useAnimatedStyle(() => {
+    const scale = isActive.value
+      ? withSpring(1.25, { damping: 12, stiffness: 400 })
+      : withSpring(1, { damping: 12, stiffness: 400 });
+
+    return {
+      transform: [
+        { translateX: translateX.value - HANDLE_SIZE / 2 },
+        { scale },
+      ],
+    };
+  });
+
+  // Fill style - pure native animation
+  const fillStyle = useAnimatedStyle(() => {
+    return {
+      width: Math.max(0, translateX.value),
+    };
+  });
+
+  // Glow effect
+  const glowStyle = useAnimatedStyle(() => {
+    const opacity = isActive.value
+      ? withTiming(0.4, { duration: 100 })
+      : withTiming(0, { duration: 200 });
+
+    return {
+      opacity,
+      width: Math.max(0, translateX.value),
+    };
+  });
+
+  // Handle input changes
+  const onInputChange = useCallback(
+    (text: string) => {
+      setInputValue(text);
+      const value = parseFloat(text);
+      if (!isNaN(value) && value >= 0 && value <= MAX_RATING) {
+        const newX = (value / MAX_RATING) * SLIDER_WIDTH;
+        translateX.value = withSpring(newX, {
+          damping: 20,
+          stiffness: 300,
+        });
+        setRating(value);
+      }
+    },
+    [setRating, translateX]
+  );
 
   return (
-    <View className="py-2">
-      <View className="flex-row items-center justify-center">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => setRating(star)}
-            className="mx-1"
-            activeOpacity={0.7}
-          >
-            <Animated.View
-              style={{
-                transform: [
-                  {
-                    scale: starAnimations[star - 1].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.2],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <Ionicons
-                name={rating >= star ? "star" : "star-outline"}
-                size={size}
-                color={rating >= star ? activeColor : inactiveColor}
-              />
+    <View style={styles.container}>
+      <View style={styles.sliderContainer}>
+        {/* Track */}
+        {/* <View style={styles.sliderTrack}> */}
+        {/* Glow effect behind fill */}
+        {/* <Animated.View style={[styles.sliderGlow, glowStyle]} /> */}
+
+        {/* Main fill */}
+        {/* <Animated.View style={[styles.sliderFill, fillStyle]} /> */}
+        {/* </View> */}
+
+        {/* Handle */}
+        <PanGestureHandler onGestureEvent={gestureHandler}>
+          <Animated.View style={styles.sliderContainer}>
+            {/* Track */}
+            <View style={styles.sliderTrack}>
+              <Animated.View style={[styles.sliderGlow, glowStyle]} />
+              <Animated.View style={[styles.sliderFill, fillStyle]} />
+            </View>
+
+            {/* Handle */}
+            <Animated.View style={[styles.handle, handleStyle]}>
+              <View style={styles.handleInner} />
             </Animated.View>
-          </TouchableOpacity>
-        ))}
+          </Animated.View>
+        </PanGestureHandler>
       </View>
 
-      {rating > 0 && (
-        <Animated.View
-          className="mt-2 items-center"
-          style={{ opacity: textOpacity }}
-        >
-          <Text
-            className="text-base font-medium"
-            style={{ color: activeColor }}
-          >
-            {getRatingLabel()}
-          </Text>
-        </Animated.View>
-      )}
+      <TextInput
+        style={styles.input}
+        keyboardType="numeric"
+        value={inputValue}
+        onChangeText={onInputChange}
+        selectTextOnFocus
+        placeholder="0.0"
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+    padding: 20,
+  },
+  sliderContainer: {
+    width: SLIDER_WIDTH,
+    height: HANDLE_SIZE + 10,
+    justifyContent: "center",
+  },
+  sliderTrack: {
+    width: SLIDER_WIDTH,
+    height: SLIDER_HEIGHT,
+    backgroundColor: "#f8fafc",
+    borderRadius: SLIDER_HEIGHT / 2,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    overflow: "visible",
+  },
+  sliderGlow: {
+    height: SLIDER_HEIGHT + 6,
+    backgroundColor: "#f39f1e",
+    borderRadius: (SLIDER_HEIGHT + 6) / 2,
+    position: "absolute",
+    top: -3,
+    shadowColor: "#f39f1e",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  sliderFill: {
+    height: "100%",
+    backgroundColor: "#f39f1e",
+    borderRadius: SLIDER_HEIGHT / 2,
+    position: "absolute",
+  },
+  handle: {
+    width: HANDLE_SIZE,
+    height: HANDLE_SIZE,
+    borderRadius: HANDLE_SIZE / 2,
+    backgroundColor: "#ffffff",
+    position: "absolute",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 3,
+    borderColor: "#f39f1e",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  handleInner: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#f39f1e",
+  },
+  input: {
+    width: 70,
+    height: 42,
+    borderWidth: 2,
+    borderColor: "#f39f1e",
+    borderRadius: 12,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+    backgroundColor: "#ffffff",
+    color: "#1e293b",
+  },
+});

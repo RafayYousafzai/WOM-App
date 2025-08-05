@@ -12,6 +12,7 @@ import { Input, InputField, Textarea, TextareaInput } from "@/components/ui";
 import { useGlobal } from "@/context/globalContext";
 import { Switch } from "react-native-paper";
 import ImageEditor from "../ImageEditor";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export const Step1ImageSelection = ({
   restaurantData,
@@ -19,6 +20,7 @@ export const Step1ImageSelection = ({
   handleChange,
 }) => {
   const { selectedImages } = useGlobal();
+
   useEffect(() => {
     if (
       restaurantData.images.length === 0 &&
@@ -31,7 +33,7 @@ export const Step1ImageSelection = ({
   }, [restaurantData.images, selectedImages, handleChange]);
 
   return (
-    <View className="flex-1">
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -39,7 +41,7 @@ export const Step1ImageSelection = ({
         <ScrollView keyboardShouldPersistTaps="handled" className="flex-1 px-4">
           <ImageEditor data={restaurantData} setData={setRestaurantData} />
 
-          <View className="mb-5 ">
+          <View className="mb-5">
             <View className="flex-row items-center justify-between p-4 bg-yellow-50 mb-6 rounded-lg shadow-sm">
               <View className="flex-1">
                 <Text className="text-lg font-semibold text-gray-800">
@@ -57,7 +59,7 @@ export const Step1ImageSelection = ({
                 onValueChange={() =>
                   handleChange("anonymous", !restaurantData.anonymous)
                 }
-                color="#f59e0b" // Indigo-600
+                color="#f59e0b"
                 style={{
                   transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
                   marginLeft: 8,
@@ -129,7 +131,7 @@ export const Step1ImageSelection = ({
             </Input>
           </View>
 
-          <View className=" ">
+          <View>
             <Text className="text-sm text-gray-500 mb-1">Location*</Text>
             <GoogleTextInput
               containerStyle={{
@@ -143,7 +145,7 @@ export const Step1ImageSelection = ({
           </View>
 
           {/* Review */}
-          <View className="   mb-4 ">
+          <View className="mb-4">
             <Text className="text-sm mt-3 text-gray-500 mb-1">Your Review</Text>
             <Textarea size="lg" className="bg-gray-50 rounded-3xl">
               <TextareaInput
@@ -155,9 +157,9 @@ export const Step1ImageSelection = ({
             </Textarea>
           </View>
 
-          <View style={{ height: 100 }}></View>
+          <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </GestureHandlerRootView>
   );
 };
