@@ -8,7 +8,6 @@ import {
   Modal,
   Image,
   Pressable,
-  Share,
 } from "react-native";
 import CommentsModal from "./comments/CommentsModal";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
@@ -18,6 +17,7 @@ import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { useSupabase } from "@/context/supabaseContext";
 import { toggleLike } from "@/lib/supabase/reviewsActions";
 import { fetchCommentCountByPost } from "@/lib/supabase/commentsActions";
+import Share from "react-native-share";
 
 export const EngagementBar = ({
   likesCount: initialLikesCount,
@@ -197,6 +197,14 @@ export const EngagementBar = ({
       const shareMessage = `Check out this post: ${
         title || "Shared post"
       }\n${universalUrl}`;
+
+      const shareOptions = {
+        title: "Share this post",
+        message: shareMessage,
+        url: universalUrl,
+        failOnCancel: false,
+      };
+      await Share.open(shareOptions);
 
       const result = await Share.share({
         message: shareMessage,

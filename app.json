@@ -50,6 +50,25 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+       [
+        "react-native-share",
+        {
+          "platforms": {
+            "ios": [
+              "fb",
+              "instagram",
+              "twitter",
+              "tiktoksharesdk"
+            ],
+            "android": [
+              "com.facebook.katana",
+              "com.instagram.android",
+              "com.twitter.android",
+              "com.zhiliaoapp.musically"
+            ]
+          }
+        }
+      ],
       [
         "expo-camera",
         {
