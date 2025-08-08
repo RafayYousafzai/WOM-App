@@ -10,7 +10,7 @@ import { router } from "expo-router";
 import { useSupabase } from "@/context/supabaseContext";
 import { useReview } from "@/context/reviewContext";
 import { useGlobal } from "@/context/globalContext";
-import { Step1ImageSelection } from "./Step1ImageSelection";
+import { Step1ImageSelection } from "../dummyUI/Step1ImageSelection";
 import { Step2DetailsInput } from "./Step2DetailsInput";
 import { Step3 } from "./Step3";
 import { restaurantSchema } from "@/lib/joi/restaurantSchema";

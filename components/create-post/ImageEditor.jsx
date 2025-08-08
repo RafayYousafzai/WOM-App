@@ -51,9 +51,9 @@ export default function ImageEditor({ data, setData }) {
       <View className="mb-6 mx-4">
         <View className="flex-row items-center justify-between mb-2">
           <Text className="text-lg font-bold text-gray-800">Your Photos</Text>
-          <TouchableOpacity onPress={showReorderInstructions}>
+          {/* <TouchableOpacity onPress={showReorderInstructions}>
             <Ionicons name="help-circle-outline" size={20} color="#6B7280" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
         <Text className="text-sm text-gray-500 mb-4">
           Add photos of the restaurant, food, or atmosphere. Tap to reorder.
