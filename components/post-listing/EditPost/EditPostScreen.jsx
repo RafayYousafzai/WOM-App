@@ -16,7 +16,7 @@ import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
 import { Input, InputField, Textarea, TextareaInput } from "@/components/ui";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
-import { RatingStars } from "@/components/create-post/review/rating-stars";
+import { RatingStars } from "@/components/create-post/shared-components/rating-stars";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 
 export default function EditPostScreen() {

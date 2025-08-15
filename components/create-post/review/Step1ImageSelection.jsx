@@ -14,9 +14,9 @@ import { Switch } from "react-native-paper";
 import ImageEditor from "../ImageEditor";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Plus } from "lucide-react-native";
-import { DishTypeModal } from "./DishTypeModal";
-import { DishTabs } from "./DishTabs";
-import { DishForm } from "./DishForm";
+import { DishTypeModal } from "../shared-components/DishTypeModal";
+import { DishTabs } from "../shared-components/DishTabs";
+import { DishForm } from "../shared-components/DishForm";
 
 export const Step1ImageSelection = ({
   restaurantData,
@@ -28,6 +28,8 @@ export const Step1ImageSelection = ({
     setCurrentDishId,
     getDishImages,
     setCurrentDishImages,
+    postType,
+    setPostType,
   } = useGlobal();
   const [showModal, setShowModal] = useState(false);
   const [dishTypes, setDishTypes] = useState([
@@ -150,23 +152,9 @@ export const Step1ImageSelection = ({
             onDishChange={handleDishChange}
           />
 
-          {/* Restaurant Name */}
-          <View className="px-4">
-            <Text className="text-sm mt-3 text-gray-500 mb-1">
-              Restaurant Name*
-            </Text>
-            <Input variant="rounded" size="md">
-              <InputField
-                value={restaurantData.restaurantName}
-                onChangeText={(text) => handleChange("restaurantName", text)}
-                placeholder="Enter restaurant name"
-              />
-            </Input>
-          </View>
-
           {/* Location */}
           <View className="px-4">
-            <Text className="text-sm mt-3 text-gray-500 mb-1">Location*</Text>
+            <Text className="text-sm mt-3 text-gray-500 mb-1">Location</Text>
             <GoogleTextInput
               containerStyle={{
                 backgroundColor: "white",
@@ -218,6 +206,12 @@ export const Step1ImageSelection = ({
           <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+      {/* Dish Type Selection Modal */}
+      <DishTypeModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+        onSelectType={handleAddDishType}
+      />
     </GestureHandlerRootView>
   );
 };

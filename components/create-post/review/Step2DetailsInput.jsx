@@ -14,6 +14,7 @@ import {
   FILTER_CATEGORIES,
 } from "@/constants/SearchFilters";
 import ImageEditor from "../ImageEditor";
+import { useGlobal } from "@/context/globalContext";
 
 export const Step2DetailsInput = ({
   restaurantData,
@@ -29,6 +30,8 @@ export const Step2DetailsInput = ({
   setPeoplesTags,
   setRestaurantData,
 }) => {
+  const { postType, setPostType } = useGlobal();
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -85,17 +88,6 @@ export const Step2DetailsInput = ({
             suggestions={extractSuggestionsByCategory(FILTER_CATEGORIES).food}
           />
         </View>
-        {/* Extra  */}
-        {/* <View className="p-4 ">
-          <Text className="text-base font-medium mb-1">Extras Information</Text>
-          <TagInputWithSuggestions
-            tags={extraTags}
-            setTags={setExtraTags}
-            title="Extra Info (e.g., cleanliness, ambiance etc.)"
-            sc="#"
-            suggestions={extractSuggestionsByCategory(FILTER_CATEGORIES).extras}
-          />
-        </View> */}
 
         <View className="h-32">
           <View className="h-32" />

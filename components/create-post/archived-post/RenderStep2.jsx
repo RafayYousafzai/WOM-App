@@ -11,7 +11,7 @@ import React from "react";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 import TagPeopleInput from "../../common/TagPeopleInput";
-import { RatingStars } from "../review/rating-stars";
+import { RatingStars } from "../shared-components/rating-stars";
 import TagInputWithSuggestions from "@/components/common/TagInputWithSuggestions";
 import { Input, InputField, Textarea, TextareaInput } from "@/components/ui";
 import { Switch } from "react-native-paper";

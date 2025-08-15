@@ -1,30 +1,42 @@
 "use client";
+// React and React Native core
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Pressable, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth, useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
-import UnloggedState from "@/components/auth/unlogged-state";
-import LoadingAnimation from "@/components/common/LoadingAnimation";
+
+// Third-party libraries
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useSupabase } from "@/context/supabaseContext";
-import { useReview } from "@/context/reviewContext";
+
+// Clerk authentication
+import { useAuth, useUser } from "@clerk/clerk-expo";
+
+// Context providers
 import { useGlobal } from "@/context/globalContext";
+import { useReview } from "@/context/reviewContext";
+import { useSupabase } from "@/context/supabaseContext";
+import { useUpload } from "@/context/upload-context";
+
+// Components
+import LoadingAnimation from "@/components/common/LoadingAnimation";
+import UnloggedState from "@/components/auth/unlogged-state";
 import { Step1ImageSelection } from "./Step1ImageSelection";
 import { Step2DetailsInput } from "./Step2DetailsInput";
 import { Step3Summary } from "./Step3Summary";
+
+// Utilities
 import { restaurantSchema } from "@/lib/joi/restaurantSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
-import { useUpload } from "@/context/upload-context";
-import { uploadImages } from "@/utils/image-upload-compressed";
 import notifyPeoples from "@/utils/notification/notify_peoples";
+import { uploadImages } from "@/utils/image-upload-compressed";
 
-export default function RestaurantCreation({ setPostType }) {
+export default function RestaurantCreation() {
   const { supabase } = useSupabase();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
 
   const [isSharing, setIsSharing] = useState(false);
+  const { postType, setPostType } = useGlobal();
   const { selectedImages, setSelectedImages } = useGlobal();
   const { startUpload, updateProgress, completeUpload, setError } = useUpload();
 
@@ -259,20 +271,6 @@ export default function RestaurantCreation({ setPostType }) {
   };
 
   const nextStep = () => {
-    if (step === 1 && restaurantData.images.length === 0) {
-      Alert.alert("Images required", "Please add at least one image");
-      return;
-    }
-    if (step === 2) {
-      // Validate Step 2 fields
-      if (!restaurantData.review || restaurantData.review.trim() === "") {
-        Alert.alert(
-          "Review required",
-          "Please provide a review for the restaurant"
-        );
-        return;
-      }
-    }
     setStep(step + 1);
   };
 

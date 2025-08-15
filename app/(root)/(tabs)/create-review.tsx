@@ -15,7 +15,6 @@ import { useAuth } from "@clerk/clerk-expo";
 import { useGlobal } from "@/context/globalContext";
 import { ErrorBoundary } from "@/components/create-post/ErrorBoundary";
 import UnloggedState from "@/components/auth/unlogged-state";
-import PostCreation from "@/components/create-post/post/PostCreation";
 import RestaurantCreation from "@/components/create-post/review/ResturantCreation";
 import { HStack, Box } from "@/components/ui"; // Adjusted import path
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -222,20 +221,11 @@ export default function CreateReview() {
     );
   }
 
-  if (postType === "homemade") {
+  if (postType === "restaurant" || postType === "homemade") {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
         <StatusBar backgroundColor="#fff" style="dark" />
-        <PostCreation setPostType={setPostType} />;
-      </View>
-    );
-  }
-
-  if (postType === "restaurant") {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#fff" }}>
-        <StatusBar backgroundColor="#fff" style="dark" />
-        <RestaurantCreation setPostType={setPostType} />;
+        <RestaurantCreation setPostType={setPostType} postType={postType} />;
       </View>
     );
   }

@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
-import { RatingStars } from "../review/rating-stars";
+import { RatingStars } from "../shared-components/rating-stars";
 import { Input, InputField, Textarea, TextareaInput } from "@/components/ui";
 import { useGlobal } from "@/context/globalContext";
 import { Switch } from "react-native-paper";

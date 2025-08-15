@@ -12,6 +12,7 @@ const ReviewContext = createContext();
 export const useReview = () => useContext(ReviewContext);
 
 const initialRestaurantData = {
+  isReview: false,
   images: [],
   restaurantName: "",
   location: "",
