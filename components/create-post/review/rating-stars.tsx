@@ -15,7 +15,7 @@ interface RatingStarsProps {
   setRating: (rating: number) => void;
 }
 
-const SLIDER_WIDTH = 280;
+const SLIDER_WIDTH = 250;
 const SLIDER_HEIGHT = 8;
 const HANDLE_SIZE = 24;
 const MAX_RATING = 10;
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderWidth: 1,
     borderColor: "#d1d5db",
-    borderRadius: 8,
+    borderRadius: 100,
     textAlign: "center",
     fontSize: 14,
     fontWeight: "500",

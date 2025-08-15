@@ -10,7 +10,7 @@ export const DishTabs = ({
   onRemoveTab,
 }) => {
   return (
-    <View className="bg-white/90 backdrop-blur-lg rounded-2xl mx-4 mb-4 p-2 shadow-lg border border-slate-200/50">
+    <View className="bg-white/90 backdrop-blur-lg rounded-2xl mx-2 mb-4 p-2 ">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

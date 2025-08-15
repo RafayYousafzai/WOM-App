@@ -121,6 +121,14 @@ export const Step1ImageSelection = ({
           keyboardShouldPersistTaps="handled"
           className="flex-1 relative"
         >
+          {/* Dish Tabs - Show after first dish type is selected */}
+          <DishTabs
+            dishTypes={dishTypes}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onAddDish={() => setShowModal(true)}
+            onRemoveTab={handleRemoveTab}
+          />
           <View className="relative">
             <ImageEditor
               data={getCurrentDish()}
@@ -135,15 +143,6 @@ export const Step1ImageSelection = ({
               }}
             />
           </View>
-
-          {/* Dish Tabs - Show after first dish type is selected */}
-          <DishTabs
-            dishTypes={dishTypes}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onAddDish={() => setShowModal(true)}
-            onRemoveTab={handleRemoveTab}
-          />
 
           {/* Dish Form */}
           <DishForm
