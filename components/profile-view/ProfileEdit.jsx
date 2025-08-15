@@ -75,6 +75,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
         lastName: clerkUser.lastName || "",
         bio: metadata.bio || "",
         dietaryRestrictions: dietaryRestrictions,
+        country: metadata.country || null,
       });
     }
     if (isLoaded && isSignedIn) {
@@ -96,30 +97,6 @@ export const EditProfileScreen = ({ setIsEditing }) => {
     }
   };
 
-  // Validate individual field
-  const validateField = async (fieldName, value) => {
-    try {
-      // Create a schema for just this field
-      const fieldSchema = yup.object().shape({
-        [fieldName]: profileSchema.fields[fieldName],
-      });
-      await fieldSchema.validate({ [fieldName]: value });
-      // Clear error if validation passes
-      setFieldErrors((prev) => ({
-        ...prev,
-        [fieldName]: null,
-      }));
-      return true;
-    } catch (error) {
-      // Set error if validation fails
-      setFieldErrors((prev) => ({
-        ...prev,
-        [fieldName]: error.message,
-      }));
-      return false;
-    }
-  };
-
   // Enhanced input handlers with validation
   const handleInputChange = (field, value) => {
     setUser((prev) => ({ ...prev, [field]: value }));
@@ -127,6 +104,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
   };
 
   const handleCountrySelect = (country) => {
+    console.log("Selected country:", country);
     setUser((prev) => ({ ...prev, country }));
     clearFieldError("country");
   };
@@ -200,6 +178,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
       const metadata = {
         bio: user.bio,
         dietaryRestrictions: user.dietaryRestrictions, // Keep as array
+        country: user.country,
       };
 
       console.log("Metadata to save:", metadata);
@@ -374,11 +353,13 @@ export const EditProfileScreen = ({ setIsEditing }) => {
                     testID="bio-input"
                   />
                 </Input>
-                <Text className="text-right text-gray-500 text-xs mt-1">
-                  {user.bio.length}/150
-                </Text>
               </View>
-
+              <View>
+                <SelectCountry
+                  onCountrySelect={handleCountrySelect}
+                  selectedCountry={user.country}
+                />
+              </View>
               <View className="p-2">
                 <Text className="text-gray-600 font-medium text-sm mb-2">
                   Dietary Options
