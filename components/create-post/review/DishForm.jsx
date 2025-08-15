@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { RatingStars } from "../review/rating-stars";
+import { RatingStars } from "./rating-stars";
 import { Input, InputField } from "@/components/ui";
 import { Switch } from "react-native-paper";
 

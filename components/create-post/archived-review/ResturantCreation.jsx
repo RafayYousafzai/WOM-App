@@ -12,14 +12,14 @@ import { useReview } from "@/context/reviewContext";
 import { useGlobal } from "@/context/globalContext";
 import { Step1ImageSelection } from "./Step1ImageSelection";
 import { Step2DetailsInput } from "./Step2DetailsInput";
-import { Step3Summary } from "./Step3Summary";
+import { Step3 } from "./";
 import { restaurantSchema } from "@/lib/joi/restaurantSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import { useUpload } from "@/context/upload-context";
 import { uploadImages } from "@/utils/image-upload-compressed";
 import notifyPeoples from "@/utils/notification/notify_peoples";
 
-export default function RestaurantCreation({ setPostType }) {
+export default function RestaurantCreationArchived({ setPostType }) {
   const { supabase } = useSupabase();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
@@ -410,7 +410,7 @@ export default function RestaurantCreation({ setPostType }) {
             setPeoplesTags={setPeoplesTags}
           />
         ) : (
-          <Step3Summary
+          <Step3
             handleSubmit={handleSubmit}
             submission={{
               ...restaurantData,

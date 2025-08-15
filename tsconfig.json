@@ -21,7 +21,7 @@
     "components/post-listing/EngagementBar.jsx",
     "components/post-listing/AmenitiesSection.jsx",
     "components/common/GooglePlacesInput.jsx",
-    "components/create-post/review/Step1ImageSelection.jsx",
+    "components/create-post/archived-review/Step1ImageSelection.jsx",
     "components/post-listing/PostHeader.jsx",
     "components/camera/CameraScreen.jsx",
     "app/(root)/camera.jsx",
@@ -29,12 +29,20 @@
     "components/create-post/ErrorBoundary.jsx",
     "components/PageSkeletons/ImageWithSkeleton.jsx",
     "app/(auth)/sign-up.jsx",
-    "components/create-post/review/Step2DetailsInput.jsx",
+    "components/create-post/archived-review/Step2DetailsInput.jsx",
     "components/post-listing/PostCard.jsx",
     "components/post-listing/PostContent.jsx",
     "components/common/TagInputWithSuggestions.tsx",
     "components/profile-view/AppleProfileSetup.jsx",
     "components/search-feed/AllResultsList.jsx",
-    "context/globalContext.jsx"
-, "components/create-post/image-edit/image-preview-editor.tsx", "components/create-post/image-edit/image-carousel-with-transforms.tsx", "components/create-post/image-edit/enhanced-image-editor.jsx", "components/common/DietaryOptionTag.tsx", "lib/supabase/postUpdateActions.js", "components/post-listing/EditPost/EditPostHeader.jsx", "components/post-listing/EditPost/EditPostScreen.jsx", "app/(root)/edit-post.jsx"  ]
+    "context/globalContext.jsx",
+    "components/create-post/image-edit/image-preview-editor.tsx",
+    "components/create-post/image-edit/image-carousel-with-transforms.tsx",
+    "components/create-post/image-edit/enhanced-image-editor.jsx",
+    "components/common/DietaryOptionTag.tsx",
+    "lib/supabase/postUpdateActions.js",
+    "components/post-listing/EditPost/EditPostHeader.jsx",
+    "components/post-listing/EditPost/EditPostScreen.jsx",
+    "app/(root)/edit-post.jsx"
+  ]
 }
