@@ -11,7 +11,14 @@ import PermissionNotice from "./PermissionNotice";
 import { styles } from "./styles";
 
 export default function CameraScreen() {
-  const { selectedImages, setSelectedImages } = useGlobal();
+  const {
+    selectedImages,
+    setSelectedImages,
+    currentDishId,
+    setCurrentDishImages,
+    getDishImages,
+  } = useGlobal();
+
   const [isExpanded, setExpanded] = useState(true);
 
   // Custom hook for camera-related logic
@@ -27,13 +34,27 @@ export default function CameraScreen() {
   // Custom hook for image picker logic
   const { pickImages } = useImagePickerHandler();
 
+  // Get current images (dish-specific if available, otherwise global)
+  const getCurrentImages = () => {
+    if (currentDishId) {
+      return getDishImages(currentDishId);
+    }
+    return selectedImages;
+  };
+
   const handleAddImages = useCallback(
     (uris) => {
       if (uris && uris.length > 0) {
-        setSelectedImages((prev) => [...prev, ...uris]);
+        if (currentDishId) {
+          // Add to specific dish
+          setCurrentDishImages(currentDishId, uris);
+        } else {
+          // Fallback to global selectedImages
+          setSelectedImages((prev) => [...prev, ...uris]);
+        }
       }
     },
-    [setSelectedImages]
+    [setSelectedImages, currentDishId, setCurrentDishImages]
   );
 
   const handleTakePicture = useCallback(async () => {
@@ -48,15 +69,22 @@ export default function CameraScreen() {
 
   const handleRemoveImage = useCallback(
     (uriToRemove) => {
-      setSelectedImages((prev) => prev.filter((uri) => uri !== uriToRemove));
+      if (currentDishId) {
+        // Remove from specific dish
+        setCurrentDishImages(currentDishId, (prev) =>
+          prev.filter((uri) => uri !== uriToRemove)
+        );
+      } else {
+        // Fallback to global selectedImages
+        setSelectedImages((prev) => prev.filter((uri) => uri !== uriToRemove));
+      }
     },
-    [setSelectedImages]
+    [setSelectedImages, currentDishId, setCurrentDishImages]
   );
 
   const handleBack = useCallback(() => {
-    setSelectedImages([]); // Clean up state
     router.replace("/(root)/(tabs)/create-review");
-  }, [setSelectedImages]);
+  }, []);
 
   const handleNext = useCallback(() => {
     router.replace("/(root)/(tabs)/create-review");
@@ -67,12 +95,10 @@ export default function CameraScreen() {
   }, []);
 
   if (!permission) {
-    // Permissions are still loading
     return <View style={styles.container} />;
   }
 
   if (!permission.granted) {
-    // Permissions are not granted
     return (
       <SafeAreaView style={styles.container}>
         <PermissionNotice requestPermission={requestPermission} />
@@ -80,7 +106,6 @@ export default function CameraScreen() {
     );
   }
 
-  // Permissions are granted, render the camera
   return (
     <SafeAreaView style={styles.container}>
       <CameraView
@@ -88,9 +113,9 @@ export default function CameraScreen() {
         ref={cameraRef}
         facing={facing}
         responsiveOrientationWhenOrientationLocked
-      ></CameraView>
+      />
       <CameraUI
-        images={selectedImages}
+        images={getCurrentImages()}
         isExpanded={isExpanded}
         onBack={handleBack}
         onNext={handleNext}

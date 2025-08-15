@@ -23,13 +23,17 @@ export const Step1ImageSelection = ({
   setRestaurantData,
   handleChange,
 }) => {
-  const { selectedImages } = useGlobal();
+  const {
+    selectedImages,
+    setCurrentDishId,
+    getDishImages,
+    setCurrentDishImages,
+  } = useGlobal();
   const [showModal, setShowModal] = useState(false);
   const [dishTypes, setDishTypes] = useState([
     {
       id: "main-course",
       name: "Main Course",
-
       dishName: "",
       recommendDish: false,
       price: "",
@@ -38,16 +42,24 @@ export const Step1ImageSelection = ({
   ]);
   const [activeTab, setActiveTab] = useState("main-course");
 
+  // Set current dish ID in global context when active tab changes
+  useEffect(() => {
+    setCurrentDishId(activeTab);
+  }, [activeTab, setCurrentDishId]);
+
+  // Handle legacy selectedImages for backward compatibility
   useEffect(() => {
     if (
-      restaurantData.images.length === 0 &&
       selectedImages &&
       Array.isArray(selectedImages) &&
       selectedImages.length > 0
     ) {
-      handleChange("images", selectedImages);
+      const currentDishImages = getDishImages(activeTab);
+      if (currentDishImages.length === 0) {
+        setCurrentDishImages(activeTab, selectedImages);
+      }
     }
-  }, [restaurantData.images, selectedImages, handleChange]);
+  }, [selectedImages, activeTab, getDishImages, setCurrentDishImages]);
 
   const handleAddDishType = (type) => {
     const newDish = {
@@ -78,9 +90,26 @@ export const Step1ImageSelection = ({
     );
   };
 
+  // New function to get current dish data with images from global context
   const getCurrentDish = () => {
-    return dishTypes.find((dish) => dish.id === activeTab) || dishTypes[0];
+    const baseDish =
+      dishTypes.find((dish) => dish.id === activeTab) || dishTypes[0];
+    return {
+      ...baseDish,
+      images: getDishImages(activeTab),
+    };
   };
+
+  // Update restaurant data whenever dishTypes change
+  useEffect(() => {
+    const dishTypesWithImages = dishTypes.map((dish) => ({
+      ...dish,
+      images: getDishImages(dish.id),
+    }));
+    const allImages = dishTypesWithImages.flatMap((dish) => dish.images);
+    handleChange("images", allImages);
+    handleChange("dishTypes", dishTypesWithImages);
+  }, [dishTypes, getDishImages]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -93,7 +122,18 @@ export const Step1ImageSelection = ({
           className="flex-1 relative"
         >
           <View className="relative">
-            <ImageEditor data={restaurantData} setData={setRestaurantData} />
+            <ImageEditor
+              data={getCurrentDish()}
+              setData={(updater) => {
+                if (typeof updater === "function") {
+                  const currentDish = getCurrentDish();
+                  const updatedDish = updater(currentDish);
+                  handleDishImagesChange(updatedDish.images);
+                } else {
+                  handleDishImagesChange(updater.images);
+                }
+              }}
+            />
           </View>
 
           {/* Dish Tabs - Show after first dish type is selected */}
@@ -106,7 +146,6 @@ export const Step1ImageSelection = ({
               onRemoveTab={handleRemoveTab}
             />
           </View>
-          {/* Anonymous Switch */}
 
           {/* Dish Form */}
           <DishForm
