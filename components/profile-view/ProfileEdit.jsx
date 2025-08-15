@@ -75,6 +75,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
         type: typeof user.dietaryRestrictions,
         isArray: Array.isArray(user.dietaryRestrictions),
         birthday: user.birthday,
+        favoriteEmoji: user.favoriteEmoji,
       });
 
       // Prepare the metadata object
@@ -83,6 +84,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
         dietaryRestrictions: user.dietaryRestrictions,
         country: user.country,
         birthday: user.birthday ? user.birthday.toISOString() : null,
+        favoriteEmoji: user.favoriteEmoji || null,
       };
 
       console.log("Metadata to save:", metadata);

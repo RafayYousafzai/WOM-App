@@ -54,6 +54,7 @@ export const useEditProfile = (clerkUser, isLoaded) => {
         dietaryRestrictions: dietaryRestrictions,
         country: metadata.country || null,
         birthday: storedBirthday,
+        favoriteEmoji: clerkUser.unsafeMetadata?.favoriteEmoji || "",
       });
     }
   }, [clerkUser, isLoaded]);

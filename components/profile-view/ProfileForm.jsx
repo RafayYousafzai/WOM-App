@@ -19,6 +19,16 @@ import {
   FILTER_CATEGORIES,
 } from "@/constants/SearchFilters";
 
+// Food-related emoji options
+const FOOD_EMOJIS = [
+  "🍕", // Pizza
+  "🍔", // Burger
+  "🥗", // Salad
+  "🍜", // Ramen
+  "🥑", // Avocado
+  "🍰", // Cake
+];
+
 export const ProfileForm = ({
   user,
   fieldErrors,
@@ -38,6 +48,10 @@ export const ProfileForm = ({
       month: "long",
       day: "numeric",
     });
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    handleInputChange("favoriteEmoji", emoji);
   };
 
   return (
@@ -110,6 +124,55 @@ export const ProfileForm = ({
             testID="bio-input"
           />
         </Input>
+      </View>
+
+      {/* Emoji Selection */}
+      <View>
+        <Text className="text-gray-600 font-medium text-sm mb-2">
+          Favorite Food Emoji
+        </Text>
+        <View className="flex-row flex-wrap gap-2 bg-gray-100 rounded-lg p-3">
+          {FOOD_EMOJIS.map((emoji, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleEmojiSelect(emoji)}
+              style={[
+                styles.emojiButton,
+                user.favoriteEmoji === emoji
+                  ? {
+                      backgroundColor: "#f39f1e",
+                      shadowColor: "#000",
+                      shadowOpacity: 0.2,
+                      shadowRadius: 12,
+                    }
+                  : {
+                      backgroundColor: "#fff",
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                    },
+              ]}
+              activeOpacity={0.7}
+              //   testID={`emoji-${emoji}`}
+            >
+              <Text className="text-2xl">{emoji}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {user.favoriteEmoji && (
+          <View className="mt-2">
+            <Text className="text-gray-500 text-sm">
+              Selected: {user.favoriteEmoji}
+            </Text>
+          </View>
+        )}
+        {!!fieldErrors.favoriteEmoji && (
+          <View className="flex-row items-center mt-1">
+            <Icon as={AlertCircle} size="xs" className="text-red-500 mr-1" />
+            <Text className="text-red-500 text-xs">
+              {fieldErrors.favoriteEmoji}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Birthday Input Field */}
