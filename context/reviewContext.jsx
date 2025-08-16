@@ -6,361 +6,217 @@ import React, {
   useCallback,
 } from "react";
 import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
+import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useSupabase } from "@/context/supabaseContext";
+import { useUpload } from "@/context/upload-context";
+import { restaurantSchema } from "@/lib/joi/restaurantSchema";
+import notifyFollowers from "@/utils/notification/notify_followers";
+import notifyPeoples from "@/utils/notification/notify_peoples";
+import { Alert } from "react-native";
+import { router } from "expo-router";
 
 const ReviewContext = createContext();
 
 export const useReview = () => useContext(ReviewContext);
 
-const initialRestaurantData = {
-  isReview: false,
+const ALL_REVIEW_DRAFTS_KEY = "all_review_drafts";
+
+const restaurantStateInit = {
+  id: null,
   images: [],
-  restaurantName: "",
-  location: "",
-  price: 0,
-  rating: 3,
-  recommendDish: false,
+  dishTypes: [],
+  location: null,
   review: "",
-  website: "",
-  phoneNumber: "",
-  dishName: "",
-  quote: false,
+  anonymous: false,
 };
 
-const CURRENT_REVIEW_DRAFT_KEY = "current_review_draft";
-const ALL_REVIEW_DRAFTS_KEY = "all_review_drafts";
-const DEBOUNCE_TIME = 2000;
-const MAX_DRAFTS = 10;
-
 export const ReviewProvider = ({ children }) => {
+  const { supabase } = useSupabase();
+  const { user } = useUser();
+  const { uploadProgress, isUploading, startUpload } = useUpload();
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [peoplesTags, setPeoplesTags] = useState([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [restaurantData, setRestaurantData] = useState(restaurantStateInit);
   const [cuisineTags, setCuisineTags] = useState([]);
   const [amenityTags, setAmenityTags] = useState([]);
   const [dietaryTags, setDietaryTags] = useState([]);
   const [extraTags, setExtraTags] = useState([]);
-  const [restaurantData, setRestaurantData] = useState(initialRestaurantData);
+  const [peoplesTags, setPeoplesTags] = useState([]);
   const [drafts, setDrafts] = useState([]);
-  const [lastChangeTime, setLastChangeTime] = useState(null);
-  const [saveTimeout, setSaveTimeout] = useState(null);
   const [currentDraftId, setCurrentDraftId] = useState(null);
 
-  // Load drafts and current draft on initial mount
   useEffect(() => {
     const loadDrafts = async () => {
-      const savedDrafts = await getValueFor(ALL_REVIEW_DRAFTS_KEY);
-      setDrafts(savedDrafts || []);
-
-      const currentDraft = await getValueFor(CURRENT_REVIEW_DRAFT_KEY);
-      if (currentDraft) {
-        setCurrentDraftId(currentDraft.id);
+      const storedDrafts = await getValueFor(ALL_REVIEW_DRAFTS_KEY);
+      if (storedDrafts) {
+        setDrafts(JSON.parse(storedDrafts));
       }
     };
     loadDrafts();
   }, []);
 
-  // Auto-save effect
-  useEffect(() => {
-    if (lastChangeTime) {
-      if (saveTimeout) clearTimeout(saveTimeout);
+  const saveDrafts = async (newDrafts) => {
+    await save(ALL_REVIEW_DRAFTS_KEY, JSON.stringify(newDrafts));
+    setDrafts(newDrafts);
+  };
 
-      const timeout = setTimeout(() => {
-        saveCurrentDraft();
-      }, DEBOUNCE_TIME);
+  const addDraft = (draft) => {
+    const newDrafts = [...drafts, draft];
+    saveDrafts(newDrafts);
+  };
 
-      setSaveTimeout(timeout);
-    }
+  const updateDraft = (draftId, updatedDraft) => {
+    const newDrafts = drafts.map((draft) =>
+      draft.id === draftId ? updatedDraft : draft
+    );
+    saveDrafts(newDrafts);
+  };
 
-    return () => {
-      if (saveTimeout) clearTimeout(saveTimeout);
-    };
-  }, [lastChangeTime]);
+  const deleteDraft = (draftId) => {
+    const newDrafts = drafts.filter((draft) => draft.id !== draftId);
+    saveDrafts(newDrafts);
+  };
 
-  // Track changes in all relevant state
-  useEffect(() => {
-    if (step !== 1) {
-      setLastChangeTime(Date.now());
-    }
-  }, [
-    step,
-    peoplesTags,
-    cuisineTags,
-    amenityTags,
-    dietaryTags,
-    extraTags,
-    restaurantData,
-    uploadProgress,
-  ]);
-
-  const saveCurrentDraft = async () => {
-    const draftId = currentDraftId || Date.now().toString();
-    const draftData = {
-      id: draftId,
-      _version: 1,
-      _timestamp: new Date().toISOString(),
-      step,
-      peoplesTags,
-      cuisineTags,
-      amenityTags,
-      dietaryTags,
-      extraTags,
-      restaurantData,
-      uploadProgress,
-    };
-
-    try {
-      if (JSON.stringify(draftData).length > 100000) {
-        console.warn("Draft too large, not saving");
-        return;
-      }
-
-      // Save as current draft
-      await save(CURRENT_REVIEW_DRAFT_KEY, draftData);
-
-      // Update existing draft or add new one
-      const existingIndex = drafts.findIndex((d) => d.id === draftId);
-      let updatedDrafts;
-
-      if (existingIndex !== -1) {
-        updatedDrafts = [...drafts];
-        updatedDrafts[existingIndex] = draftData;
-      } else {
-        updatedDrafts = [draftData, ...drafts.slice(0, MAX_DRAFTS - 1)];
-      }
-
-      await save(ALL_REVIEW_DRAFTS_KEY, updatedDrafts);
-      setDrafts(updatedDrafts);
-      setCurrentDraftId(draftId);
-    } catch (error) {
-      console.error("Review auto-save failed:", error);
+  const nextStep = () => {
+    if (step < 3) {
+      setStep(step + 1);
     }
   };
 
-  const saveAsDraft = async (draftName = "") => {
-    const draftId = currentDraftId || Date.now().toString();
-    const draftData = {
-      id: draftId,
-      _version: 1,
-      _timestamp: new Date().toISOString(),
-      name: draftName,
-      step,
-      peoplesTags,
-      cuisineTags,
-      amenityTags,
-      dietaryTags,
-      extraTags,
-      restaurantData,
-      uploadProgress,
-    };
-
-    try {
-      if (JSON.stringify(draftData).length > 100000) {
-        console.warn("Draft too large, not saving");
-        return false;
-      }
-
-      // Update existing draft or add new one
-      const existingIndex = drafts.findIndex((d) => d.id === draftId);
-      let updatedDrafts;
-
-      if (existingIndex !== -1) {
-        updatedDrafts = [...drafts];
-        updatedDrafts[existingIndex] = draftData;
-      } else {
-        updatedDrafts = [draftData, ...drafts.slice(0, MAX_DRAFTS - 1)];
-      }
-
-      await save(ALL_REVIEW_DRAFTS_KEY, updatedDrafts);
-      setDrafts(updatedDrafts);
-      setCurrentDraftId(draftId);
-      return true;
-    } catch (error) {
-      console.error("Failed to save review draft:", error);
-      return false;
+  const prevStep = () => {
+    if (step > 1) {
+      setStep(step - 1);
     }
   };
 
-  const loadDraft = async (draftId) => {
+  const handleChange = (field, value) => {
+    setRestaurantData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleShare = async () => {
+    setLoading(true);
+    setIsSharing(true);
+
+    const finalData = {
+      ...restaurantData,
+      allTags: [
+        ...cuisineTags,
+        ...dietaryTags,
+        ...amenityTags,
+        ...extraTags,
+      ].filter(Boolean),
+      peoplesTags,
+    };
+
+    const { error } = restaurantSchema.validate(finalData);
+    if (error) {
+      Alert.alert("Validation Error", error.details[0].message);
+      setLoading(false);
+      setIsSharing(false);
+      return;
+    }
+
     try {
-      const draft = drafts.find((d) => d.id === draftId);
-      if (!draft) return false;
-
-      setStep(draft.step);
-      setPeoplesTags(draft.peoplesTags || []);
-      setCuisineTags(draft.cuisineTags || []);
-      setAmenityTags(draft.amenityTags || []);
-      setDietaryTags(draft.dietaryTags || []);
-      setExtraTags(draft.extraTags || []);
-
-      setRestaurantData({
-        ...initialRestaurantData,
-        ...draft.restaurantData,
-        images: Array.isArray(draft.restaurantData.images)
-          ? draft.restaurantData.images
-          : [],
-        rating:
-          typeof draft.restaurantData.rating === "number"
-            ? Math.min(Math.max(draft.restaurantData.rating, 0), 5)
-            : 3,
+      const imageUrls = await startUpload(restaurantData.images, {
+        onProgress: (progress) => {},
       });
 
-      setUploadProgress(
-        typeof draft.uploadProgress === "number"
-          ? Math.min(Math.max(draft.uploadProgress, 0), 100)
-          : 0
-      );
+      const reviewData = {
+        ...finalData,
+        images: imageUrls,
+        user_id: user.id,
+      };
 
-      setCurrentDraftId(draftId);
-      return true;
-    } catch (error) {
-      console.error("Failed to load review draft:", error);
-      return false;
-    }
-  };
+      const { data: newReview, error: reviewError } = await supabase
+        .from("reviews")
+        .insert([reviewData])
+        .select();
 
-  const deleteDraft = async (draftId) => {
-    try {
-      const updatedDrafts = drafts.filter((d) => d.id !== draftId);
-      await save(ALL_REVIEW_DRAFTS_KEY, updatedDrafts);
-      setDrafts(updatedDrafts);
-
-      if (draftId === currentDraftId) {
-        await remove(CURRENT_REVIEW_DRAFT_KEY);
-        setCurrentDraftId(null);
+      if (reviewError) {
+        throw new Error(reviewError.message);
       }
 
-      return true;
+      if (currentDraftId) {
+        deleteDraft(currentDraftId);
+      }
+      await notifyFollowers(user.id, newReview[0].id, "new_review");
+      await notifyPeoples(peoplesTags, newReview[0].id, "tagged_in_review");
+
+      router.push(`/post/${newReview[0].id}`);
     } catch (error) {
-      console.error("Failed to delete review draft:", error);
-      return false;
+      Alert.alert("Error", "Failed to share the review. Please try again.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+      setIsSharing(false);
     }
   };
 
-  const clearCurrentDraft = async () => {
-    await remove(CURRENT_REVIEW_DRAFT_KEY);
-    setCurrentDraftId(null);
-  };
-
-  const getDraftDetails = (draftId) => {
-    const draft = drafts.find((d) => d.id === draftId);
-    if (!draft) return null;
-
-    const restaurantData = draft.restaurantData || {};
-    return {
-      id: draft.id,
-      name: draft.name || restaurantData.restaurantName || "Unnamed review",
-      createdAt: draft._timestamp,
-      step: draft.step,
-      hasImages:
-        Array.isArray(restaurantData.images) &&
-        restaurantData.images.length > 0,
-      rating: restaurantData.rating || 0,
-      isValid: true,
+  const handleSaveDraft = () => {
+    const draftData = {
+      id: currentDraftId || Date.now().toString(),
+      restaurantData,
+      cuisineTags,
+      amenityTags,
+      dietaryTags,
+      extraTags,
+      peoplesTags,
+      step,
     };
+
+    if (currentDraftId) {
+      updateDraft(currentDraftId, draftData);
+    } else {
+      addDraft(draftData);
+      setCurrentDraftId(draftData.id);
+    }
+
+    Alert.alert("Draft Saved", "Your review has been saved as a draft.");
   };
 
-  const getAllDraftDetails = () => {
-    return drafts.map((draft) => {
-      const restaurantData = draft.restaurantData || {};
-      return {
-        id: draft.id,
-        name: draft.name || restaurantData.restaurantName || "Unnamed review",
-        createdAt: draft._timestamp,
-        step: draft.step,
-        hasImages:
-          Array.isArray(restaurantData.images) &&
-          restaurantData.images.length > 0,
-        rating: restaurantData.rating || 0,
-        isValid: true,
-      };
-    });
+  const removeImage = (index) => {
+    const newImages = [...restaurantData.images];
+    newImages.splice(index, 1);
+    setRestaurantData((prev) => ({ ...prev, images: newImages }));
   };
-
-  const resetReviewState = async () => {
-    setStep(1);
-    setLoading(false);
-    setUploadProgress(0);
-    setPeoplesTags([]);
-    setCuisineTags([]);
-    setAmenityTags([]);
-    setDietaryTags([]);
-    setExtraTags([]);
-    setRestaurantData({ ...initialRestaurantData });
-    await clearCurrentDraft();
-  };
-
-  // Wrapped setters
-  const wrappedSetStep = useCallback((value) => {
-    setStep(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetPeoplesTags = useCallback((value) => {
-    setPeoplesTags(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetCuisineTags = useCallback((value) => {
-    setCuisineTags(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetAmenityTags = useCallback((value) => {
-    setAmenityTags(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetDietaryTags = useCallback((value) => {
-    setDietaryTags(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetExtraTags = useCallback((value) => {
-    setExtraTags(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetRestaurantData = useCallback((value) => {
-    setRestaurantData(value);
-    setLastChangeTime(Date.now());
-  }, []);
-
-  const wrappedSetUploadProgress = useCallback((value) => {
-    setUploadProgress(value);
-    setLastChangeTime(Date.now());
-  }, []);
 
   return (
     <ReviewContext.Provider
       value={{
         step,
         loading,
-        peoplesTags,
+        isSharing,
+        restaurantData,
         cuisineTags,
         amenityTags,
         dietaryTags,
         extraTags,
-        restaurantData,
-        uploadProgress,
+        peoplesTags,
         drafts,
-        setStep: wrappedSetStep,
-        setLoading,
-        setPeoplesTags: wrappedSetPeoplesTags,
-        setCuisineTags: wrappedSetCuisineTags,
-        setAmenityTags: wrappedSetAmenityTags,
-        setDietaryTags: wrappedSetDietaryTags,
-        setExtraTags: wrappedSetExtraTags,
-        setRestaurantData: wrappedSetRestaurantData,
-        setUploadProgress: wrappedSetUploadProgress,
-        resetReviewState,
-        saveAsDraft,
-        loadDraft,
-        deleteDraft,
-        clearCurrentDraft,
-        getDraftDetails,
-        getAllDraftDetails,
         currentDraftId,
+        uploadProgress,
+        isUploading,
+        setStep,
+        setLoading,
+        setIsSharing,
+        setRestaurantData,
+        setCuisineTags,
+        setAmenityTags,
+        setDietaryTags,
+        setExtraTags,
+        setPeoplesTags,
+        setCurrentDraftId,
+        nextStep,
+        prevStep,
+        handleChange,
+        handleShare,
+        handleSaveDraft,
+        removeImage,
+        addDraft,
+        updateDraft,
+        deleteDraft,
       }}
     >
       {children}

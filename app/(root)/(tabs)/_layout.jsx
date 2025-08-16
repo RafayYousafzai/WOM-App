@@ -9,8 +9,6 @@ import { useGlobal } from "@/context/globalContext";
 // Custom tab bar component that preserves your styling
 function CustomTabBar({ state, descriptors, navigation, theme }) {
   const { user } = useUser();
-  const { resetDishState } = useDish();
-  const { resetReviewState } = useReview();
   const { setSelectedImages, setPostType } = useGlobal();
   const { drafts: hasDishDraft } = useDish();
   const { drafts: hasReviewDraft } = useReview();
@@ -54,8 +52,6 @@ function CustomTabBar({ state, descriptors, navigation, theme }) {
   ];
 
   const resetStates = () => {
-    resetDishState();
-    resetReviewState();
     setSelectedImages([]);
     setPostType(null);
   };

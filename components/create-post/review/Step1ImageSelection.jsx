@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
 import { Input, InputField, Textarea, TextareaInput } from "@/components/ui";
-import { useGlobal } from "@/context/globalContext";
 import { Switch } from "react-native-paper";
 import ImageEditor from "../ImageEditor";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -17,51 +16,16 @@ import { Plus } from "lucide-react-native";
 import { DishTypeModal } from "../shared-components/DishTypeModal";
 import { DishTabs } from "../shared-components/DishTabs";
 import { DishForm } from "../shared-components/DishForm";
+import { useReview } from "@/context/reviewContext";
 
-export const Step1ImageSelection = ({
-  restaurantData,
-  setRestaurantData,
-  handleChange,
-}) => {
+export const Step1ImageSelection = () => {
   const {
-    selectedImages,
-    setCurrentDishId,
-    getDishImages,
-    setCurrentDishImages,
-    postType,
-    setPostType,
-  } = useGlobal();
+    restaurantData,
+    handleChange,
+    removeImage,
+  } = useReview();
   const [showModal, setShowModal] = useState(false);
-  const [dishTypes, setDishTypes] = useState([
-    {
-      id: "main-course",
-      name: "Main Course",
-      dishName: "",
-      recommendDish: false,
-      price: "",
-      rating: 0,
-    },
-  ]);
   const [activeTab, setActiveTab] = useState("main-course");
-
-  // Set current dish ID in global context when active tab changes
-  useEffect(() => {
-    setCurrentDishId(activeTab);
-  }, [activeTab, setCurrentDishId]);
-
-  // Handle legacy selectedImages for backward compatibility
-  useEffect(() => {
-    if (
-      selectedImages &&
-      Array.isArray(selectedImages) &&
-      selectedImages.length > 0
-    ) {
-      const currentDishImages = getDishImages(activeTab);
-      if (currentDishImages.length === 0) {
-        setCurrentDishImages(activeTab, selectedImages);
-      }
-    }
-  }, [selectedImages, activeTab, getDishImages, setCurrentDishImages]);
 
   const handleAddDishType = (type) => {
     const newDish = {
@@ -70,48 +34,57 @@ export const Step1ImageSelection = ({
       recommendDish: false,
       price: "",
       rating: 0,
+      images: [],
     };
 
-    setDishTypes((prev) => [...prev, newDish]);
+    const newDishTypes = [...restaurantData.dishTypes, newDish];
+    handleChange("dishTypes", newDishTypes);
     setActiveTab(type.id);
     setShowModal(false);
   };
 
   const handleRemoveTab = (tabId) => {
-    setDishTypes((prev) => prev.filter((dish) => dish.id !== tabId));
+    const newDishTypes = restaurantData.dishTypes.filter(
+      (dish) => dish.id !== tabId
+    );
+    handleChange("dishTypes", newDishTypes);
     if (activeTab === tabId) {
       setActiveTab("main-course");
     }
   };
 
   const handleDishChange = (field, value) => {
-    setDishTypes((prev) =>
-      prev.map((dish) =>
-        dish.id === activeTab ? { ...dish, [field]: value } : dish
-      )
+    const newDishTypes = restaurantData.dishTypes.map((dish) =>
+      dish.id === activeTab ? { ...dish, [field]: value } : dish
+    );
+    handleChange("dishTypes", newDishTypes);
+  };
+
+  const handleDishImagesChange = (images) => {
+    const newDishTypes = restaurantData.dishTypes.map((dish) =>
+      dish.id === activeTab ? { ...dish, images } : dish
+    );
+    handleChange("dishTypes", newDishTypes);
+  };
+
+  const getCurrentDish = () => {
+    return (
+      restaurantData.dishTypes.find((dish) => dish.id === activeTab) || {
+        id: "main-course",
+        name: "Main Course",
+        dishName: "",
+        recommendDish: false,
+        price: "",
+        rating: 0,
+        images: [],
+      }
     );
   };
 
-  // New function to get current dish data with images from global context
-  const getCurrentDish = () => {
-    const baseDish =
-      dishTypes.find((dish) => dish.id === activeTab) || dishTypes[0];
-    return {
-      ...baseDish,
-      images: getDishImages(activeTab),
-    };
-  };
-
-  // Update restaurant data whenever dishTypes change
   useEffect(() => {
-    const dishTypesWithImages = dishTypes.map((dish) => ({
-      ...dish,
-      images: getDishImages(dish.id),
-    }));
-    const allImages = dishTypesWithImages.flatMap((dish) => dish.images);
+    const allImages = restaurantData.dishTypes.flatMap((dish) => dish.images);
     handleChange("images", allImages);
-    handleChange("dishTypes", dishTypesWithImages);
-  }, [dishTypes, getDishImages]);
+  }, [restaurantData.dishTypes]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -123,9 +96,8 @@ export const Step1ImageSelection = ({
           keyboardShouldPersistTaps="handled"
           className="flex-1 relative"
         >
-          {/* Dish Tabs - Show after first dish type is selected */}
           <DishTabs
-            dishTypes={dishTypes}
+            dishTypes={restaurantData.dishTypes}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             onAddDish={() => setShowModal(true)}
@@ -146,13 +118,11 @@ export const Step1ImageSelection = ({
             />
           </View>
 
-          {/* Dish Form */}
           <DishForm
             dishData={getCurrentDish()}
             onDishChange={handleDishChange}
           />
 
-          {/* Location */}
           <View className="px-4">
             <Text className="text-sm mt-3 text-gray-500 mb-1">Location</Text>
             <GoogleTextInput
@@ -166,7 +136,6 @@ export const Step1ImageSelection = ({
             />
           </View>
 
-          {/* Review */}
           <View className="px-4 mb-4">
             <Text className="text-sm mt-3 text-gray-500 mb-1">Your Review</Text>
             <Textarea size="lg" className="bg-gray-50 rounded-3xl">
@@ -206,7 +175,6 @@ export const Step1ImageSelection = ({
           <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-      {/* Dish Type Selection Modal */}
       <DishTypeModal
         visible={showModal}
         onClose={() => setShowModal(false)}

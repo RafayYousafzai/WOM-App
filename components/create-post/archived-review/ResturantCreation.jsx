@@ -45,7 +45,6 @@ export default function RestaurantCreationArchived({ setPostType }) {
     setRestaurantData,
     dietaryTags,
     setDietaryTags,
-    resetReviewState,
     extraTags,
     setExtraTags,
     deleteDraft,
@@ -208,7 +207,6 @@ export default function RestaurantCreationArchived({ setPostType }) {
 
       // Success flow
       Alert.alert("Success", "Restaurant review posted successfully!");
-      resetReviewState();
       setPostType(null);
       router.replace("/home");
     } catch (error) {
@@ -280,11 +278,9 @@ export default function RestaurantCreationArchived({ setPostType }) {
     if (step > 1) {
       setStep(step - 1);
     } else if (restaurantData.quote) {
-      resetReviewState();
       setPostType(null);
       router.push("/favorites");
     } else {
-      resetReviewState();
       setPostType(null);
       Alert.alert(
         "Draft",
@@ -337,8 +333,7 @@ export default function RestaurantCreationArchived({ setPostType }) {
             onPress={() => {
               step < 3 ? nextStep() : handleShareWithLoading();
             }}
-            className={`px-4 py-2 rounded-full ${
-              step === 3 && (loading || isSharing)
+            className={`px-4 py-2 rounded-full ${step === 3 && (loading || isSharing)
                 ? "bg-gray-400"
                 : "bg-yellow-400"
             }`}
@@ -378,65 +373,4 @@ export default function RestaurantCreationArchived({ setPostType }) {
             <Text className="text-xs text-gray-600 mt-1 text-center">
               {isSharing
                 ? "Sharing restaurant review..."
-                : "Processing and uploading..."}{" "}
-              {Math.round(uploadProgress)}%
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View className="flex-1">
-        {step === 1 ? (
-          <Step1ImageSelection
-            restaurantData={restaurantData}
-            setRestaurantData={setRestaurantData}
-            handleChange={handleChange}
-            removeImage={removeImage}
-          />
-        ) : step === 2 ? (
-          <Step2DetailsInput
-            restaurantData={restaurantData}
-            setRestaurantData={setRestaurantData}
-            handleChange={handleChange}
-            cuisineTags={cuisineTags}
-            setCuisineTags={setCuisineTags}
-            amenityTags={amenityTags}
-            setAmenityTags={setAmenityTags}
-            dietaryTags={dietaryTags}
-            setDietaryTags={setDietaryTags}
-            extraTags={extraTags}
-            setExtraTags={setExtraTags}
-            peoplesTags={peoplesTags}
-            setPeoplesTags={setPeoplesTags}
-          />
-        ) : (
-          <Step3
-            handleSubmit={handleSubmit}
-            submission={{
-              ...restaurantData,
-              allTags: [
-                ...(cuisineTags || []),
-                ...(dietaryTags || []),
-                ...(amenityTags || []),
-                ...(extraTags || []),
-              ].filter(Boolean),
-            }}
-            handleChange={handleChange}
-          />
-        )}
-      </View>
-
-      {/* Loading Overlay */}
-      {(loading || isSharing) && !uploadProgress && (
-        <View className="absolute inset-0 bg-white bg-opacity-80 items-center justify-center">
-          <LoadingAnimation size={170} />
-          <Text className="mt-4 text-gray-600 font-medium">
-            {isSharing
-              ? "Sharing your restaurant review..."
-              : "Processing your review..."}
-          </Text>
-        </View>
-      )}
-    </SafeAreaView>
-  );
-}
+                : "Processing and uploading..."}{

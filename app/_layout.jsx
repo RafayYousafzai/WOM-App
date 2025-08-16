@@ -97,9 +97,9 @@ export default function RootLayoutNav() {
                 <PaperProvider>
                   <GlobalProvider>
                     <SearchProvider>
-                      <DishProvider>
-                        <ReviewProvider>
-                          <UploadProvider>
+                      <UploadProvider>
+                        <DishProvider>
+                          <ReviewProvider>
                             <NotificationConfig />
                             <StatusBar backgroundColor="#fff" style="dark" />
 
@@ -113,9 +113,9 @@ export default function RootLayoutNav() {
                               <Stack.Screen name="(auth)" />
                               <Stack.Screen name="(root)" />
                             </Stack>
-                          </UploadProvider>
-                        </ReviewProvider>
-                      </DishProvider>
+                          </ReviewProvider>
+                        </DishProvider>
+                      </UploadProvider>
                     </SearchProvider>
                   </GlobalProvider>
                 </PaperProvider>

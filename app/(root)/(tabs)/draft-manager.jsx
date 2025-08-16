@@ -23,14 +23,12 @@ const DraftsScreen = () => {
     drafts: dishDrafts,
     loadDraft: loadDishDraft,
     deleteDraft: deleteDishDraft,
-    resetDishState,
     clearCurrentDraft: clearCurrentDishDraft,
   } = useDish();
   const {
     drafts: reviewDrafts,
     loadDraft: loadReviewDraft,
     deleteDraft: deleteReviewDraft,
-    resetReviewState,
     clearCurrentDraft: clearCurrentReviewDraft,
   } = useReview();
   const [loading, setLoading] = useState(true);
@@ -296,8 +294,6 @@ const DraftsScreen = () => {
         style={styles.newPostButton}
         onPress={() => {
           setPostType(null);
-          resetDishState();
-          resetReviewState();
           setSelectedImages([]);
           router.push("create-review");
         }}

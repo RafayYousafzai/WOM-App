@@ -18,33 +18,43 @@ import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import { classNames } from "@/utils/classNames";
 import { CurrencyDollarIcon, StarIcon } from "react-native-heroicons/mini";
+import { useReview } from "@/context/reviewContext";
 
-export const Step3 = ({ handleSubmit, submission, handleChange }) => {
+export const Step3Summary = () => {
   const { user } = useUser();
+  const { restaurantData, cuisineTags, amenityTags, dietaryTags, extraTags } =
+    useReview();
+
+  const submission = {
+    ...restaurantData,
+    allTags: [
+      ...(cuisineTags || []),
+      ...(dietaryTags || []),
+      ...(amenityTags || []),
+      ...(extraTags || []),
+    ].filter(Boolean),
+  };
 
   const safeSubmission = {
-    dishName: submission?.dishName || "Dish",
-    restaurantName: submission?.restaurantName || "Restaurant",
-    price: submission?.price || "0",
-    rating: submission?.rating || 0,
+    dishName: submission?.dishTypes[0]?.dishName || "Dish",
+    restaurantName: submission?.location?.name || "Restaurant",
+    price: submission?.dishTypes[0]?.price || "0",
+    rating: submission?.dishTypes[0]?.rating || 0,
     images: submission?.images || [],
     location: submission?.location || {
       address: "Location not provided",
-      latitude: 40.7128, // Default to NYC coordinates if missing
+      latitude: 40.7128,
       longitude: -74.006,
     },
     tags: submission?.allTags || [],
     allTags: submission?.allTags || [],
-    cuisines: submission?.cuisines || [],
-    recommendDish: submission?.recommendDish || "",
+    cuisines: submission?.allTags || [],
+    recommendDish: submission?.dishTypes[0]?.recommendDish || "",
     review: submission?.review || "",
-    phoneNumber: submission?.phoneNumber || "",
-    website: submission?.website || "",
+    phoneNumber: submission?.location?.phoneNumber || "",
+    website: submission?.location?.website || "",
   };
 
-  // Handle submission with background upload
-  //
-  // Format price with $ symbols
   const getPriceCategory = (price) => {
     const numPrice = Number.parseInt(price) || 0;
     if (numPrice <= 50) return "$";
@@ -53,7 +63,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
     return "$$$$";
   };
 
-  // Handle opening maps app with coordinates
   const openMaps = () => {
     const { latitude, longitude } = safeSubmission.location;
     const url = Platform.select({
@@ -63,7 +72,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
     Linking.openURL(url);
   };
 
-  // Generate star rating display
   const renderRating = (rating) => {
     const stars = [];
     const safeRating = Number(rating) || 0;
@@ -81,7 +89,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
     return stars;
   };
 
-  // Check if user exists and has a username
   const getUserInitial = () => {
     if (!user || !user.username) return "U";
     return user.username.charAt(0).toUpperCase();
@@ -97,7 +104,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
       className="flex-1"
     >
       <ScrollView className="flex-1 bg-white">
-        {/* Hero Image Section */}
         <View className="relative">
           <Image
             source={
@@ -109,7 +115,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             style={{ resizeMode: "cover" }}
           />
           <View className="absolute inset-0 bg-black opacity-30" />
-          {/* Restaurant info overlay */}
           <View className="absolute bottom-0 left-0 right-0 p-5">
             <Text className="text-white text-3xl font-bold">
               {safeSubmission.restaurantName}
@@ -125,9 +130,7 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
           </View>
         </View>
 
-        {/* Content Card */}
         <View className="bg-white rounded-t-3xl -mt-6 px-5 pt-6 pb-10">
-          {/* Tags Section */}
           {safeSubmission.tags.length > 0 ||
           safeSubmission.cuisines.length > 0 ? (
             <ScrollView
@@ -169,7 +172,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             </View>
           )}
 
-          {/* Location Card */}
           <View className="bg-gray-50 rounded-xl p-4 mb-5">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1">
@@ -192,7 +194,7 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
                 <Text className="text-white font-semibold">Map</Text>
               </TouchableOpacity>
             </View>
-            {/* Mini Map Preview */}
+
             <TouchableOpacity onPress={openMaps} className="mt-3">
               <View className="h-32 rounded-lg overflow-hidden">
                 <MapView
@@ -225,7 +227,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Price & Details */}
           <View className="flex-row mb-6">
             <View className="flex-1 bg-green-50 rounded-xl p-4 mr-2">
               <View className="flex-row mb-4 items-center">
@@ -263,7 +264,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             </View>
           </View>
 
-          {/* Recommended Dishes */}
           <View className="mb-6">
             <Text className="text-gray-800 font-bold text-xl mb-3">
               Recommended Dishes
@@ -303,7 +303,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             )}
           </View>
 
-          {/* Review Section */}
           <View className="mb-6">
             <Text className="text-gray-800 font-bold text-xl mb-3">Review</Text>
             {safeSubmission.review ? (
@@ -334,7 +333,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
             )}
           </View>
 
-          {/* Contact Information Actions */}
           {(safeSubmission.phoneNumber || safeSubmission.website) && (
             <View className="mb-6">
               <Text className="text-gray-800 font-bold text-xl mb-3">

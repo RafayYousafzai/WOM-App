@@ -13,24 +13,19 @@ import {
   extractSuggestionsByCategory,
   FILTER_CATEGORIES,
 } from "@/constants/SearchFilters";
-import ImageEditor from "../ImageEditor";
-import { useGlobal } from "@/context/globalContext";
+import { useReview } from "@/context/reviewContext";
 
-export const Step2DetailsInput = ({
-  restaurantData,
-  cuisineTags,
-  setCuisineTags,
-  amenityTags,
-  setAmenityTags,
-  dietaryTags,
-  setDietaryTags,
-  extraTags,
-  setExtraTags,
-  peoplesTags,
-  setPeoplesTags,
-  setRestaurantData,
-}) => {
-  const { postType, setPostType } = useGlobal();
+export const Step2DetailsInput = () => {
+  const {
+    cuisineTags,
+    setCuisineTags,
+    amenityTags,
+    setAmenityTags,
+    dietaryTags,
+    setDietaryTags,
+    peoplesTags,
+    setPeoplesTags,
+  } = useReview();
 
   return (
     <KeyboardAvoidingView
@@ -38,10 +33,6 @@ export const Step2DetailsInput = ({
       className="flex-1"
     >
       <ScrollView className="flex-1">
-        {/* Restaurant Preview */}
-        <ImageEditor data={restaurantData} setData={setRestaurantData} />
-
-        {/* Peoples Types */}
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Tag People</Text>
           <TagPeopleInput
@@ -51,7 +42,6 @@ export const Step2DetailsInput = ({
           />
         </View>
 
-        {/* Cuisine Types */}
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Cuisine Types</Text>
           <TagInputWithSuggestions
@@ -64,7 +54,7 @@ export const Step2DetailsInput = ({
             }
           />
         </View>
-        {/* Amenities */}
+
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Amenities</Text>
           <TagInputWithSuggestions
@@ -77,7 +67,7 @@ export const Step2DetailsInput = ({
             }
           />
         </View>
-        {/* Dietary  */}
+
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Dietary Options</Text>
           <TagInputWithSuggestions
