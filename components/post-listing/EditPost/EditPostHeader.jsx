@@ -326,8 +326,14 @@ export const EditPostHeader = ({
     );
   };
 
-  // Menu items for own posts
   const ownPostMenuItems = [
+    {
+      icon: "shield",
+      label: "Enable Gatekeeping",
+      onPress: handleEdit,
+      color: "#2563EB",
+      backgroundColor: "#E0F2FE",
+    },
     {
       icon: "edit-2",
       label: "Edit Post",

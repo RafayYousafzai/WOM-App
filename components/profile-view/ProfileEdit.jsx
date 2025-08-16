@@ -1,81 +1,51 @@
 import {
   View,
   Text,
-  TouchableOpacity,
-  TextInput,
   Alert,
-  Modal,
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useUser } from "@clerk/clerk-expo";
 import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import * as yup from "yup";
-import { profileSchema } from "./profile-validation";
 import { router } from "expo-router";
 import { Button, Icon } from "@/components/ui";
-import { ArrowLeft, LogOut, AlertCircle } from "lucide-react-native";
-import SelectCountry from "@/components/common/SelectCountry";
-import { Input, InputField } from "@/components/ui";
-import DietaryTagInput from "@/components/common/DietaryOptionTag";
-import {
-  extractSuggestionsByCategory,
-  FILTER_CATEGORIES,
-} from "@/constants/SearchFilters";
+import { ArrowLeft, LogOut } from "lucide-react-native";
+
+import { useEditProfile } from "./useEditProfile";
+import { ProfileForm, DatePickerModal } from "./ProfileForm";
 
 export const EditProfileScreen = ({ setIsEditing }) => {
   const { user: clerkUser, isLoaded, isSignedIn } = useUser();
   const { signOut } = useAuth();
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date());
   const [incomplete, setIncomplete] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Field error states
-  const [fieldErrors, setFieldErrors] = useState({
-    username: null,
-    firstName: null,
-    lastName: null,
-    bio: null,
-    dietaryRestrictions: [],
-  });
-
-  const [user, setUser] = useState({
-    username: "",
-    firstName: "",
-    lastName: "",
-    bio: "",
-    dietaryRestrictions: [], // Changed to array
-    country: null,
-  });
+  const {
+    user,
+    fieldErrors,
+    showDateModal,
+    tempDate,
+    setShowDateModal,
+    setTempDate,
+    handleInputChange,
+    handleCountrySelect,
+    handleDietaryRestrictionsChange,
+    onDateChange,
+    confirmDate,
+    cancelDateSelection,
+    clearFieldError,
+    validateAllFields,
+    initializeUserData,
+  } = useEditProfile(clerkUser, isLoaded);
 
   useEffect(() => {
     if (isLoaded && clerkUser) {
-      const metadata = clerkUser.unsafeMetadata || {};
-
-      // Handle dietary restrictions properly
-      let dietaryRestrictions = [];
-      if (Array.isArray(metadata.dietaryRestrictions)) {
-        dietaryRestrictions = metadata.dietaryRestrictions;
-      }
-
-      console.log("Loading user data:", {
-        dietaryRestrictions,
-        metadata: metadata.dietaryRestrictions,
-      });
-
-      setUser({
-        username: clerkUser.username || "",
-        firstName: clerkUser.firstName || "",
-        lastName: clerkUser.lastName || "",
-        bio: metadata.bio || "",
-        dietaryRestrictions: dietaryRestrictions,
-      });
+      initializeUserData();
     }
     if (isLoaded && isSignedIn) {
       if (!clerkUser?.firstName || !clerkUser?.username) {
@@ -84,97 +54,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
         setIncomplete(false);
       }
     }
-  }, [clerkUser, isLoaded, isSignedIn]);
-
-  // Clear field error when user starts typing
-  const clearFieldError = (fieldName) => {
-    if (fieldErrors[fieldName]) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        [fieldName]: null,
-      }));
-    }
-  };
-
-  // Validate individual field
-  const validateField = async (fieldName, value) => {
-    try {
-      // Create a schema for just this field
-      const fieldSchema = yup.object().shape({
-        [fieldName]: profileSchema.fields[fieldName],
-      });
-      await fieldSchema.validate({ [fieldName]: value });
-      // Clear error if validation passes
-      setFieldErrors((prev) => ({
-        ...prev,
-        [fieldName]: null,
-      }));
-      return true;
-    } catch (error) {
-      // Set error if validation fails
-      setFieldErrors((prev) => ({
-        ...prev,
-        [fieldName]: error.message,
-      }));
-      return false;
-    }
-  };
-
-  // Enhanced input handlers with validation
-  const handleInputChange = (field, value) => {
-    setUser((prev) => ({ ...prev, [field]: value }));
-    clearFieldError(field);
-  };
-
-  const handleCountrySelect = (country) => {
-    setUser((prev) => ({ ...prev, country }));
-    clearFieldError("country");
-  };
-
-  // Handle dietary restrictions change
-  const handleDietaryRestrictionsChange = (tags) => {
-    console.log("Dietary restrictions changed:", tags);
-    setUser((prev) => ({
-      ...prev,
-      dietaryRestrictions: tags,
-    }));
-    clearFieldError("dietaryRestrictions");
-  };
-
-  // Validate all required fields
-  const validateAllFields = () => {
-    let hasErrors = false;
-    const errors = {};
-
-    // Check required fields - dietaryRestrictions is now optional
-    const requiredFields = {
-      username: user.username?.trim(),
-      firstName: user.firstName?.trim(),
-      lastName: user.lastName?.trim(),
-    };
-
-    // Validate each required field
-    Object.entries(requiredFields).forEach(([field, value]) => {
-      if (!value) {
-        const fieldLabels = {
-          username: "Username",
-          firstName: "First Name",
-          lastName: "Last Name",
-        };
-        errors[field] = `${fieldLabels[field]} is required`;
-        hasErrors = true;
-      }
-    });
-
-    // Additional validation for bio length
-    if (user.bio && user.bio.trim().length < 10) {
-      errors.bio = "Bio must be at least 10 characters long";
-      hasErrors = true;
-    }
-
-    setFieldErrors(errors);
-    return !hasErrors;
-  };
+  }, [clerkUser, isLoaded, isSignedIn, initializeUserData]);
 
   const saveChanges = async () => {
     try {
@@ -194,12 +74,17 @@ export const EditProfileScreen = ({ setIsEditing }) => {
         dietaryRestrictions: user.dietaryRestrictions,
         type: typeof user.dietaryRestrictions,
         isArray: Array.isArray(user.dietaryRestrictions),
+        birthday: user.birthday,
+        favoriteEmoji: user.favoriteEmoji,
       });
 
       // Prepare the metadata object
       const metadata = {
         bio: user.bio,
-        dietaryRestrictions: user.dietaryRestrictions, // Keep as array
+        dietaryRestrictions: user.dietaryRestrictions,
+        country: user.country,
+        birthday: user.birthday ? user.birthday.toISOString() : null,
+        favoriteEmoji: user.favoriteEmoji || null,
       };
 
       console.log("Metadata to save:", metadata);
@@ -305,122 +190,30 @@ export const EditProfileScreen = ({ setIsEditing }) => {
                 </Text>
               )}
             </View>
-            <View className="space-y-4">
-              <Input
-                variant="filled"
-                size="sm"
-                label="Username"
-                isRequired
-                isInvalid={!!fieldErrors.username}
-                errorText={fieldErrors.username}
-              >
-                <InputField
-                  value={user.username}
-                  onChangeText={(text) => handleInputChange("username", text)}
-                  placeholder="Choose a unique username"
-                  autoCapitalize="none"
-                  testID="username-input"
-                />
-              </Input>
 
-              <Input
-                variant="filled"
-                size="sm"
-                label="First Name"
-                isRequired
-                isInvalid={!!fieldErrors.firstName}
-                errorText={fieldErrors.firstName}
-              >
-                <InputField
-                  value={user.firstName}
-                  onChangeText={(text) => handleInputChange("firstName", text)}
-                  placeholder="Enter your first name"
-                  autoCapitalize="words"
-                  testID="firstname-input"
-                />
-              </Input>
-
-              <Input
-                variant="filled"
-                size="sm"
-                label="Last Name"
-                isRequired
-                isInvalid={!!fieldErrors.lastName}
-                errorText={fieldErrors.lastName}
-              >
-                <InputField
-                  value={user.lastName}
-                  onChangeText={(text) => handleInputChange("lastName", text)}
-                  placeholder="Enter your last name"
-                  autoCapitalize="words"
-                  testID="lastname-input"
-                />
-              </Input>
-
-              <View>
-                <Input
-                  variant="filled"
-                  size="sm"
-                  label="Bio"
-                  isInvalid={!!fieldErrors.bio}
-                  errorText={fieldErrors.bio}
-                >
-                  <InputField
-                    value={user.bio}
-                    onChangeText={(text) => handleInputChange("bio", text)}
-                    placeholder="Tell us about yourself and your food preferences"
-                    maxLength={150}
-                    textAlignVertical="top"
-                    testID="bio-input"
-                  />
-                </Input>
-                <Text className="text-right text-gray-500 text-xs mt-1">
-                  {user.bio.length}/150
-                </Text>
-              </View>
-
-              <View className="p-2">
-                <Text className="text-gray-600 font-medium text-sm mb-2">
-                  Dietary Options
-                </Text>
-                <DietaryTagInput
-                  tags={user.dietaryRestrictions}
-                  setTags={handleDietaryRestrictionsChange}
-                  title="Add dietary restrictions (e.g., gluten-free, vegan)"
-                  sc="#"
-                  suggestions={
-                    extractSuggestionsByCategory(FILTER_CATEGORIES).food || [
-                      "vegetarian",
-                      "vegan",
-                      "gluten-free",
-                      "dairy-free",
-                      "nut-free",
-                    ]
-                  }
-                />
-              </View>
-
-              <TouchableOpacity
-                className={`bg-[#f39f1e] py-4 px-6 rounded-full mt-6 shadow-md ${
-                  isSubmitting ? "opacity-70" : ""
-                }`}
-                onPress={saveChanges}
-                disabled={isSubmitting}
-                activeOpacity={0.8}
-                testID="save-button"
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text className="text-white font-bold text-center text-lg">
-                    {incomplete ? "Complete Account Details" : "Save Changes"}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <ProfileForm
+              user={user}
+              fieldErrors={fieldErrors}
+              handleInputChange={handleInputChange}
+              handleCountrySelect={handleCountrySelect}
+              handleDietaryRestrictionsChange={handleDietaryRestrictionsChange}
+              setShowDateModal={setShowDateModal}
+              saveChanges={saveChanges}
+              isSubmitting={isSubmitting}
+              incomplete={incomplete}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <DatePickerModal
+        showDateModal={showDateModal}
+        tempDate={tempDate}
+        onDateChange={onDateChange}
+        confirmDate={confirmDate}
+        cancelDateSelection={cancelDateSelection}
+        setShowDateModal={setShowDateModal}
+      />
     </SafeAreaView>
   );
 };
