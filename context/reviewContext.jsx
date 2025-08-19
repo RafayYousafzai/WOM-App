@@ -179,30 +179,39 @@ export const ReviewProvider = ({ children }) => {
   return (
     <ReviewContext.Provider
       value={{
+        // States
         step,
         loading,
         reviewData,
         currentDraftId,
         uploadProgress,
         isUploading,
+        activeTab,
+        showModal,
+
+        // State setters
         setStep,
         setLoading,
         setReviewData,
         setCurrentDraftId,
+        setActiveTab,
+        setShowModal,
+
+        // Step controls
         nextStep,
         prevStep,
+
+        // Review handlers
         handleChange,
         handleShare,
         setTagsWrapper,
+
+        // Dish type handlers
         handleAddDishType,
         handleRemoveTab,
         handleDishChange,
         handleDishImagesChange,
         getCurrentDish,
-        activeTab,
-        setActiveTab,
-        showModal,
-        setShowModal,
       }}
     >
       {children}
