@@ -98,14 +98,6 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
       country: terms[5],
     };
 
-    if (!structured.city || !structured.state) {
-      Alert.alert(
-        "Invalid Location",
-        "Please select a more complete location that includes city and state."
-      );
-      return;
-    }
-
     locationData.structured = structured;
 
     setSelectedLocation(locationData.address);

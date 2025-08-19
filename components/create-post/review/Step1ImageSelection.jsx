@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +8,6 @@ import {
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
 import { Textarea, TextareaInput } from "@/components/ui";
 import { Switch } from "react-native-paper";
-import ImageEditor from "../ImageEditor";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DishTypeModal } from "../shared-components/DishTypeModal";
 import { DishTabs } from "../shared-components/DishTabs";
@@ -23,14 +21,12 @@ export const Step1ImageSelection = () => {
     reviewData,
     handleChange,
     handleAddDishType,
-    handleRemoveTab,
     handleDishChange,
     getCurrentDish,
-    activeTab,
-    setActiveTab,
     showModal,
     setShowModal,
   } = useReview();
+  const { postType } = useGlobal();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -81,10 +77,12 @@ export const Step1ImageSelection = () => {
             </Textarea>
           </View>
 
-          <RatingStars
-            rating={reviewData.rating}
-            setRating={(rating) => handleChange("rating", rating)}
-          />
+          {postType === "homemade" && (
+            <RatingStars
+              rating={reviewData.rating}
+              setRating={(rating) => handleChange("rating", rating)}
+            />
+          )}
 
           <View className="px-4 mb-5">
             <View className="flex-row items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-white mb-6 rounded-2xl shadow-sm border border-yellow-200/50">

@@ -15,6 +15,8 @@ import notifyPeoples from "@/utils/notification/notify_peoples";
 import { Alert } from "react-native";
 import { router } from "expo-router";
 
+import handleSubmit from "@/lib/supabase/post";
+
 const ReviewContext = createContext();
 
 export const useReview = () => useContext(ReviewContext);
@@ -138,42 +140,7 @@ export const ReviewProvider = ({ children }) => {
   };
 
   const handleShare = async () => {
-    setLoading(true);
-
-    const finalData = {
-      ...reviewData,
-      allTags: [
-        ...(reviewData.cuisineTags || []),
-        ...(reviewData.dietaryTags || []),
-        ...(reviewData.amenityTags || []),
-      ].filter(Boolean),
-    };
-
-    console.log("Submitting data:", JSON.stringify(finalData, null, 2));
-
-    const { error } = restaurantSchema.validate(finalData);
-    if (error) {
-      Alert.alert("Validation Error", error.details[0].message);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // const imageUrls = await startUpload(reviewData.images, {
-      //   onProgress: (progress) => {},
-      // });
-
-      // await notifyFollowers(user.id, newReview[0].id, "new_review");
-      // await notifyPeoples(peoplesTags, newReview[0].id, "tagged_in_review");
-
-      // router.push(`/post/${newReview[0].id}`);
-      Alert.alert("Success", "Review shared successfully!");
-    } catch (error) {
-      Alert.alert("Error", "Failed to share the review. Please try again.");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    handleSubmit();
   };
 
   return (
