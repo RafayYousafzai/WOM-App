@@ -9,6 +9,8 @@ import UnloggedState from "@/components/auth/unlogged-state";
 import { Step1ImageSelection } from "./Step1ImageSelection";
 import { Step2DetailsInput } from "./Step2DetailsInput";
 import { Step3Summary } from "./Step3Summary";
+import { useFocusEffect } from "expo-router";
+import { useGlobal } from "@/context/globalContext";
 
 export default function RestaurantCreation() {
   const { isSignedIn } = useAuth();
@@ -16,13 +18,26 @@ export default function RestaurantCreation() {
   const {
     step,
     loading,
-    isSharing,
     uploadProgress,
     nextStep,
     prevStep,
     handleShare,
     handleSaveDraft,
+    handleDishImagesChange,
+    getCurrentDish,
   } = useReview();
+
+  const { selectedImages, setSelectedImages } = useGlobal();
+
+  useFocusEffect(() => {
+    console.log("Selected Images:", selectedImages);
+
+    if (selectedImages.length > 0) {
+      const currentDish = getCurrentDish();
+      handleDishImagesChange([...currentDish.images, ...selectedImages]);
+      setSelectedImages([]);
+    }
+  });
 
   if (!isSignedIn) return <UnloggedState />;
 
@@ -60,14 +75,12 @@ export default function RestaurantCreation() {
               step < 3 ? nextStep() : handleShareWithLoading();
             }}
             className={`px-4 py-2 rounded-full ${
-              step === 3 && (loading || isSharing)
-                ? "bg-gray-400"
-                : "bg-yellow-400"
+              step === 3 && loading ? "bg-gray-400" : "bg-yellow-400"
             }`}
-            disabled={step === 3 && (loading || isSharing)}
+            disabled={step === 3 && loading}
           >
             <View className="flex-row items-center">
-              {isSharing && (
+              {loading && (
                 <Ionicons
                   name="hourglass"
                   size={16}
@@ -76,19 +89,13 @@ export default function RestaurantCreation() {
                 />
               )}
               <Text className="font-semibold text-white">
-                {step < 3
-                  ? "Next"
-                  : loading
-                  ? "Posting..."
-                  : isSharing
-                  ? "Sharing..."
-                  : "Share"}
+                {step < 3 ? "Next" : loading ? "Posting..." : "Share"}
               </Text>
             </View>
           </Pressable>
         </View>
 
-        {(loading || isSharing) && uploadProgress > 0 && (
+        {loading && uploadProgress > 0 && (
           <View className="mt-3">
             <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <View
@@ -97,10 +104,7 @@ export default function RestaurantCreation() {
               />
             </View>
             <Text className="text-xs text-gray-600 mt-1 text-center">
-              {isSharing
-                ? "Sharing restaurant review..."
-                : "Processing and uploading..."}{" "}
-              {Math.round(uploadProgress)}%
+              {"Processing and uploading..."} {Math.round(uploadProgress)}%
             </Text>
           </View>
         )}
@@ -116,22 +120,14 @@ export default function RestaurantCreation() {
         )}
       </View>
 
-      {(loading || isSharing) && !uploadProgress && (
+      {loading && !uploadProgress && (
         <View className="absolute inset-0 bg-white bg-opacity-80 items-center justify-center">
           <LoadingAnimation size={170} />
           <Text className="mt-4 text-gray-600 font-medium">
-            {isSharing
-              ? "Sharing your restaurant review..."
-              : "Processing your review..."}
+            {"Processing your review..."}
           </Text>
         </View>
       )}
-      <TouchableOpacity
-        onPress={handleSaveDraft}
-        className="absolute bottom-32 right-10 bg-blue-500 p-4 rounded-full"
-      >
-        <Ionicons name="save" size={24} color="white" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }

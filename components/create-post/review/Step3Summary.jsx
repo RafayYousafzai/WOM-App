@@ -22,16 +22,15 @@ import { useReview } from "@/context/reviewContext";
 
 export const Step3Summary = () => {
   const { user } = useUser();
-  const { restaurantData, cuisineTags, amenityTags, dietaryTags, extraTags } =
-    useReview();
+  const { reviewData } = useReview();
 
   const submission = {
-    ...restaurantData,
+    ...reviewData,
     allTags: [
-      ...(cuisineTags || []),
-      ...(dietaryTags || []),
-      ...(amenityTags || []),
-      ...(extraTags || []),
+      ...(reviewData.cuisineTags || []),
+      ...(reviewData.dietaryTags || []),
+      ...(reviewData.amenityTags || []),
+      ...(reviewData.peoplesTags || []),
     ].filter(Boolean),
   };
 

@@ -3,11 +3,21 @@ import { View, Text } from "react-native";
 import { RatingStars } from "./rating-stars";
 import { Input, InputField } from "@/components/ui";
 import { Switch } from "react-native-paper";
+import ImageEditor from "../ImageEditor";
+import { useReview } from "@/context/reviewContext";
 
 export const DishForm = ({ dishData, onDishChange }) => {
+  const { activeTab, getCurrentDish, handleDishImagesChange } = useReview();
+
   return (
     <View className="px-4">
-      {/* Rating */}
+      <View className="relative">
+        <ImageEditor
+          key={activeTab}
+          getCurrentDish={getCurrentDish}
+          handleDishImagesChange={handleDishImagesChange}
+        />
+      </View>
 
       {/* Dish Name */}
       <Text className="text-sm text-gray-500 mb-1">Dish Name*</Text>

@@ -1,14 +1,16 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Plus, X } from "lucide-react-native";
+import { useReview } from "@/context/reviewContext";
 
-export const DishTabs = ({
-  dishTypes,
-  activeTab,
-  onTabChange,
-  onAddDish,
-  onRemoveTab,
-}) => {
+export const DishTabs = () => {
+  const { reviewData, handleRemoveTab, activeTab, setActiveTab, setShowModal } =
+    useReview();
+
+  const onAddDish = () => setShowModal(true);
+  const onRemoveTab = (id) => handleRemoveTab(id);
+  const dishTypes = reviewData.dishTypes;
+
   return (
     <View className="bg-white/90 backdrop-blur-lg rounded-2xl mx-2 mb-4 p-2 ">
       <ScrollView
@@ -19,7 +21,7 @@ export const DishTabs = ({
         {dishTypes.map((dish, index) => (
           <View key={dish.id} className="flex-row items-center">
             <TouchableOpacity
-              onPress={() => onTabChange(dish.id)}
+              onPress={() => setActiveTab(dish.id)}
               className={`px-4 py-3 rounded-xl mr-2 flex-row items-center ${
                 activeTab === dish.id
                   ? "bg-[#f39f1e] shadow-md"

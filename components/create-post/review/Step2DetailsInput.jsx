@@ -16,16 +16,7 @@ import {
 import { useReview } from "@/context/reviewContext";
 
 export const Step2DetailsInput = () => {
-  const {
-    cuisineTags,
-    setCuisineTags,
-    amenityTags,
-    setAmenityTags,
-    dietaryTags,
-    setDietaryTags,
-    peoplesTags,
-    setPeoplesTags,
-  } = useReview();
+  const { reviewData, setReviewData, setTagsWrapper } = useReview();
 
   return (
     <KeyboardAvoidingView
@@ -36,8 +27,8 @@ export const Step2DetailsInput = () => {
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Tag People</Text>
           <TagPeopleInput
-            tags={peoplesTags}
-            setTags={setPeoplesTags}
+            tags={reviewData.peoplesTags}
+            setTags={setTagsWrapper("peoplesTags")}
             title="Who's with you?"
           />
         </View>
@@ -45,8 +36,8 @@ export const Step2DetailsInput = () => {
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Cuisine Types</Text>
           <TagInputWithSuggestions
-            tags={cuisineTags}
-            setTags={setCuisineTags}
+            tags={reviewData.cuisineTags}
+            setTags={setTagsWrapper("cuisineTags")}
             title="Add cuisine types (e.g., Italian, Mexican)..."
             sc="#"
             suggestions={
@@ -58,8 +49,8 @@ export const Step2DetailsInput = () => {
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Amenities</Text>
           <TagInputWithSuggestions
-            tags={amenityTags}
-            setTags={setAmenityTags}
+            tags={reviewData.amenityTags}
+            setTags={setTagsWrapper("amenityTags")}
             title="Add amenities (e.g., Outdoor, Wi-Fi)"
             sc="#"
             suggestions={
@@ -71,8 +62,8 @@ export const Step2DetailsInput = () => {
         <View className="p-4 ">
           <Text className="text-base font-medium mb-1">Dietary Options</Text>
           <TagInputWithSuggestions
-            tags={dietaryTags}
-            setTags={setDietaryTags}
+            tags={reviewData.dietaryTags}
+            setTags={setTagsWrapper("dietaryTags")}
             title="Add dietary restrictions (e.g., gluten-free, vegan)"
             sc="#"
             suggestions={extractSuggestionsByCategory(FILTER_CATEGORIES).food}
