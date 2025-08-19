@@ -44,5 +44,5 @@
     "components/post-listing/EditPost/EditPostHeader.jsx",
     "components/post-listing/EditPost/EditPostScreen.jsx",
     "app/(root)/edit-post.jsx"
-  ]
+, "components/post-listing/DishSidebar.tsx", "components/post-listing/RestaurantInfo.jsx"  ]
 }
