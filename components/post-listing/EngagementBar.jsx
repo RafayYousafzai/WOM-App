@@ -223,7 +223,7 @@ export const EngagementBar = ({
 
   return (
     <View>
-      <View className="flex-row justify-between">
+      <View className="flex-row mt-3 justify-between">
         <View className="flex-row mx-2 items-center">
           {/* Like Button with optimistic feedback */}
           <TouchableOpacity

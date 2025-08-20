@@ -6,6 +6,8 @@ export const PostContent = ({
   description,
   recommendDish,
   post_type,
+  location,
+  postTimeAgo,
 }) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -14,11 +16,10 @@ export const PostContent = ({
   };
 
   return (
-    <View className="px-1 py-3">
-      {/* <Text className="font-bold text-xl text-gray-900 mb-1">{title}</Text> */}
+    <View className="px-1 pt-2">
       <TouchableOpacity onPress={toggleDescription}>
         <Text
-          className="text-gray-800 text-lg leading-5 font-semibold mb-1"
+          className="text-gray-800 text-lg leading-5 font-semibold"
           numberOfLines={isDescriptionExpanded ? undefined : 2}
         >
           {description}
@@ -29,6 +30,28 @@ export const PostContent = ({
           </Text>
         )}
       </TouchableOpacity>
+
+      {/* Location at bottom with nice styling */}
+      <View className=" border-t border-gray-100">
+        <View className="flex-row items-center">
+          <Text className="text-gray-600 text-sm flex-1" numberOfLines={1}>
+            <Text className="font-semibold text-gray-500">{postTimeAgo}</Text>
+          </Text>
+        </View>
+        {/* <View className="flex-row items-center">
+          {(() => {
+            const [firstPart, ...rest] = (location || "").split(",");
+            return (
+              <Text className="text-gray-600 text-sm flex-1" numberOfLines={1}>
+                <Text className="font-semibold text-gray-800">{firstPart}</Text>
+                {rest.length > 0 && (
+                  <Text className="text-gray-500">{`, ${rest.join(",")}`}</Text>
+                )}
+              </Text>
+            );
+          })()}
+        </View> */}
+      </View>
     </View>
   );
 };

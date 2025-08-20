@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, FlatList, StyleSheet, useWindowDimensions } from "react-native";
 
 const PaginationDots = ({ data, currentIndex }) => {
@@ -20,12 +20,29 @@ const PaginationDots = ({ data, currentIndex }) => {
   );
 };
 
-export const ImageCarousel = ({ images }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+export const ImageCarousel = ({ images, onImageChange, currentIndex = 0 }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(currentIndex);
   const { width, height } = useWindowDimensions();
   const flatListRef = useRef(null);
   const maxHeight = height - height * 0.5;
-  // console.log({ width, height, maxHeight });
+
+  // Handle external index changes (from dish selection)
+  useEffect(() => {
+    if (currentIndex !== currentImageIndex) {
+      setCurrentImageIndex(currentIndex);
+      // Smoothly scroll to the new index
+      if (
+        flatListRef.current &&
+        currentIndex >= 0 &&
+        currentIndex < images.length
+      ) {
+        flatListRef.current.scrollToIndex({
+          index: currentIndex,
+          animated: true,
+        });
+      }
+    }
+  }, [currentIndex, currentImageIndex, images.length]);
 
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
@@ -33,9 +50,27 @@ export const ImageCarousel = ({ images }) => {
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
-      setCurrentImageIndex(viewableItems[0].index ?? 0);
+      const newIndex = viewableItems[0].index ?? 0;
+      if (newIndex !== currentImageIndex) {
+        setCurrentImageIndex(newIndex);
+        // Notify parent component about the image change
+        if (onImageChange) {
+          onImageChange(newIndex);
+        }
+      }
     }
   }).current;
+
+  // Handle scroll to index errors gracefully
+  const onScrollToIndexFailed = (info) => {
+    const wait = new Promise((resolve) => setTimeout(resolve, 500));
+    wait.then(() => {
+      flatListRef.current?.scrollToIndex({
+        index: info.index,
+        animated: true,
+      });
+    });
+  };
 
   const normalizedImages = images.map((img, index) => ({
     uri: typeof img === "string" ? img : img.uri,
@@ -64,6 +99,12 @@ export const ImageCarousel = ({ images }) => {
         showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        onScrollToIndexFailed={onScrollToIndexFailed}
+        getItemLayout={(data, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
       />
       <PaginationDots
         data={normalizedImages}

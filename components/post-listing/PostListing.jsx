@@ -11,6 +11,7 @@ import { toggleReviewLike } from "@/lib/supabase/reviewsActions";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import { EditPostHeader } from "./EditPost/EditPostHeader";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { dummyPost } from "./PostCard";
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -75,8 +76,11 @@ export default function PostListing({
       item.review_likes?.some((like) => like.user_id === user?.id) ||
       item.own_review_likes?.some((like) => like.user_id === user?.id);
 
-    const likesCount = item?.likeCount?.[0]?.count || 0;
-    const fullName = `${item.user.first_name} ${item.user.last_name}`;
+    const likesCount = item?.likeCount?.[0]?.count || item.likesCount || 0;
+    const fullName = item.user
+      ? `${item.user.first_name} ${item.user.last_name}`
+      : "Anonymous";
+
     const description = item.recommend_dsh
       ? `Recommendation: ${item.recommend_dsh}`
       : "";
@@ -90,6 +94,7 @@ export default function PostListing({
         <View className="mx-3 mb-2">
           <EditPostHeader
             username={fullName}
+            location={item.location?.address}
             userAvatar={item.user.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}
@@ -143,34 +148,45 @@ export default function PostListing({
     }
 
     return (
+      //  <FlatList
+      //   ref={flatListRef}
+      //   data={posts}
+      //   renderItem={renderItem}
+      //   keyExtractor={(item) => item.id.toString()}
+      //   ItemSeparatorComponent={() => <View className="h-2" />}
+      //   showsVerticalScrollIndicator={false}
+      //   ListFooterComponent={
+      //     <View className="flex-1">
+      //       {isLoadingMore && posts && posts.length > 0 && (
+      //         <PostListingSkeleton count={1} />
+      //       )}
+      //       <View className="h-14 mb-14" />
+      //     </View>
+      //   }
+      //   ListHeaderComponent={ListHeaderComponent}
+      //   stickyHeaderHiddenOnScroll={true}
+      //   onEndReached={handleEndReached}
+      //   onEndReachedThreshold={0.5}
+      //   onRefresh={handleRefresh}
+      //   refreshing={loading}
+      //   ListEmptyComponent={
+      //     <View className="mt-36 items-center justify-center">
+      //       {loading && (
+      //         <Text className="text-gray-500">No posts available</Text>
+      //       )}
+      //     </View>
+      //   }
+      // />
+      // Dummy FlatList below:
       <FlatList
         ref={flatListRef}
-        data={posts}
+        // Force showing dummy data instead of DB posts
+        data={[dummyPost]}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => item.post_id || index.toString()}
         ItemSeparatorComponent={() => <View className="h-2" />}
         showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          <View className="flex-1">
-            {isLoadingMore && posts && posts.length > 0 && (
-              <PostListingSkeleton count={1} />
-            )}
-            <View className="h-14 mb-14" />
-          </View>
-        }
         ListHeaderComponent={ListHeaderComponent}
-        stickyHeaderHiddenOnScroll={true}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        onRefresh={handleRefresh}
-        refreshing={loading}
-        ListEmptyComponent={
-          <View className="mt-36 items-center justify-center">
-            {loading && (
-              <Text className="text-gray-500">No posts available</Text>
-            )}
-          </View>
-        }
       />
     );
   };

@@ -36,6 +36,7 @@ export const EditPostHeader = ({
   post_type,
   anonymous,
   onDelete,
+  location,
   post, // Add the full post object for editing
 }) => {
   const { supabase } = useSupabase();
@@ -444,7 +445,26 @@ export const EditPostHeader = ({
           />
           <View className="ml-3 flex-1">
             <Text className="font-medium text-gray-900">{username}</Text>
-            <Text className="text-xs text-gray-500">{postTimeAgo}</Text>
+            <View className="flex-row ml-0.5 items-center">
+              {(() => {
+                const [firstPart, ...rest] = (location || "").split(",");
+                return (
+                  <Text
+                    className="text-gray-600 text-sm flex-1"
+                    numberOfLines={1}
+                  >
+                    <Text className="font-semibold text-gray-800">
+                      {firstPart}
+                    </Text>
+                    {rest.length > 0 && (
+                      <Text className="text-gray-500">{`, ${rest.join(
+                        ","
+                      )}`}</Text>
+                    )}
+                  </Text>
+                );
+              })()}
+            </View>
           </View>
         </TouchableOpacity>
 

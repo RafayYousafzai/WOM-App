@@ -23,6 +23,7 @@ export const RestaurantInfo = ({
   // New props for multiple dishes
   restaurantDishes = [],
   currentDishId = null,
+  onDishSelect, // New callback for dish selection
 }) => {
   const [showDishSidebar, setShowDishSidebar] = useState(false);
   const [slideAnim] = useState(new Animated.Value(300));
@@ -49,24 +50,6 @@ export const RestaurantInfo = ({
             rating: 4.8,
             review: "Rich and creamy with authentic truffle flavor.",
             dishType: "main",
-          },
-          {
-            id: 3,
-            name: "Tiramisu",
-            price: 12,
-            category: "Dessert",
-            rating: 4.6,
-            review: "Perfect end to a wonderful meal.",
-            dishType: "dessert",
-          },
-          {
-            id: 4,
-            name: "Caesar Salad",
-            price: 16,
-            category: "Appetizer",
-            rating: 4.3,
-            review: "Fresh and crispy with homemade croutons.",
-            dishType: "appetizer",
           },
         ];
 
@@ -136,6 +119,16 @@ export const RestaurantInfo = ({
     });
   };
 
+  const handleDishPress = (dish) => {
+    // Get the new index from parent component
+    const newIndex = onDishSelect ? onDishSelect(dish.id) : 0;
+
+    // Close sidebar with a slight delay to allow image transition
+    setTimeout(() => {
+      closeDishSidebar();
+    }, 100);
+  };
+
   const getDishTypeColor = (dishType) => {
     switch (dishType) {
       case "appetizer":
@@ -164,62 +157,30 @@ export const RestaurantInfo = ({
             <Text className="font-bold ml-1 text-xl text-gray-900">
               {currentDish.name}
             </Text>
-            <View className="flex-row items-center ml-1">
-              <View className="flex-row items-center justify-between">
-                {/* Left side: Location */}
-                <View className="flex-row items-center flex-1 mr-4">
-                  {(() => {
-                    const [firstPart, ...rest] = (location || "").split(",");
-                    return (
-                      <Text
-                        className="text-gray-800 text-sm ml-1 flex-1"
-                        numberOfLines={1}
-                      >
-                        <Text className="font-bold">{firstPart}</Text>
-                        {rest.length > 0 && `, ${rest.join(",")}`}
-                      </Text>
-                    );
-                  })()}
-                </View>
-
-                {/* Right side: Rating, Price, Cuisine */}
-                {/* <View className="flex-row items-center">
-            {renderRating(currentDish.rating)}
-            <Text className="mx-2 text-gray-300">•</Text>
-            {renderPriceLevel(currentDish.price)}
-            <Text className="mx-2 text-gray-300">•</Text>
-            <Text className="text-gray-500 text-sm">{cuisine}</Text>
-          </View> */}
-              </View>
-            </View>
           </View>
 
           {/* Show dish options button if there are other dishes */}
           {otherDishes.length > 0 && (
             <>
-              <View
-                className={`bg-blue-50 px-3 py-2 rounded-lg mr-3 ${getDishTypeColor(
-                  currentDish.dishType
-                )}`}
-              >
-                <Text className="text-blue-200 text-sm font-medium">
+              <View className={`bg-slate-200 px-3 py-2 rounded-lg mr-3 `}>
+                <Text className="text-slate-600 text-sm font-medium">
                   {currentDish.category}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={openDishSidebar}
-                className="bg-blue-50 px-3 py-2 rounded-lg flex-row items-center"
+                className="bg-slate-200 px-3 py-2 rounded-lg flex-row items-center"
                 activeOpacity={0.7}
               >
-                <FontAwesome name="cutlery" size={14} color="#3B82F6" />
-                <Text className="ml-1 text-blue-600 text-sm font-medium">
+                {/* <FontAwesome name="cutlery" size={14} color="#475569" /> */}
+                <Text className="ml-1 text-slate-600 text-sm font-medium">
                   +{otherDishes.length} dishes
                 </Text>
 
                 <FontAwesome
                   name="chevron-right"
                   size={12}
-                  color="#3B82F6"
+                  color="#475569"
                   className="ml-1"
                 />
               </TouchableOpacity>
@@ -275,11 +236,7 @@ export const RestaurantInfo = ({
                         : "border-gray-200 bg-white"
                     }`}
                     activeOpacity={0.7}
-                    onPress={() => {
-                      // Here you would handle switching to this dish
-                      console.log("Switch to dish:", dish.name);
-                      closeDishSidebar();
-                    }}
+                    onPress={() => handleDishPress(dish)}
                   >
                     <View className="flex-row items-start justify-between">
                       <View className="flex-1 mr-3">
