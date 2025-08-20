@@ -29,8 +29,6 @@ export default function RestaurantCreation() {
   const { selectedImages, setSelectedImages } = useGlobal();
 
   useFocusEffect(() => {
-    console.log("Selected Images:", selectedImages);
-
     if (selectedImages.length > 0) {
       const currentDish = getCurrentDish();
       handleDishImagesChange([...currentDish.images, ...selectedImages]);

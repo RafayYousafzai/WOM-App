@@ -155,7 +155,7 @@ export const PostCard = ({
         <PostContent
           location={location?.address || location}
           title={currentDish?.name || post?.caption || post?.dish_name}
-          description={currentDish?.review || post?.review}
+          description={post?.review}
           post_type={post_type}
           postTimeAgo={postTimeAgo}
         />

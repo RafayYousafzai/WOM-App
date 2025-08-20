@@ -32,7 +32,7 @@ export const PostContent = ({
       </TouchableOpacity>
 
       {/* Location at bottom with nice styling */}
-      <View className=" border-t border-gray-100">
+      <View className="  mt-1">
         <View className="flex-row items-center">
           <Text className="text-gray-600 text-sm flex-1" numberOfLines={1}>
             <Text className="font-semibold text-gray-500">{postTimeAgo}</Text>

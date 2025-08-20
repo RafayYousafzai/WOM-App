@@ -14,7 +14,7 @@ import notifyPeoples from "@/utils/notification/notify_peoples";
 import { Alert } from "react-native";
 import { router } from "expo-router";
 
-import handleSubmit from "@/lib/supabase/post";
+import { handleReviewSubmit } from "@/lib/supabase/post";
 
 const ReviewContext = createContext();
 
@@ -58,8 +58,8 @@ export const ReviewProvider = ({ children }) => {
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-
-  console.log(reviewData);
+  const { supabase } = useSupabase();
+  const { user } = useUser();
 
   const nextStep = () => {
     if (step < 3) {
@@ -143,7 +143,25 @@ export const ReviewProvider = ({ children }) => {
   };
 
   const handleShare = async () => {
-    await handleSubmit();
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to share a review.");
+      return;
+    }
+
+    await handleReviewSubmit({
+      reviewData,
+      user,
+      supabase,
+      setLoading,
+      onSuccess: () => {
+        setReviewData(postStateInit);
+        setStep(1);
+        router.push("/(root)/posts");
+      },
+      onError: (error) => {
+        console.error("Failed to submit review:", error);
+      },
+    });
   };
 
   return (
