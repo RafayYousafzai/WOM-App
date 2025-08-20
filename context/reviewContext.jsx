@@ -13,6 +13,7 @@ import notifyFollowers from "@/utils/notification/notify_followers";
 import notifyPeoples from "@/utils/notification/notify_peoples";
 import { Alert } from "react-native";
 import { router } from "expo-router";
+import { reviewSchema } from "@/lib/yup/reviewValidationSchema";
 
 import { handleReviewSubmit } from "@/lib/supabase/post";
 
@@ -147,6 +148,8 @@ export const ReviewProvider = ({ children }) => {
       Alert.alert("Error", "You must be logged in to share a review.");
       return;
     }
+
+    // await postSchema.validate(reviewData, { abortEarly: false });
 
     await handleReviewSubmit({
       reviewData,

@@ -148,46 +148,46 @@ export default function PostListing({
     }
 
     return (
-      // <FlatList
-      //   ref={flatListRef}
-      //   data={posts}
-      //   renderItem={renderItem}
-      //   keyExtractor={(item) => item.id.toString()}
-      //   ItemSeparatorComponent={() => <View className="h-2" />}
-      //   showsVerticalScrollIndicator={false}
-      //   ListFooterComponent={
-      //     <View className="flex-1">
-      //       {isLoadingMore && posts && posts.length > 0 && (
-      //         <PostListingSkeleton count={1} />
-      //       )}
-      //       <View className="h-14 mb-14" />
-      //     </View>
-      //   }
-      //   ListHeaderComponent={ListHeaderComponent}
-      //   stickyHeaderHiddenOnScroll={true}
-      //   onEndReached={handleEndReached}
-      //   onEndReachedThreshold={0.5}
-      //   onRefresh={handleRefresh}
-      //   refreshing={loading}
-      //   ListEmptyComponent={
-      //     <View className="mt-36 items-center justify-center">
-      //       {loading && (
-      //         <Text className="text-gray-500">No posts available</Text>
-      //       )}
-      //     </View>
-      //   }
-      // />
-      // Dummy FlatList below:
       <FlatList
         ref={flatListRef}
-        // Force showing dummy data instead of DB posts
-        data={[dummyPost]}
+        data={posts}
         renderItem={renderItem}
-        keyExtractor={(item, index) => item.post_id || index.toString()}
+        keyExtractor={(item) => item.id.toString()}
         ItemSeparatorComponent={() => <View className="h-2" />}
         showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          <View className="flex-1">
+            {isLoadingMore && posts && posts.length > 0 && (
+              <PostListingSkeleton count={1} />
+            )}
+            <View className="h-14 mb-14" />
+          </View>
+        }
         ListHeaderComponent={ListHeaderComponent}
+        stickyHeaderHiddenOnScroll={true}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        onRefresh={handleRefresh}
+        refreshing={loading}
+        ListEmptyComponent={
+          <View className="mt-36 items-center justify-center">
+            {loading && (
+              <Text className="text-gray-500">No posts available</Text>
+            )}
+          </View>
+        }
       />
+      // Dummy FlatList below:
+      // <FlatList
+      //   ref={flatListRef}
+      //   // Force showing dummy data instead of DB posts
+      //   data={[dummyPost]}
+      //   renderItem={renderItem}
+      //   keyExtractor={(item, index) => item.post_id || index.toString()}
+      //   ItemSeparatorComponent={() => <View className="h-2" />}
+      //   showsVerticalScrollIndicator={false}
+      //   ListHeaderComponent={ListHeaderComponent}
+      // />
     );
   };
 
