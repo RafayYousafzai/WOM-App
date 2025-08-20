@@ -15,7 +15,6 @@ import { useSupabase } from "@/context/supabaseContext"; // Adjust path if neces
 
 const TagPeopleInput = ({ tags = [], setTags, title = "Tag people..." }) => {
   const { supabase } = useSupabase();
-  console.log(tags);
 
   const [inputValue, setInputValue] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -74,14 +73,6 @@ const TagPeopleInput = ({ tags = [], setTags, title = "Tag people..." }) => {
         setSearchResults([]);
       } finally {
         setIsSearching(false);
-        // Keep dropdown visible if there are results or input still has value
-        // and the query used for search is still relevant to current input
-        // if (inputValue.trim() === trimmedQuery) {
-        //   setShowDropdown(trimmedQuery.length > 0);
-        // } else {
-        //    // If input changed during search, new search might be pending, or input cleared
-        //   setShowDropdown(inputValue.trim().length > 0 && (isSearching || searchResults.length > 0));
-        // }
       }
     },
     [supabase, inputValue]

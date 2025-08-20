@@ -3,12 +3,11 @@ import { router } from "expo-router";
 import { Image, TouchableOpacity } from "react-native";
 import { View, Text } from "react-native";
 import { useEffect, useState } from "react";
+import { useReview } from "@/context/reviewContext";
 
-export default function ImageEditor({
-  getCurrentDish,
-  handleDishImagesChange,
-  activeTab,
-}) {
+export default function ImageEditor({}) {
+  const { activeTab, getCurrentDish, handleDishImagesChange } = useReview();
+
   const dish = getCurrentDish();
   const [selectedIndex, setSelectedIndex] = useState(null);
 
@@ -62,44 +61,46 @@ export default function ImageEditor({
         </Text>
 
         <View className="flex-row flex-wrap">
-          {images.map((img, index) => (
-            <View key={`${img}-${index}`} className="relative mr-3 mb-3">
-              <TouchableOpacity
-                onPress={() => handleImagePress(index)}
-                style={{
-                  opacity: selectedIndex === index ? 0.7 : 1,
-                  transform: [{ scale: selectedIndex === index ? 0.95 : 1 }],
-                }}
-              >
-                <Image
-                  source={{ uri: img }}
-                  className="w-28 h-28 rounded-xl"
-                  style={{ backgroundColor: "#f3f4f6" }}
-                />
-                {selectedIndex === index && (
-                  <View className="absolute inset-0 bg-blue-500 bg-opacity-30 rounded-xl items-center justify-center">
-                    <View className="bg-blue-500 rounded-full p-2">
-                      <Ionicons name="checkmark" size={20} color="white" />
+          {images &&
+            images.length > 0 &&
+            images?.map((img, index) => (
+              <View key={`${img}-${index}`} className="relative mr-3 mb-3">
+                <TouchableOpacity
+                  onPress={() => handleImagePress(index)}
+                  style={{
+                    opacity: selectedIndex === index ? 0.7 : 1,
+                    transform: [{ scale: selectedIndex === index ? 0.95 : 1 }],
+                  }}
+                >
+                  <Image
+                    source={{ uri: img || null }}
+                    className="w-28 h-28 rounded-xl"
+                    style={{ backgroundColor: "#f3f4f6" }}
+                  />
+                  {selectedIndex === index && (
+                    <View className="absolute inset-0 bg-blue-500 bg-opacity-30 rounded-xl items-center justify-center">
+                      <View className="bg-blue-500 rounded-full p-2">
+                        <Ionicons name="checkmark" size={20} color="white" />
+                      </View>
                     </View>
-                  </View>
-                )}
-              </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-sm"
-                onPress={() => removeImage(img)}
-                style={{ elevation: 2 }}
-              >
-                <Ionicons name="trash" size={15} color="#dc2626" />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-sm"
+                  onPress={() => removeImage(img)}
+                  style={{ elevation: 2 }}
+                >
+                  <Ionicons name="trash" size={15} color="#dc2626" />
+                </TouchableOpacity>
 
-              <View className="absolute bottom-1 left-1 bg-black/50 rounded-full px-2 py-1">
-                <Text className="text-white text-xs font-bold">
-                  {index + 1}
-                </Text>
+                <View className="absolute bottom-1 left-1 bg-black/50 rounded-full px-2 py-1">
+                  <Text className="text-white text-xs font-bold">
+                    {index + 1}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
 
           {/* Add Photo Button */}
           <TouchableOpacity

@@ -19,19 +19,21 @@ import RestaurantCreation from "@/components/create-post/review/ResturantCreatio
 import { HStack, Box } from "@/components/ui"; // Adjusted import path
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { useReview } from "@/context/reviewContext";
 
 const { width } = Dimensions.get("window");
 const imageSize = width * 0.44;
 export default function CreateReview() {
   const { isSignedIn } = useAuth();
-  const { postType, setPostType, selectedImages } = useGlobal();
+  const { selectedImages } = useGlobal();
   const [activeImage, setActiveImage] = useState(0);
+  const { reviewData, setReviewData } = useReview();
 
   if (!isSignedIn) {
     return <UnloggedState />;
   }
 
-  if (postType === null) {
+  if (reviewData.is_review === null) {
     return (
       <ErrorBoundary>
         <SafeAreaView className="flex-1 bg-white">
@@ -104,7 +106,12 @@ export default function CreateReview() {
                 <View>
                   <TouchableOpacity
                     className="bg-slate-50 rounded-3xl p-4 py-3 mb-3"
-                    onPress={() => setPostType("restaurant")}
+                    onPress={() =>
+                      setReviewData((prev) => ({
+                        ...prev,
+                        is_review: "restaurant",
+                      }))
+                    }
                     activeOpacity={0.9}
                   >
                     <HStack className="items-center  mb-4">
@@ -151,7 +158,12 @@ export default function CreateReview() {
                 <View>
                   <TouchableOpacity
                     className="bg-slate-50 rounded-3xl p-4 py-3 mb-3"
-                    onPress={() => setPostType("homemade")}
+                    onPress={() =>
+                      setReviewData((prev) => ({
+                        ...prev,
+                        is_review: "homemade",
+                      }))
+                    }
                     activeOpacity={0.9}
                   >
                     <HStack className="items-center mb-4">
@@ -221,11 +233,14 @@ export default function CreateReview() {
     );
   }
 
-  if (postType === "restaurant" || postType === "homemade") {
+  if (
+    reviewData.is_review === "restaurant" ||
+    reviewData.is_review === "homemade"
+  ) {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
         <StatusBar backgroundColor="#fff" style="dark" />
-        <RestaurantCreation setPostType={setPostType} postType={postType} />;
+        <RestaurantCreation />;
       </View>
     );
   }

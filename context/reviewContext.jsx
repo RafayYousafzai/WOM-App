@@ -9,7 +9,6 @@ import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUpload } from "@/context/upload-context";
-import { restaurantSchema } from "@/lib/joi/restaurantSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import notifyPeoples from "@/utils/notification/notify_peoples";
 import { Alert } from "react-native";
@@ -40,6 +39,8 @@ const postStateInit = {
   location: null,
   rating: 0,
   review: "",
+  images: [],
+  is_review: null,
   anonymous: false,
   cuisineTags: [],
   amenityTags: [],
@@ -69,6 +70,8 @@ export const ReviewProvider = ({ children }) => {
   const prevStep = () => {
     if (step > 1) {
       setStep(step - 1);
+    } else {
+      setReviewData((prev) => ({ ...prev, is_review: null }));
     }
   };
 
@@ -140,7 +143,7 @@ export const ReviewProvider = ({ children }) => {
   };
 
   const handleShare = async () => {
-    handleSubmit();
+    await handleSubmit();
   };
 
   return (
@@ -179,6 +182,8 @@ export const ReviewProvider = ({ children }) => {
         handleDishChange,
         handleDishImagesChange,
         getCurrentDish,
+
+        handleShare,
       }}
     >
       {children}

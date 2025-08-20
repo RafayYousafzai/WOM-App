@@ -50,63 +50,18 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
     }
   };
 
-  // Fetch place details when a suggestion is selected
-  const fetchPlaceDetails = async (placeId) => {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address,name,place_id,types&key=AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs`
-      );
-      const data = await response.json();
-      if (data.status === "OK") {
-        return data.result;
-      } else {
-        console.error("Place Details API error:", data.status);
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching place details:", error);
-      return null;
-    }
-  };
-
   // Handle suggestion selection
   const handleLocationSelect = async (item) => {
-    const details = await fetchPlaceDetails(item.place_id);
-    if (!details) {
-      Alert.alert("Error", "Could not fetch location details.");
-      return;
-    }
+    const address = item.description;
+    console.log("Selected Location Details:", address);
 
-    const locationData = {
-      latitude: details.geometry.location.lat,
-      longitude: details.geometry.location.lng,
-      address: item.description,
-      placeId: item.place_id,
-      mainText: item.structured_formatting.main_text,
-      secondaryText: item.structured_formatting.secondary_text,
-      terms: item.terms.map((term) => term.value),
-      types: item.types,
-    };
-
-    const terms = locationData.terms;
-    const structured = {
-      place: terms[0],
-      area: terms[1],
-      locality: terms[2],
-      city: terms[3],
-      state: terms[4],
-      country: terms[5],
-    };
-
-    locationData.structured = structured;
-
-    setSelectedLocation(locationData.address);
+    setSelectedLocation(address);
     setSearchQuery("");
     setSuggestions([]);
     setIsModalVisible(false);
 
     if (handlePress) {
-      handlePress(locationData);
+      handlePress(address);
     }
   };
 

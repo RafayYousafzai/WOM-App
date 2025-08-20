@@ -15,7 +15,6 @@ import {
 import { Ionicons, FontAwesome5, Feather } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useUser } from "@clerk/clerk-expo";
-import { router } from "expo-router";
 import { classNames } from "@/utils/classNames";
 import { CurrencyDollarIcon, StarIcon } from "react-native-heroicons/mini";
 import { useReview } from "@/context/reviewContext";

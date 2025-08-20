@@ -154,7 +154,7 @@ export const RestaurantInfo = ({
         {/* Dish Info Row */}
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
-            <Text className="font-bold ml-1 text-xl text-gray-900">
+            <Text className="font-bold ml-1 text-lg text-gray-900">
               {currentDish.name}
             </Text>
           </View>
@@ -162,26 +162,21 @@ export const RestaurantInfo = ({
           {/* Show dish options button if there are other dishes */}
           {otherDishes.length > 0 && (
             <>
-              <View className={`bg-slate-200 px-3 py-2 rounded-lg mr-3 `}>
-                <Text className="text-slate-600 text-sm font-medium">
-                  {currentDish.category}
-                </Text>
-              </View>
               <TouchableOpacity
                 onPress={openDishSidebar}
-                className="bg-slate-200 px-3 py-2 rounded-lg flex-row items-center"
+                className=" px-3 py-2 rounded-lg flex-row items-center"
                 activeOpacity={0.7}
               >
                 {/* <FontAwesome name="cutlery" size={14} color="#475569" /> */}
                 <Text className="ml-1 text-slate-600 text-sm font-medium">
-                  +{otherDishes.length} dishes
+                  {currentDish.category} +{otherDishes.length} more.
                 </Text>
 
                 <FontAwesome
                   name="chevron-right"
-                  size={12}
+                  size={11}
                   color="#475569"
-                  className="ml-1"
+                  className="ml-1 mt-[1px]"
                 />
               </TouchableOpacity>
             </>

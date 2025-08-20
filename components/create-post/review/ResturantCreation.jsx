@@ -1,5 +1,5 @@
 "use client";
-import { View, Text, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useUser } from "@clerk/clerk-expo";
@@ -22,7 +22,6 @@ export default function RestaurantCreation() {
     nextStep,
     prevStep,
     handleShare,
-    handleSaveDraft,
     handleDishImagesChange,
     getCurrentDish,
   } = useReview();
@@ -52,7 +51,7 @@ export default function RestaurantCreation() {
   const handleShareWithLoading = () => {
     Alert.alert("Share Review", "Are you sure you want to share this review?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Share", onPress: handleShare },
+      { text: "Share", onPress: handleShare() },
     ]);
   };
 
