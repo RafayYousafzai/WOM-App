@@ -9,48 +9,54 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import snakeCaseToSentence from "@/utils/snakeCaseToSentence";
-// normalize input (lowercase, no spaces)
-const normalize = (text: string) =>
-  text.toLowerCase().trim().replace(/\s+/g, "_");
+
+interface Tag {
+  id: number;
+  name: string;
+  type: string;
+}
+
+interface TagInputWithSuggestionsProps {
+  tags?: Tag[];
+  setTags?: (tags: Tag[]) => void;
+  title?: string;
+  sc?: string;
+  suggestions?: Tag[];
+}
 
 const TagInputWithSuggestions = ({
   tags: value = [],
-  setTags: setValue = (tags: string[]) => {},
+  setTags: setValue = () => {},
   title = "Add tags...",
   sc = "#",
-  suggestions = ["apple", "banana", "carrot"],
-}) => {
-  const [tags, setTags] = useState<string[]>([]);
+  suggestions = [],
+}: TagInputWithSuggestionsProps) => {
+  const [tags, setTags] = useState<Tag[]>(value);
   const [input, setInput] = useState("");
 
   useEffect(() => {
-    if (value?.length && tags.length === 0) {
-      const normalized = value.map(normalize);
-      setTags(normalized); // internal state
-      setValue(normalized); // sync external state
-    }
+    setTags(value);
   }, [value]);
 
   const filteredSuggestions = suggestions.filter(
     (s) =>
-      normalize(s).includes(normalize(input)) && !tags.includes(normalize(s))
+      s.name.toLowerCase().includes(input.toLowerCase()) &&
+      !tags.some((tag) => tag.id === s.id)
   );
 
-  const handleAddTag = (tag: string) => {
-    const cleaned = normalize(tag);
-    if (cleaned && !tags.includes(cleaned)) {
-      const updated = [...tags, cleaned];
+  const handleAddTag = (tag: Tag) => {
+    if (!tags.some((t) => t.id === tag.id)) {
+      const updated = [...tags, tag];
       setTags(updated);
-      setValue(updated); // sync with parent
+      setValue(updated);
       setInput("");
     }
   };
 
-  const handleRemoveTag = (index: number) => {
-    const updated = [...tags];
-    updated.splice(index, 1);
+  const handleRemoveTag = (tagId: number) => {
+    const updated = tags.filter((tag) => tag.id !== tagId);
     setTags(updated);
-    setValue(updated); // sync with parent
+    setValue(updated);
   };
 
   return (
@@ -61,7 +67,6 @@ const TagInputWithSuggestions = ({
         onChangeText={setInput}
         placeholder={title}
         style={styles.input}
-        onSubmitEditing={() => handleAddTag(input)}
         returnKeyType="done"
       />
 
@@ -69,27 +74,28 @@ const TagInputWithSuggestions = ({
       {input.length > 0 && filteredSuggestions.length > 0 && (
         <FlatList
           data={filteredSuggestions}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => handleAddTag(item)}
               style={styles.suggestionItem}
             >
-              <Text style={styles.suggestionText}>{item}</Text>
+              <Text style={styles.suggestionText}>{item.name}</Text>
             </TouchableOpacity>
           )}
           style={styles.suggestionsList}
         />
       )}
+
       {/* Tags */}
       <View style={styles.tagsContainer}>
-        {tags.map((tag, index) => (
-          <View key={index} style={styles.tag}>
+        {tags.map((tag) => (
+          <View key={tag.id} style={styles.tag}>
             <Text style={styles.tagText}>
               {sc}
-              {snakeCaseToSentence(tag)}
+              {snakeCaseToSentence(tag.name)}
             </Text>
-            <TouchableOpacity onPress={() => handleRemoveTag(index)}>
+            <TouchableOpacity onPress={() => handleRemoveTag(tag.id)}>
               <Ionicons name="close-circle" size={16} color="#fff" />
             </TouchableOpacity>
           </View>

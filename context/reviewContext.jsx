@@ -1,26 +1,26 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
-import { useAuth, useUser } from "@clerk/clerk-expo";
-import { useSupabase } from "@/context/supabaseContext";
-import { useUpload } from "@/context/upload-context";
-import notifyFollowers from "@/utils/notification/notify_followers";
-import notifyPeoples from "@/utils/notification/notify_peoples";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { router } from "expo-router";
-import { reviewSchema } from "@/lib/yup/reviewValidationSchema";
 
+// Contexts & Hooks
+import { useSupabase } from "@/context/supabaseContext";
+import { useUpload } from "@/context/upload-context";
+import { useUser } from "@clerk/clerk-expo";
+
+// Utils & Libs
 import { handleReviewSubmit } from "@/lib/supabase/post";
+import { reviewSchema } from "@/lib/yup/reviewValidationSchema";
+import notifyFollowers from "@/utils/notification/notify_followers";
+import notifyPeoples from "@/utils/notification/notify_peoples";
 
+// SecureStore (unused here but imported for draft handling)
+import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
+
+// -------------------- Context Setup -------------------- //
 const ReviewContext = createContext();
-
 export const useReview = () => useContext(ReviewContext);
 
+// -------------------- Constants -------------------- //
 const ALL_REVIEW_DRAFTS_KEY = "all_review_drafts";
 
 const dishTypesInit = [
@@ -34,6 +34,7 @@ const dishTypesInit = [
     images: [],
   },
 ];
+
 const postStateInit = {
   dishTypes: dishTypesInit,
   id: null,
@@ -50,123 +51,141 @@ const postStateInit = {
   drafts: [],
 };
 
-export const ReviewProvider = ({ children }) => {
-  const { uploadProgress, isUploading, startUpload } = useUpload();
-  const [showModal, setShowModal] = useState(false);
+const initialTags = { cuisine: [], amenity: [], dietary: [] };
 
-  const [activeTab, setActiveTab] = useState("main-course");
-  const [reviewData, setReviewData] = useState(postStateInit);
-  const [currentDraftId, setCurrentDraftId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1);
+// -------------------- Provider -------------------- //
+export const ReviewProvider = ({ children }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
+  const { uploadProgress, isUploading } = useUpload();
 
-  const nextStep = () => {
-    if (step < 3) {
-      setStep(step + 1);
+  // UI States
+  const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("main-course");
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  // Review States
+  const [reviewData, setReviewData] = useState(postStateInit);
+  const [tags, setTags] = useState(initialTags);
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+
+  // -------------------- Data Fetch -------------------- //
+  async function fetchAllTags() {
+    let { data: tags, error } = await supabase
+      .from("tags")
+      .select("id, name, type");
+
+    if (error) {
+      console.error("Error fetching tags:", error);
+      throw error;
     }
-  };
 
+    setTags({
+      cuisine: tags.filter((tag) => tag.type === "cuisine"),
+      amenity: tags.filter((tag) => tag.type === "amenity"),
+      dietary: tags.filter((tag) => tag.type === "dietary"),
+    });
+
+    return tags;
+  }
+
+  useEffect(() => {
+    fetchAllTags();
+  }, []);
+
+  // -------------------- Step Controls -------------------- //
+  const nextStep = () => step < 3 && setStep(step + 1);
   const prevStep = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    } else {
-      setReviewData((prev) => ({ ...prev, is_review: null }));
-    }
+    if (step > 1) setStep(step - 1);
+    else setReviewData((prev) => ({ ...prev, is_review: null }));
   };
 
+  // -------------------- Handlers -------------------- //
   const handleChange = (field, value) => {
     setReviewData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const setTagsWrapper = (key) => (data) => {
-    setReviewData((prev) => ({
-      ...prev,
-      [key]: data,
-    }));
-  };
+  const setTagsWrapper = (key) => (data) =>
+    setReviewData((prev) => ({ ...prev, [key]: data }));
 
   const handleAddDishType = (type) => {
-    const newDish = {
-      ...dishTypesInit[0],
-      ...type,
-    };
-
-    const newDishTypes = [...reviewData.dishTypes, newDish];
-    handleChange("dishTypes", newDishTypes);
+    const newDish = { ...dishTypesInit[0], ...type };
+    handleChange("dishTypes", [...reviewData.dishTypes, newDish]);
     setActiveTab(type.id);
     setShowModal(false);
   };
 
   const handleRemoveTab = (tabId) => {
-    const newDishTypes = reviewData.dishTypes.filter(
-      (dish) => dish.id !== tabId
+    handleChange(
+      "dishTypes",
+      reviewData.dishTypes.filter((dish) => dish.id !== tabId)
     );
-    handleChange("dishTypes", newDishTypes);
-    if (activeTab === tabId) {
-      setActiveTab("main-course");
-    }
+    if (activeTab === tabId) setActiveTab("main-course");
   };
 
   const handleDishChange = (field, value) => {
-    const newDishTypes = reviewData.dishTypes.map((dish) =>
-      dish.id === activeTab ? { ...dish, [field]: value } : dish
+    handleChange(
+      "dishTypes",
+      reviewData.dishTypes.map((dish) =>
+        dish.id === activeTab ? { ...dish, [field]: value } : dish
+      )
     );
-    handleChange("dishTypes", newDishTypes);
   };
 
   const handleDishImagesChange = (images) => {
     const safeImages = Array.isArray(images)
       ? images
       : [images].filter(Boolean);
-    const newDishTypes = reviewData.dishTypes.map((dish) =>
-      dish.id === activeTab ? { ...dish, images: safeImages } : dish
+    handleChange(
+      "dishTypes",
+      reviewData.dishTypes.map((dish) =>
+        dish.id === activeTab ? { ...dish, images: safeImages } : dish
+      )
     );
-    handleChange("dishTypes", newDishTypes);
   };
 
   const getCurrentDish = () => {
-    const dish = reviewData.dishTypes.find((dish) => dish.id === activeTab) || {
-      id: "main-course",
-      name: "Main Course",
-      dishName: "",
-      recommendDish: false,
-      price: "",
-      rating: 0,
-      images: [],
-    };
-
-    return {
-      ...dish,
-      images: Array.isArray(dish.images) ? dish.images : [],
-    };
+    const dish =
+      reviewData.dishTypes.find((dish) => dish.id === activeTab) ||
+      dishTypesInit[0];
+    return { ...dish, images: Array.isArray(dish.images) ? dish.images : [] };
   };
 
   const handleShare = async () => {
-    if (!user) {
-      Alert.alert("Error", "You must be logged in to share a review.");
+    try {
+      console.log("Sharing review data:", reviewData);
+
+      const tags = {
+        cuisineTags: reviewData.cuisineTags.map((tag) => tag.id),
+        amenityTags: reviewData.amenityTags.map((tag) => tag.id),
+        dietaryTags: reviewData.dietaryTags.map((tag) => tag.id),
+      };
+
+      const postData = { ...reviewData, ...tags };
+
+      console.log("Sharing post data:", postData);
+
+      await handleReviewSubmit({
+        reviewData: postData,
+        user,
+        supabase,
+        setLoading,
+        onSuccess: () => {
+          setReviewData(postStateInit);
+          setStep(1);
+          router.push("/(root)/posts");
+        },
+        onError: (error) => console.error("Failed to submit review:", error),
+      });
+    } catch (error) {
+      console.error("Error sharing review:", error);
+      Alert.alert("Error", "Failed to share review. Please try again.");
       return;
     }
-
-    // await postSchema.validate(reviewData, { abortEarly: false });
-
-    await handleReviewSubmit({
-      reviewData,
-      user,
-      supabase,
-      setLoading,
-      onSuccess: () => {
-        setReviewData(postStateInit);
-        setStep(1);
-        router.push("/(root)/posts");
-      },
-      onError: (error) => {
-        console.error("Failed to submit review:", error);
-      },
-    });
   };
 
+  // -------------------- Context Value -------------------- //
   return (
     <ReviewContext.Provider
       value={{
@@ -179,6 +198,7 @@ export const ReviewProvider = ({ children }) => {
         isUploading,
         activeTab,
         showModal,
+        tags,
 
         // State setters
         setStep,
@@ -188,23 +208,21 @@ export const ReviewProvider = ({ children }) => {
         setActiveTab,
         setShowModal,
 
-        // Step controls
+        // Controls
         nextStep,
         prevStep,
 
-        // Review handlers
+        // Review Handlers
         handleChange,
         handleShare,
         setTagsWrapper,
 
-        // Dish type handlers
+        // Dish Handlers
         handleAddDishType,
         handleRemoveTab,
         handleDishChange,
         handleDishImagesChange,
         getCurrentDish,
-
-        handleShare,
       }}
     >
       {children}

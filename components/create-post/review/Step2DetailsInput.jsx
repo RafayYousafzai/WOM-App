@@ -9,14 +9,10 @@ import {
 } from "react-native";
 import TagPeopleInput from "../../common/TagPeopleInput";
 import TagInputWithSuggestions from "@/components/common/TagInputWithSuggestions";
-import {
-  extractSuggestionsByCategory,
-  FILTER_CATEGORIES,
-} from "@/constants/SearchFilters";
 import { useReview } from "@/context/reviewContext";
 
 export const Step2DetailsInput = () => {
-  const { reviewData, setReviewData, setTagsWrapper } = useReview();
+  const { reviewData, setReviewData, setTagsWrapper, tags } = useReview();
 
   return (
     <KeyboardAvoidingView
@@ -40,9 +36,7 @@ export const Step2DetailsInput = () => {
             setTags={setTagsWrapper("cuisineTags")}
             title="Add cuisine types (e.g., Italian, Mexican)..."
             sc="#"
-            suggestions={
-              extractSuggestionsByCategory(FILTER_CATEGORIES).cuisine
-            }
+            suggestions={tags.cuisine}
           />
         </View>
 
@@ -53,9 +47,7 @@ export const Step2DetailsInput = () => {
             setTags={setTagsWrapper("amenityTags")}
             title="Add amenities (e.g., Outdoor, Wi-Fi)"
             sc="#"
-            suggestions={
-              extractSuggestionsByCategory(FILTER_CATEGORIES).amenities
-            }
+            suggestions={tags.amenity}
           />
         </View>
 
@@ -66,7 +58,7 @@ export const Step2DetailsInput = () => {
             setTags={setTagsWrapper("dietaryTags")}
             title="Add dietary restrictions (e.g., gluten-free, vegan)"
             sc="#"
-            suggestions={extractSuggestionsByCategory(FILTER_CATEGORIES).food}
+            suggestions={tags.dietary}
           />
         </View>
 

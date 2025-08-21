@@ -26,9 +26,9 @@ export const Step3Summary = () => {
   const submission = {
     ...reviewData,
     allTags: [
-      ...(reviewData.cuisineTags || []),
-      ...(reviewData.dietaryTags || []),
-      ...(reviewData.amenityTags || []),
+      ...(reviewData.cuisineTags.name || []),
+      ...(reviewData.dietaryTags.name || []),
+      ...(reviewData.amenityTags.name || []),
       ...(reviewData.peoplesTags || []),
     ].filter(Boolean),
   };

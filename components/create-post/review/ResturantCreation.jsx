@@ -46,12 +46,7 @@ export default function RestaurantCreation() {
     );
   }
 
-  const handleShareWithLoading = () => {
-    Alert.alert("Share Review", "Are you sure you want to share this review?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Share", onPress: handleShare() },
-    ]);
-  };
+  const handleShareWithLoading = () => handleShare();
 
   return (
     <SafeAreaView className="flex-1 bg-white">
