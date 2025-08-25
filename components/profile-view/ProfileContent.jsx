@@ -15,7 +15,6 @@ import { useState, useMemo, useEffect } from "react";
 import { useUser } from "@clerk/clerk-expo";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { posts } from "@/constants/mockPosts";
 import ProfileFilters from "./ProfileFilters";
 import { getTotalPostsCount } from "@/lib/supabase/userActions";
 import {
@@ -117,7 +116,6 @@ const ProfileHeader = ({ user, pickImage }) => (
     </View>
   </View>
 );
-
 export const ProfileContentScreen = ({ setIsEditing }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
@@ -135,7 +133,7 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
 
   const fetchData = async () => {
     try {
-      const [allPosts, totalFollowersCount, totalFollowingCount] =
+      const [postsData, totalFollowersCount, totalFollowingCount] =
         await Promise.all([
           getTotalPostsCount(supabase, user.id),
           getTotalFollowersCount(supabase, user.id),
@@ -143,18 +141,17 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
         ]);
 
       setCounts({
-        posts: allPosts.all,
+        posts: postsData.reviewCount, // Changed from allPosts.all to postsData.reviewCount
         followers: totalFollowersCount,
+
         following: totalFollowingCount,
       });
     } catch (error) {
       console.error("Error fetching profile data:", error);
     }
   };
-
   const onRefresh = async () => {
     console.log("Refreshing profile data...");
-
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
@@ -204,15 +201,6 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
     setShowFilterDropdown(false);
   };
 
-  const postCounts = useMemo(
-    () => ({
-      restaurant: posts.filter((post) => post.category === "restaurant").length,
-      homemade: posts.filter((post) => post.category === "homemade").length,
-      all: posts.length,
-    }),
-    []
-  );
-
   useEffect(() => {
     const scrollListener = scrollY.addListener(() => {
       if (showFilterDropdown) {
@@ -256,7 +244,6 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
         <View style={{ minHeight: 200 }}>
           <ProfileFilters
             activeFilter={activeFilter}
-            postCounts={postCounts}
             showFilterDropdown={showFilterDropdown}
             setShowFilterDropdown={setShowFilterDropdown}
             handleFilterChange={handleFilterChange}

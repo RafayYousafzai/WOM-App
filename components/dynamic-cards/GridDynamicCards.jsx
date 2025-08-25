@@ -9,15 +9,7 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import { PostCard } from "../post-listing/PostCard";
-import { SafeAreaView } from "react-native-safe-area-context";
-import CustomHeader from "../common/CustomHeader";
-import { useSupabase } from "@/context/supabaseContext";
-import { toggleOwnReviewLike } from "@/lib/supabase/ownreviewsActions";
-import { toggleReviewLike } from "@/lib/supabase/reviewsActions";
-import { useUser } from "@clerk/clerk-expo";
-import { useToast, Toast, ToastTitle } from "@/components/ui/toast";
-import { XIcon } from "lucide-react-native";
+
 import { Image } from "expo-image";
 import { router } from "expo-router";
 
@@ -29,8 +21,12 @@ const ITEM_WIDTH = Dimensions.get("window").width * 0.33;
 export default function DynamicCards({ posts, scroll = true }) {
   const { setRenderPosts } = useGlobal();
 
-  const renderGridItem = useCallback(
-    ({ item, index }) => (
+  const renderGridItem = useCallback(({ item, index }) => {
+    // Get the first image from the post's images array
+    const firstImage =
+      item.images && item.images.length > 0 ? item.images[0] : null;
+
+    return (
       <TouchableOpacity
         className="relative"
         style={{ width: ITEM_WIDTH, height: ITEM_WIDTH, padding: 1 }}
@@ -45,18 +41,24 @@ export default function DynamicCards({ posts, scroll = true }) {
           router.push("/posts");
         }}
       >
-        <Image
-          source={{ uri: item.images[0] }}
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: 14,
-          }}
-        />
+        {firstImage ? (
+          <Image
+            source={{ uri: firstImage }}
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: 14,
+            }}
+          />
+        ) : (
+          <View className="w-full h-full bg-gray-100 items-center justify-center rounded-xl">
+            <Feather name="image" size={24} color="#ccc" />
+          </View>
+        )}
       </TouchableOpacity>
-    ),
-    []
-  );
+    );
+  }, []);
+
   return (
     <View>
       <FlatList

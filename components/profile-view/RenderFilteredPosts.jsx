@@ -6,7 +6,7 @@ import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
 
 export default function RenderFilteredPosts({
-  activeFilter: table_name,
+  activeFilter,
   title,
   refreshCount,
   setRefreshCount,
@@ -18,15 +18,18 @@ export default function RenderFilteredPosts({
   const [error, setError] = useState(null);
 
   const fetchPosts = async () => {
-    console.log(`Fetching posts for filter: ${table_name}`);
+    console.log(`Fetching posts for filter: ${activeFilter}`);
 
     try {
       setLoading(true);
       setPosts([]);
       setError(null);
 
-      const { data, error: supabaseError } = await supabase
-        .from(table_name)
+      const isReview = activeFilter === "reviews" ? true : false;
+
+      // Fetch posts with their related dishes
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
         .select(
           `*,
           user:user_id (
@@ -35,18 +38,35 @@ export default function RenderFilteredPosts({
             last_name,
             image_url
           ),
-          ${table_name.slice(0, -1)}_likes (
-            user_id
-          ) 
+          restaurant:restaurant_id (*),
+          post_dishes (*)
         `
         )
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("is_review", isReview)
+        .order("created_at", { ascending: false });
 
-      if (supabaseError) {
-        throw supabaseError;
+      if (postsError) {
+        throw postsError;
       }
 
-      setPosts(data || []);
+      // Process posts to extract images from dishes
+      const postsWithImages = postsData.map((post) => {
+        // Extract all images from all dishes in this post
+        const images = post.post_dishes
+          .flatMap((dish) => dish.image_urls || [])
+          .filter((url) => url); // Remove any empty/null URLs
+
+        return {
+          ...post,
+          images, // Add images array to the post object
+        };
+      });
+
+      console.log(
+        `Fetched ${postsWithImages.length} posts for filter: ${activeFilter}`
+      );
+      setPosts(postsWithImages || []);
     } catch (err) {
       console.error("Error fetching posts:", err.message);
       setError(err.message);
@@ -54,9 +74,10 @@ export default function RenderFilteredPosts({
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchPosts();
-  }, [table_name, refreshCount]);
+  }, [activeFilter, refreshCount]);
 
   if (loading) {
     return (
