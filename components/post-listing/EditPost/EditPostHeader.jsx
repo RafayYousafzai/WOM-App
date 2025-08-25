@@ -24,6 +24,9 @@ import { deleteReview } from "@/lib/supabase/reviewsActions";
 import { deleteOwnReview } from "@/lib/supabase/ownreviewsActions";
 import { blockUser } from "@/lib/supabase/user_blocks";
 import { useAuth } from "@clerk/clerk-expo";
+import { MapPin } from "lucide-react-native";
+import { Image } from "react-native";
+import mapIcon from "@/assets/icons/marker.png";
 
 const { width } = Dimensions.get("window");
 
@@ -449,19 +452,23 @@ export const EditPostHeader = ({
               {(() => {
                 const [firstPart, ...rest] = (location || "").split(",");
                 return (
-                  <Text
-                    className="text-gray-600 text-sm flex-1"
+                  <View
+                    className="text-gray-600 text-sm flex-row align-middle justify-center"
                     numberOfLines={1}
                   >
-                    <Text className="font-semibold text-gray-800">
+                    <Image
+                      source={require("../../../assets/icons/marker.png")}
+                      className="w-3.5 h-4 mr-1 mt-0.5"
+                    />
+                    <Text className="text-gray-500 font-semibold">
                       {firstPart}
                     </Text>
-                    {rest.length > 0 && (
+                    {/* {rest.length > 0 && (
                       <Text className="text-gray-500">{`, ${rest.join(
                         ","
                       )}`}</Text>
-                    )}
-                  </Text>
+                    )} */}
+                  </View>
                 );
               })()}
             </View>
