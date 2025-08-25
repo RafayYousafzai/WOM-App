@@ -1,8 +1,10 @@
+"use client";
+
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Image, TouchableOpacity } from "react-native";
+import { Image, TouchableOpacity, Animated, ScrollView } from "react-native";
 import { View, Text } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useReview } from "@/context/reviewContext";
 
 export default function ImageEditor({}) {
@@ -10,10 +12,44 @@ export default function ImageEditor({}) {
 
   const dish = getCurrentDish();
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     setSelectedIndex(null);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 0.95,
+          useNativeDriver: true,
+          tension: 150,
+          friction: 8,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0.8,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 150,
+          friction: 8,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [selectedIndex]);
 
   const removeImage = (imageToRemove) => {
     handleDishImagesChange(
@@ -43,104 +79,165 @@ export default function ImageEditor({}) {
 
   return (
     <View>
-      <View className="mb-6 mx-4">
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-lg font-bold text-gray-800">
-            {dish.dishName ? `${dish.dishName} Photos` : "Your Photos"}
-          </Text>
-          {images.length > 0 && (
-            <View className="bg-blue-100 px-3 py-1 rounded-full">
-              <Text className="text-blue-800 text-sm font-medium">
-                {images.length} photo{images.length !== 1 ? "s" : ""}
-              </Text>
-            </View>
-          )}
-        </View>
-        <Text className="text-sm text-gray-500 mb-4">
-          Add photos of this specific dish. Tap to reorder.
-        </Text>
-
-        <View className="flex-row flex-wrap">
+      <View style={{ marginBottom: 10 }}>
+        <ScrollView
+          horizontal
+          style={{ flexDirection: "row" }}
+          showsHorizontalScrollIndicator={false}
+        >
           {images &&
             images.length > 0 &&
             images?.map((img, index) => (
-              <View key={`${img}-${index}`} className="relative mr-3 mb-3">
+              <View
+                key={`${img}-${index}`}
+                style={{ position: "relative", marginHorizontal: 7 }}
+              >
                 <TouchableOpacity
                   onPress={() => handleImagePress(index)}
-                  style={{
-                    opacity: selectedIndex === index ? 0.7 : 1,
-                    transform: [{ scale: selectedIndex === index ? 0.95 : 1 }],
-                  }}
+                  activeOpacity={0.8}
                 >
-                  <Image
-                    source={{ uri: img || null }}
-                    className="w-28 h-28 rounded-xl"
-                    style={{ backgroundColor: "#f3f4f6" }}
-                  />
-                  {selectedIndex === index && (
-                    <View className="absolute inset-0 bg-blue-500 bg-opacity-30 rounded-xl items-center justify-center">
-                      <View className="bg-blue-500 rounded-full p-2">
-                        <Ionicons name="checkmark" size={20} color="white" />
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          scale: selectedIndex === index ? scaleAnim : 1,
+                        },
+                      ],
+                      opacity: selectedIndex === index ? fadeAnim : 1,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: img || null }}
+                      style={{
+                        width: 140,
+                        height: 140,
+                        borderRadius: 20,
+                        backgroundColor: "#f3f4f6",
+                      }}
+                    />
+                    {selectedIndex === index && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: "rgba(99, 102, 241, 0.3)",
+                          borderRadius: 20,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <View
+                          style={{
+                            backgroundColor: "#6366F1",
+                            borderRadius: 25,
+                            padding: 12,
+                          }}
+                        >
+                          <Ionicons name="checkmark" size={24} color="white" />
+                        </View>
                       </View>
-                    </View>
-                  )}
+                    )}
+                  </Animated.View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-sm"
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    padding: 8,
+                    backgroundColor: "white",
+                    borderRadius: 20,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 2,
+                  }}
                   onPress={() => removeImage(img)}
-                  style={{ elevation: 2 }}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="trash" size={15} color="#dc2626" />
+                  <Ionicons name="trash" size={18} color="#dc2626" />
                 </TouchableOpacity>
 
-                <View className="absolute bottom-1 left-1 bg-black/50 rounded-full px-2 py-1">
-                  <Text className="text-white text-xs font-bold">
+                <View
+                  style={{
+                    position: "absolute",
+                    bottom: 8,
+                    left: 8,
+                    backgroundColor: "rgba(0, 0, 0, 0.7)",
+                    borderRadius: 16,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {index + 1}
                   </Text>
                 </View>
               </View>
             ))}
 
-          {/* Add Photo Button */}
           <TouchableOpacity
             onPress={() => router.replace("/camera")}
-            className="w-28 h-28 bg-gray-100 aspect-square rounded-xl items-center justify-center border-2 border-dashed border-gray-300 mr-3 mb-3"
-            style={{ minHeight: 112 }}
+            style={{
+              width: 140,
+              height: 140,
+              backgroundColor: "#F9FAFB",
+              borderRadius: 20,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 2,
+              borderStyle: "dashed",
+              borderColor: "#D1D5DB",
+            }}
+            activeOpacity={0.7}
           >
-            <Ionicons name="camera" size={32} color="#6B7280" />
-            <Text className="text-xs text-gray-500 mt-1 text-center">
+            <Ionicons name="camera" size={40} color="#6B7280" />
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#6B7280",
+                marginTop: 8,
+                textAlign: "center",
+                fontWeight: "500",
+              }}
+            >
               {images.length > 0 ? "Add More" : "Take Photos"}
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         {selectedIndex !== null && (
           <TouchableOpacity
-            className="mt-4 p-3 bg-gray-200 rounded-lg"
+            style={{
+              marginTop: 24,
+              padding: 16,
+              backgroundColor: "#F3F4F6",
+              borderRadius: 16,
+            }}
             onPress={() => setSelectedIndex(null)}
+            activeOpacity={0.8}
           >
-            <Text className="text-center text-gray-700 font-medium">
+            <Text
+              style={{
+                textAlign: "center",
+                color: "#374151",
+                fontWeight: "600",
+                fontSize: 16,
+              }}
+            >
               Cancel Reordering
             </Text>
           </TouchableOpacity>
-        )}
-
-        {dish.dishName && (
-          <View className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-sm text-blue-800 font-medium">
-                  Currently editing: {dish.dishName}
-                </Text>
-                <Text className="text-xs text-blue-600 mt-1">
-                  {images.length} photo{images.length !== 1 ? "s" : ""} added
-                  for this dish
-                </Text>
-              </View>
-              <Ionicons name="restaurant" size={20} color="#3b82f6" />
-            </View>
-          </View>
         )}
       </View>
     </View>

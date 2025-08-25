@@ -1,16 +1,27 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
   SafeAreaView,
   FlatList,
-  Alert,
+  Animated,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Input, InputField, Text, Spinner, Modal } from "@/components/ui";
+import { Text, Spinner } from "@/components/ui";
+import {
+  Card,
+  Surface,
+  Searchbar,
+  List,
+  Portal,
+  Modal as PaperModal,
+} from "react-native-paper";
 import LottieView from "lottie-react-native";
-
-const GoogleTextInput = ({ initialLocation, handlePress }) => {
+import debounce from "lodash.debounce";
+const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -18,8 +29,30 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
   const [selectedLocation, setSelectedLocation] = useState(
     initialLocation?.address || ""
   );
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
   const API = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+
+  useEffect(() => {
+    if (isModalVisible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      fadeAnim.setValue(0);
+      slideAnim.setValue(50);
+    }
+  }, [isModalVisible]);
 
   // Fetch autocomplete suggestions from Google Places API
   const fetchSuggestions = async (query) => {
@@ -53,132 +86,351 @@ const GoogleTextInput = ({ initialLocation, handlePress }) => {
   // Handle suggestion selection
   const handleLocationSelect = async (item) => {
     const address = item.description;
-    console.log("Selected Location Details:", address);
 
     setSelectedLocation(address);
     setSearchQuery("");
     setSuggestions([]);
     setIsModalVisible(false);
 
-    if (handlePress) {
+    if (handlePress && address) {
       handlePress(address);
     }
   };
 
   // Debounce search input
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchSuggestions(searchQuery);
-    }, 300);
 
-    return () => clearTimeout(delayDebounceFn);
+  const debouncedFetch = useMemo(() => debounce(fetchSuggestions, 400), [API]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      debouncedFetch(searchQuery);
+    } else {
+      setSuggestions([]);
+    }
   }, [searchQuery]);
 
   return (
-    <View>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => setIsModalVisible(true)}
-        className="mb-4"
+    <View style={containerStyle}>
+      <View
+        style={{
+          borderRadius: 16,
+          backgroundColor: "#f9fafb", // Light gray background
+        }}
       >
-        <Input
-          variant="rounded"
-          size="md"
-          className="flex-1 justify-between pr-3 bg-white shadow-sm"
-          pointerEvents="none"
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setIsModalVisible(true)}
+          style={{
+            padding: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderRadius: 16, // Rounded corners for the touchable
+          }}
         >
-          <InputField
-            value={selectedLocation}
-            placeholder="Enter the location"
-            className="text-gray-800 text-base"
-            editable={false}
-          />
-        </Input>
-      </TouchableOpacity>
-
-      <Modal
-        isOpen={isModalVisible}
-        className="flex-1 "
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <SafeAreaView className="flex-1 w-full bg-gray-50 mt-10">
-          {/* Header */}
-          <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
-            <TouchableOpacity
-              onPress={() => setIsModalVisible(false)}
-              className="p-2"
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: "#1F2937",
+                fontWeight: "400",
+              }}
+              className="text-xl"
             >
-              <Ionicons name="close" size={28} color="#1F2937" />
-            </TouchableOpacity>
-            <Text className="text-lg font-bold text-gray-800 flex-1 text-center">
-              Select Location
+              {selectedLocation || "Enter the location"}
             </Text>
-            <View style={{ width: 40 }} />
           </View>
+          <Ionicons name="location-outline" size={24} color="#6366F1" />
+        </TouchableOpacity>
+      </View>
 
-          {/* Search Input */}
-          <View space="md" className="px-4 pt-4">
-            <View className="p-4 ">
-              <Text className="text-base font-medium mb-1">Location</Text>
-              <Input variant="rounded" size="md" className="bg-gray-50">
-                <InputField
-                  onChangeText={setSearchQuery}
-                  placeholder="Search for a location"
-                  placeholderTextColor="#9CA3AF"
-                  returnKeyType="search"
-                  className="text-gray-800 text-base"
-                />
-              </Input>
-            </View>
-
-            {/* Suggestions List */}
-            {suggestions.length > 0 && (
-              <View>
-                <View className="bg-white rounded-xl shadow-lg max-h-80 overflow-hidden">
-                  <FlatList
-                    data={suggestions}
-                    keyExtractor={(item) => item.place_id}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => handleLocationSelect(item)}
-                        className="px-4 py-3 border-b border-gray-100"
-                      >
-                        <Text className="text-gray-800 text-base font-medium">
-                          {item.structured_formatting.main_text}
-                        </Text>
-                        <Text className="text-gray-500 text-sm mt-1">
-                          {item.structured_formatting.secondary_text}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  />
-                </View>
-              </View>
-            )}
-
-            {/* Loading State */}
-            {isLoading && <Spinner size="small" />}
-          </View>
-
-          {/* Lottie Animation */}
-          {!isLoading && suggestions.length === 0 && (
-            <View className="flex-1 items-center justify-center px-4 mt-8">
-              <LottieView
-                autoPlay
+      <Portal>
+        <PaperModal
+          visible={isModalVisible}
+          onDismiss={() => setIsModalVisible(false)}
+          contentContainerStyle={{
+            backgroundColor: "#F9FAFB",
+            marginTop: 60,
+            marginBottom: 0,
+            marginHorizontal: 0,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            height: "90%",
+          }}
+        >
+          <Animated.View
+            style={{
+              height: "100%",
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            <SafeAreaView
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Surface
                 style={{
-                  width: 200,
-                  height: 200,
+                  elevation: 2,
+                  backgroundColor: "#ffffff",
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  flexShrink: 0,
                 }}
-                source={require("../../assets/lottie/Maps.json")}
-              />
-              <Text className="text-gray-600 text-base text-center mt-4 w-3/4">
-                Add the location so others can savor the flavors you discovered!
-              </Text>
-            </View>
-          )}
-        </SafeAreaView>
-      </Modal>
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 20,
+                    paddingVertical: 16,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setIsModalVisible(false)}
+                    style={{
+                      padding: 8,
+                      borderRadius: 12,
+                      backgroundColor: "#F3F4F6",
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="#374151" />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: "#1F2937",
+                      flex: 1,
+                      textAlign: "center",
+                    }}
+                  >
+                    Select Location
+                  </Text>
+                  <View style={{ width: 40 }} />
+                </View>
+              </Surface>
+
+              <View
+                style={{
+                  flex: 1,
+                  padding: 20,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Searchbar
+                  placeholder="Search for a location"
+                  onChangeText={setSearchQuery}
+                  style={{
+                    backgroundColor: "#ffffff",
+                    borderRadius: 16,
+                    elevation: 2,
+                    marginBottom: 16,
+                    flexShrink: 0,
+                  }}
+                  inputStyle={{
+                    fontSize: 16,
+                    color: "#1F2937",
+                  }}
+                  iconColor="#6366F1"
+                />
+
+                {isLoading && (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      paddingVertical: 20,
+                    }}
+                  >
+                    <Spinner size="large" color="#6366F1" />
+                    <Text
+                      style={{
+                        marginTop: 12,
+                        fontSize: 16,
+                        color: "#6B7280",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Searching locations...
+                    </Text>
+                  </View>
+                )}
+
+                {!isLoading && suggestions.length > 0 && (
+                  <View style={{ flex: 1 }}>
+                    {/* Debug: Show count of suggestions */}
+                    <Text
+                      style={{ color: "gray", marginBottom: 10, fontSize: 12 }}
+                    >
+                      {suggestions.length} suggestions found
+                    </Text>
+
+                    <View
+                      style={{
+                        borderRadius: 16,
+                        backgroundColor: "#ffffff",
+                        borderWidth: 1,
+                        borderColor: "#e5e7eb",
+                        flex: 1,
+                        maxHeight: 300, // Set a fixed maxHeight
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        elevation: 3,
+                      }}
+                    >
+                      <FlatList
+                        data={suggestions}
+                        keyExtractor={(item) => item.place_id}
+                        showsVerticalScrollIndicator={true}
+                        style={{ flex: 1 }}
+                        initialNumToRender={10} // Render only initial items
+                        maxToRenderPerBatch={10} // Render in batches of 10
+                        windowSize={5} // Reduce the window size
+                        removeClippedSubviews={true} // Remove offscreen items
+                        updateCellsBatchingPeriod={50} // Batch updates
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            onPress={() => handleLocationSelect(item)}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingVertical: 16,
+                              paddingHorizontal: 20,
+                            }}
+                          >
+                            <Ionicons
+                              name="location-outline"
+                              size={24}
+                              color="#6366F1"
+                              style={{ marginRight: 16 }}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  fontSize: 16,
+                                  fontWeight: "600",
+                                  color: "#1F2937",
+                                  marginBottom: 4,
+                                }}
+                                numberOfLines={1} // Limit text to single line
+                              >
+                                {item.structured_formatting?.main_text ||
+                                  "No main text"}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                  color: "#6B7280",
+                                }}
+                                numberOfLines={1} // Limit text to single line
+                              >
+                                {item.description || "No description"}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        ItemSeparatorComponent={() => (
+                          <View
+                            style={{
+                              height: 1,
+                              backgroundColor: "#F3F4F6",
+                              marginHorizontal: 16,
+                            }}
+                          />
+                        )}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {!isLoading &&
+                  suggestions.length === 0 &&
+                  searchQuery === "" && (
+                    <View
+                      style={{
+                        flex: 1,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        paddingHorizontal: 32,
+                      }}
+                    >
+                      <LottieView
+                        autoPlay
+                        style={{
+                          width: 240,
+                          height: 240,
+                        }}
+                        source={require("../../assets/lottie/Maps.json")}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          color: "#374151",
+                          textAlign: "center",
+                          marginTop: 16,
+                          fontWeight: "600",
+                          lineHeight: 26,
+                        }}
+                      >
+                        Add the location so others can savor the flavors you
+                        discovered!
+                      </Text>
+                    </View>
+                  )}
+
+                {!isLoading &&
+                  suggestions.length === 0 &&
+                  searchQuery !== "" && (
+                    <View
+                      style={{
+                        flex: 1,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        paddingHorizontal: 32,
+                      }}
+                    >
+                      <Ionicons
+                        name="search-outline"
+                        size={64}
+                        color="#D1D5DB"
+                      />
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          color: "#374151",
+                          textAlign: "center",
+                          marginTop: 16,
+                          fontWeight: "600",
+                          lineHeight: 26,
+                        }}
+                      >
+                        No locations found for "{searchQuery}"
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: "#6B7280",
+                          textAlign: "center",
+                          marginTop: 8,
+                          lineHeight: 20,
+                        }}
+                      >
+                        Try a different search term
+                      </Text>
+                    </View>
+                  )}
+              </View>
+            </SafeAreaView>
+          </Animated.View>
+        </PaperModal>
+      </Portal>
     </View>
   );
 };

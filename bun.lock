@@ -75,6 +75,7 @@
         "leaflet": "^1.9.4",
         "leaflet.heat": "^0.2.0",
         "lightningcss": "^1.29.1",
+        "lodash.debounce": "^4.0.8",
         "lottie-react-native": "7.1.0",
         "lucide-react-native": "^0.445.0",
         "moti": "^0.30.0",

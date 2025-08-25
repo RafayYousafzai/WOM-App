@@ -1,66 +1,103 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Animated } from "react-native";
+import { TextInput, Switch, Divider } from "react-native-paper";
 import { RatingStars } from "./rating-stars";
-import { Input, InputField } from "@/components/ui";
-import { Switch } from "react-native-paper";
 import ImageEditor from "../ImageEditor";
 
 export const DishForm = ({ dishData, onDishChange }) => {
   return (
-    <View className="px-4">
-      <View className="relative">
-        <ImageEditor />
-      </View>
+    <Animated.View
+      style={{ paddingHorizontal: 20, marginBottom: 24 }}
+      className="y-4 flex-1"
+    >
+      <View className="mb-6  ">
+        <View className="">
+          <View className="relative mb-6">
+            <ImageEditor />
+          </View>
 
-      {/* Dish Name */}
-      <Text className="text-sm text-gray-500 mb-1">Dish Name*</Text>
-      <Input variant="rounded" size="md">
-        <InputField
-          value={dishData.dishName}
-          onChangeText={(text) => onDishChange("dishName", text)}
-          placeholder="Enter dish name"
-        />
-      </Input>
+          <Divider className="mb-6" />
 
-      {/* Recommended Dishes */}
-
-      {/* Price */}
-      <View className="mt-3 mb-2">
-        <Text className="text-sm text-gray-500 mb-1">Price</Text>
-        <Input variant="rounded" size="md">
-          <InputField
-            value={dishData.price}
-            onChangeText={(text) => onDishChange("price", text)}
-            placeholder="Enter price"
-            keyboardType="decimal-pad"
-          />
-        </Input>
-      </View>
-      <View className="my-3">
-        <View className="bg-[#f9fafb] rounded-full border-2 border-gray-300 p-2 shadow-sm">
-          <View className="flex-row justify-between items-center">
-            <View className="flex-1 pr-3 pl-2">
-              <Text className="text-base font-medium text-gray-400">
-                Recommend this dish?
-              </Text>
-            </View>
-            <Switch
-              value={dishData.recommendDish}
-              onValueChange={(value) => onDishChange("recommendDish", value)}
-              color="#f59e0b"
+          <View className="mb-6">
+            <TextInput
+              label="Dish Name"
+              value={dishData.dishName}
+              onChangeText={(text) => onDishChange("dishName", text)}
+              placeholder="Enter dish name"
+              mode="outlined"
+              outlineColor="#e5e7eb"
+              activeOutlineColor="#6366f1"
               style={{
-                transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }],
+                backgroundColor: "#f8fafc",
+                fontSize: 18,
+              }}
+              contentStyle={{
+                fontSize: 18,
+                paddingVertical: 8,
+              }}
+              outlineStyle={{
+                borderRadius: 16,
+                borderWidth: 0,
+              }}
+              required
+            />
+          </View>
+
+          <View className="mb-6">
+            <TextInput
+              label="Price"
+              value={dishData.price}
+              onChangeText={(text) => onDishChange("price", text)}
+              placeholder="Enter price"
+              keyboardType="decimal-pad"
+              mode="outlined"
+              outlineColor="#e5e7eb"
+              activeOutlineColor="#6366f1"
+              style={{
+                backgroundColor: "#f8fafc",
+                fontSize: 18,
+              }}
+              contentStyle={{
+                fontSize: 18,
+                paddingVertical: 8,
+              }}
+              outlineStyle={{
+                borderRadius: 16,
+                borderWidth: 0,
               }}
             />
           </View>
+
+          <Divider className="mb-6" />
+
+          <View className="mb-6 bg-[#f9fafb] rounded-2xl elevation-2">
+            <View className="p-5">
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1 pr-4">
+                  <Text className="text-xl text-gray-800">
+                    Recommend this dish?
+                  </Text>
+                </View>
+                <Switch
+                  value={dishData.recommendDish}
+                  onValueChange={(value) =>
+                    onDishChange("recommendDish", value)
+                  }
+                  color="#f59e0b"
+                  style={{
+                    transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }],
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          <RatingStars
+            rating={dishData.rating}
+            setRating={(rating) => onDishChange("rating", rating)}
+          />
         </View>
       </View>
-      <View>
-        <RatingStars
-          rating={dishData.rating}
-          setRating={(rating) => onDishChange("rating", rating)}
-        />
-      </View>
-    </View>
+    </Animated.View>
   );
 };
