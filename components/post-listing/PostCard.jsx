@@ -29,13 +29,11 @@ export const PostCard = ({
   onRestaurantPress,
   isInModal = false,
 }) => {
-  // State to track current dish/image index
   const [currentDishIndex, setCurrentDishIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Get dishes from post data
   const dishes = post?.dishes || [];
 
-  // Transform dishes to match the expected format
   const formattedDishes = dishes.map((dish) => ({
     id: dish.id,
     name: dish.dish_name,
@@ -48,7 +46,6 @@ export const PostCard = ({
     image_urls: dish.image_urls || [],
   }));
 
-  // If no dishes, create a fallback dish
   const fallbackDishes =
     formattedDishes.length > 0
       ? formattedDishes
@@ -68,7 +65,6 @@ export const PostCard = ({
 
   const currentDish = fallbackDishes[currentDishIndex] || fallbackDishes[0];
 
-  // Get all images from all dishes, or use provided images
   const allImages =
     images.length > 0
       ? images
@@ -76,17 +72,24 @@ export const PostCard = ({
           return [...allImgs, ...(dish.image_urls || [])];
         }, []);
 
-  // Handle image swipe to change dish
   const handleImageChange = useCallback(
-    (imageIndex, dishIndex, dish) => {
-      if (dishIndex !== undefined && dishIndex !== currentDishIndex) {
-        setCurrentDishIndex(dishIndex);
+    (imageIndex) => {
+      setCurrentImageIndex(imageIndex);
+
+      // Map imageIndex back to the dish it belongs to
+      let total = 0;
+      for (let i = 0; i < fallbackDishes.length; i++) {
+        total += fallbackDishes[i].image_urls?.length || 0;
+        if (imageIndex < total) {
+          setCurrentDishIndex(i);
+          break;
+        }
       }
     },
-    [currentDishIndex]
+    [fallbackDishes]
   );
 
-  // Handle dish selection from sidebar
+  // Handle dish selection from RestaurantInfo sidebar
   const handleDishSelect = useCallback(
     (dishId) => {
       const dishIndex = fallbackDishes.findIndex((dish) => dish.id === dishId);
@@ -99,6 +102,8 @@ export const PostCard = ({
           const dishImages = fallbackDishes[i].image_urls || [];
           imageIndex += dishImages.length;
         }
+
+        setCurrentImageIndex(imageIndex);
         return imageIndex;
       }
       return 0;
@@ -118,7 +123,6 @@ export const PostCard = ({
           cuisine={cuisine}
           onRestaurantPress={onRestaurantPress}
           isInModal={isInModal}
-          // Pass real dishes data
           restaurantDishes={fallbackDishes}
           currentDishId={currentDish?.id}
           onDishSelect={handleDishSelect}
@@ -130,7 +134,7 @@ export const PostCard = ({
           images={allImages}
           dishes={fallbackDishes}
           onImageChange={handleImageChange}
-          currentIndex={currentDishIndex}
+          currentIndex={currentImageIndex}
         />
       )}
 

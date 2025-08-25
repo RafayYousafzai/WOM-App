@@ -35,21 +35,12 @@ export const RestaurantInfo = ({
       : [
           {
             id: 1,
-            name: title || "Signature Pasta",
-            price: price || 25,
+            name: title || "",
+            price: price || 0,
             category: "Main Course",
-            rating: rating || 4.5,
-            review: "Absolutely delicious! The flavors blend perfectly.",
-            dishType: "main",
-          },
-          {
-            id: 2,
-            name: "Truffle Risotto",
-            price: 32,
-            category: "Main Course",
-            rating: 4.8,
-            review: "Rich and creamy with authentic truffle flavor.",
-            dishType: "main",
+            rating: rating || 1,
+            review: ".",
+            dishType: "",
           },
         ];
 
@@ -160,27 +151,29 @@ export const RestaurantInfo = ({
           </View>
 
           {/* Show dish options button if there are other dishes */}
-          {otherDishes.length > 0 && (
-            <>
-              <TouchableOpacity
-                onPress={openDishSidebar}
-                className=" px-3 py-2 rounded-lg flex-row items-center"
-                activeOpacity={0.7}
-              >
-                {/* <FontAwesome name="cutlery" size={14} color="#475569" /> */}
+          <TouchableOpacity
+            onPress={openDishSidebar}
+            className=" px-3 py-2 rounded-lg flex-row items-center"
+            activeOpacity={0.7}
+          >
+            <Text className="ml-1 text-slate-600 text-sm font-medium">
+              {currentDish.category}
+            </Text>
+            {otherDishes.length > 0 && (
+              <>
                 <Text className="ml-1 text-slate-600 text-sm font-medium">
-                  {currentDish.category} +{otherDishes.length} more.
+                  +{otherDishes.length}
                 </Text>
+              </>
+            )}
 
-                <FontAwesome
-                  name="chevron-right"
-                  size={11}
-                  color="#475569"
-                  className="ml-1 mt-[1px]"
-                />
-              </TouchableOpacity>
-            </>
-          )}
+            <FontAwesome
+              name="chevron-right"
+              size={11}
+              color="#475569"
+              className="ml-1 mt-[1px]"
+            />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
 
