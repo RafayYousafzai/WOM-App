@@ -57,7 +57,7 @@ export const RestaurantInfo = ({
     const fullStars = Math.floor(dishRating);
     const hasHalfStar = dishRating % 1 !== 0;
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       if (i < fullStars) {
         stars.push(
           <FontAwesome key={i} name="star" size={12} color="#FFD700" />
@@ -125,7 +125,7 @@ export const RestaurantInfo = ({
       case "appetizer":
         return "bg-green-100 text-green-800";
       case "main":
-        return "bg-blue-100 text-blue-800";
+        return "bg-yellow-100 text-yellow-800";
       case "dessert":
         return "bg-purple-100 text-purple-800";
       default:
@@ -220,7 +220,7 @@ export const RestaurantInfo = ({
                     key={dish.id}
                     className={`p-4 mb-3 rounded-lg border ${
                       dish.id === currentDishId
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-yellow-500 bg-yellow-50"
                         : "border-gray-200 bg-white"
                     }`}
                     activeOpacity={0.7}
@@ -240,22 +240,16 @@ export const RestaurantInfo = ({
                             {dish.category}
                           </Text>
                         </View>
-                        <Text
-                          className="text-gray-600 text-sm mb-2"
-                          numberOfLines={2}
-                        >
-                          {dish.review}
-                        </Text>
                         <View className="flex-row items-center justify-between">
                           {renderRating(dish.rating)}
-                          <Text className="font-bold text-blue-600">
+                          <Text className="font-bold text-yellow-600">
                             ${dish.price}
                           </Text>
                         </View>
                       </View>
 
                       {dish.id === currentDishId && (
-                        <View className="bg-blue-500 rounded-full w-6 h-6 items-center justify-center">
+                        <View className="bg-yellow-500 rounded-full absolute right-1 w-6 h-6 items-center justify-center">
                           <FontAwesome name="check" size={12} color="white" />
                         </View>
                       )}
