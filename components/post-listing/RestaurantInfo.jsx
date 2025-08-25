@@ -48,10 +48,6 @@ export const RestaurantInfo = ({
     sampleDishes.find((dish) => dish.id === currentDishId) || sampleDishes[0];
   const otherDishes = sampleDishes.filter((dish) => dish.id !== currentDishId);
 
-  const renderPriceLevel = (dishPrice = price) => {
-    return <Text className="text-gray-500 text-sm">${dishPrice}</Text>;
-  };
-
   const renderRating = (dishRating = rating) => {
     const stars = [];
     const fullStars = Math.floor(dishRating);
