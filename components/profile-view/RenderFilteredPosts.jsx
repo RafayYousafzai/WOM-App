@@ -60,6 +60,7 @@ export default function RenderFilteredPosts({
         return {
           ...post,
           images, // Add images array to the post object
+          dishes: post.post_dishes || [], // 👈 rename for consistency
         };
       });
 

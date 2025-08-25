@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 
 import { useGlobal } from "@/context/globalContext";
+import { Feather } from "@expo/vector-icons";
 
 const GRID_COLUMNS = 3;
 const ITEM_WIDTH = Dimensions.get("window").width * 0.33;
