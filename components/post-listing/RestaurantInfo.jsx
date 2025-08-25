@@ -28,25 +28,12 @@ export const RestaurantInfo = ({
   const [showDishSidebar, setShowDishSidebar] = useState(false);
   const [slideAnim] = useState(new Animated.Value(300));
 
-  // Sample data for demonstration (remove when you have real data)
-  const sampleDishes =
-    restaurantDishes.length > 0
-      ? restaurantDishes
-      : [
-          {
-            id: 1,
-            name: title || "",
-            price: price || 0,
-            category: "Main Course",
-            rating: rating || 1,
-            review: ".",
-            dishType: "",
-          },
-        ];
-
-  const currentDish =
-    sampleDishes.find((dish) => dish.id === currentDishId) || sampleDishes[0];
-  const otherDishes = sampleDishes.filter((dish) => dish.id !== currentDishId);
+  const currentDish = restaurantDishes.find(
+    (dish) => dish.id === currentDishId
+  ) || [0];
+  const otherDishes = restaurantDishes.filter(
+    (dish) => dish.id !== currentDishId
+  );
 
   const renderRating = (dishRating = rating) => {
     const stars = [];
@@ -201,7 +188,7 @@ export const RestaurantInfo = ({
                     {restaurantName || "Restaurant Dishes"}
                   </Text>
                   <Text className="text-sm text-gray-500">
-                    {sampleDishes.length} dishes available
+                    {restaurantDishes.length} dishes available
                   </Text>
                 </View>
                 <TouchableOpacity onPress={closeDishSidebar} className="p-2">
@@ -211,7 +198,7 @@ export const RestaurantInfo = ({
 
               {/* Dishes List */}
               <ScrollView className="flex-1 px-4 py-2">
-                {sampleDishes.map((dish, index) => (
+                {restaurantDishes.map((dish, index) => (
                   <TouchableOpacity
                     key={dish.id}
                     className={`p-4 mb-3 rounded-lg border ${
