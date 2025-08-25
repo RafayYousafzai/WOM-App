@@ -9,9 +9,10 @@ import { useUser } from "@clerk/clerk-expo";
 
 // Utils & Libs
 import { handleReviewSubmit } from "@/lib/supabase/post";
-import { reviewSchema } from "@/lib/yup/reviewValidationSchema";
+import { postSchema } from "@/lib/yup/reviewValidationSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import notifyPeoples from "@/utils/notification/notify_peoples";
+import { uploadDishImages } from "@/lib/supabase/imageUploads";
 
 // SecureStore (unused here but imported for draft handling)
 import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
@@ -57,7 +58,14 @@ const initialTags = { cuisine: [], amenity: [], dietary: [] };
 export const ReviewProvider = ({ children }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
-  const { uploadProgress, isUploading } = useUpload();
+  const {
+    startUpload,
+    updateProgress,
+    completeUpload,
+    setError,
+    uploadProgress,
+    isUploading,
+  } = useUpload();
 
   // UI States
   const [showModal, setShowModal] = useState(false);
@@ -152,36 +160,75 @@ export const ReviewProvider = ({ children }) => {
     return { ...dish, images: Array.isArray(dish.images) ? dish.images : [] };
   };
 
+  // main component file
+
   const handleShare = async () => {
+    console.log("Preparing to share review...");
+    startUpload("Submitting review...");
+
+    // --- 1. Prepare and Validate Data ---
+    let postData = {
+      ...reviewData,
+      cuisineTags: reviewData.cuisineTags.map((tag) => tag.id),
+      amenityTags: reviewData.amenityTags.map((tag) => tag.id),
+      dietaryTags: reviewData.dietaryTags.map((tag) => tag.id),
+      peoplesTags: reviewData.peoplesTags.map((tag) => tag.username),
+    };
+
     try {
-      console.log("Sharing review data:", reviewData);
+      await postSchema.validate(postData, { abortEarly: false });
+      console.log("Validation passed ✅");
+    } catch (err) {
+      const errors = err.errors || ["Unknown validation error."];
+      Alert.alert("Validation Error", errors.join("\n"));
+      setError("Validation failed");
+      completeUpload();
+      return;
+    }
 
-      const tags = {
-        cuisineTags: reviewData.cuisineTags.map((tag) => tag.id),
-        amenityTags: reviewData.amenityTags.map((tag) => tag.id),
-        dietaryTags: reviewData.dietaryTags.map((tag) => tag.id),
-      };
+    // --- 2. Upload Dish Images ---
+    let updatedDishTypes = [];
+    try {
+      if (postData.dishTypes && postData.dishTypes.length > 0) {
+        updateProgress(25, "Uploading dish images...");
+        updatedDishTypes = await uploadDishImages(
+          postData.dishTypes,
+          user,
+          supabase
+        );
+      }
+      updateProgress(75, "Images uploaded successfully!");
+    } catch (err) {
+      console.error("Dish image upload failed ❌", err);
+      Alert.alert("Upload Error", err.message);
+      setError("Image upload failed");
+      completeUpload();
+      return;
+    }
 
-      const postData = { ...reviewData, ...tags };
-
-      console.log("Sharing post data:", postData);
-
+    // --- 3. Submit Review to Database ---
+    try {
+      const finalPostData = { ...postData, dishTypes: updatedDishTypes };
       await handleReviewSubmit({
-        reviewData: postData,
+        reviewData: finalPostData,
         user,
         supabase,
         setLoading,
         onSuccess: () => {
+          completeUpload();
           setReviewData(postStateInit);
           setStep(1);
           router.push("/(root)/posts");
         },
-        onError: (error) => console.error("Failed to submit review:", error),
+        onError: (error) => {
+          setError("Failed to submit review");
+          console.error("❌ Failed to submit review:", error);
+        },
       });
-    } catch (error) {
-      console.error("Error sharing review:", error);
-      Alert.alert("Error", "Failed to share review. Please try again.");
-      return;
+    } catch (err) {
+      console.error("Unexpected error while sharing review:", err);
+      setError(err.message || "Unexpected error");
+      completeUpload();
     }
   };
 

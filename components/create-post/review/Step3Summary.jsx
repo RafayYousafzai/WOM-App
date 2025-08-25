@@ -26,10 +26,10 @@ export const Step3Summary = () => {
   const submission = {
     ...reviewData,
     allTags: [
-      ...(reviewData.cuisineTags.name || []),
-      ...(reviewData.dietaryTags.name || []),
-      ...(reviewData.amenityTags.name || []),
-      ...(reviewData.peoplesTags || []),
+      ...(reviewData.cuisineTags?.map((c) => c.name) || []),
+      ...(reviewData.dietaryTags?.map((d) => d.name) || []),
+      ...(reviewData.amenityTags?.map((a) => a.name) || []),
+      ...(reviewData.peoplesTags?.map((p) => p.username) || []),
     ].filter(Boolean),
   };
 

@@ -3,15 +3,11 @@ import {
   View,
   Text,
   ScrollView,
-  Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import TagPeopleInput from "../../common/TagPeopleInput";
 import TagInputWithSuggestions from "@/components/common/TagInputWithSuggestions";
-import { TouchableOpacity } from "react-native";
-import { router } from "expo-router";
 import {
   extractSuggestionsByCategory,
   FILTER_CATEGORIES,
@@ -26,8 +22,6 @@ export const Step2DetailsInput = ({
   setAmenityTags,
   dietaryTags,
   setDietaryTags,
-  extraTags,
-  setExtraTags,
   peoplesTags,
   setPeoplesTags,
   setRestaurantData,
