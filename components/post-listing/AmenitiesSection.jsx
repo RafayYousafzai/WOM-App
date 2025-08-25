@@ -25,7 +25,7 @@ export const AmenitiesSection = ({
     : normalizedAmenities.slice(0, 3);
 
   return (
-    <View className="px-1 pb-2">
+    <View className="px-1 pb-0">
       <View className="flex-row flex-wrap">
         {showDiff && (
           <View>

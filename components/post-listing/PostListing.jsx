@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { FlatList, Text, View } from "react-native";
 import { PostCard } from "./PostCard";
 import { PostListingSkeleton } from "../PageSkeletons/PostCardSkeleton";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
-import { toggleOwnReviewLike } from "../../lib/supabase/ownreviewsActions";
-import { toggleReviewLike } from "@/lib/supabase/reviewsActions";
+import { togglePostLike } from "../../lib/supabase/postsAction";
+
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import { EditPostHeader } from "./EditPost/EditPostHeader";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { dummyPost } from "./PostCard";
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -31,62 +30,89 @@ export default function PostListing({
   const { supabase } = useSupabase();
   const { user } = useUser();
   const { isPostBookmarked } = useBookmarks();
-  const [enrichedPosts, setEnrichedPosts] = useState([]);
   const route = useRoute();
-  const navigation = useNavigation(); // Added navigation hook
+  const navigation = useNavigation();
   const flatListRef = useRef(null);
 
   useEffect(() => {
     if (route.params?.scrollToTop) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-
       navigation.setParams({ scrollToTop: false });
     }
   }, [route.params?.scrollToTop, navigation]);
 
-  useEffect(() => {
-    const enrichPosts = async () => {
-      if (!posts || !user?.id) return;
-      const enriched = await Promise.all(
-        posts.map(async (post) => {
-          const postType = post.caption ? "own_review" : "review";
-          const isFavorited = await isPostBookmarked({
-            postId: post.id,
-            postType,
-            userId: user.id,
-          });
-          return { ...post, isFavorited };
-        })
-      );
-      setEnrichedPosts(enriched);
-    };
-    enrichPosts();
-  }, [posts, user]);
+  const handleLike = async (item) => {
+    try {
+      const result = await togglePostLike(supabase, user?.id, item.id);
+      if (result.error) {
+        console.error("Error toggling like:", result.error);
+      }
+      // Refresh posts to get updated like counts
+      handleRefresh();
+    } catch (error) {
+      console.error("Error in handleLike:", error);
+    }
+  };
 
-  const handleLike = (item) => {
-    if (item.caption) {
-      toggleOwnReviewLike(supabase, user?.id, item.id);
-    } else {
-      toggleReviewLike(supabase, user?.id, item.id);
+  const handleBookmarkCheck = async (postId) => {
+    if (!user?.id) return false;
+    try {
+      return await isPostBookmarked({
+        postId,
+        postType: "post",
+        userId: user.id,
+      });
+    } catch (error) {
+      console.error("Error checking bookmark:", error);
+      return false;
     }
   };
 
   const renderItem = ({ item }) => {
-    const isLiked =
-      item.review_likes?.some((like) => like.user_id === user?.id) ||
-      item.own_review_likes?.some((like) => like.user_id === user?.id);
+    // Check if user has liked this post
+    const isLiked = item.post_likes?.some((like) => like.user_id === user?.id);
 
-    const likesCount = item?.likeCount?.[0]?.count || item.likesCount || 0;
+    const likesCount = item.likesCount || 0;
+    const commentsCount = item.commentsCount || 0;
+
     const fullName = item.user
       ? `${item.user.first_name} ${item.user.last_name}`
       : "Anonymous";
 
-    const description = item.recommend_dsh
-      ? `Recommendation: ${item.recommend_dsh}`
+    // Get primary dish for display (first dish or create from post data)
+    const primaryDish = item.dishes?.[0];
+    const dishName = primaryDish?.dish_name || item.review || "Post";
+    const dishPrice = primaryDish?.dish_price;
+    const dishRating = primaryDish?.rating || item.rating;
+
+    // Get all images from dishes - flatten the arrays properly
+    const allImages =
+      item.dishes?.reduce((images, dish) => {
+        if (dish.image_urls && Array.isArray(dish.image_urls)) {
+          // Filter out null/undefined/empty URLs
+          const validUrls = dish.image_urls.filter(
+            (url) => url && typeof url === "string" && url.trim().length > 0
+          );
+          return [...images, ...validUrls];
+        }
+        return images;
+      }, []) || [];
+
+    console.log(`Post ${item.id} images:`, allImages); // Debug log
+
+    // Get recommended dish
+    const recommendedDish = item.dishes?.find((dish) => dish.is_recommended);
+    const description = recommendedDish
+      ? `Recommended: ${recommendedDish.dish_name}`
       : "";
-    const amenities = [...(item.cuisines || []), ...(item.amenities || [])];
-    const cuisine = item.cuisines?.join(", ");
-    const postType = item.caption ? "own_review" : "review";
+
+    // Get tags by type
+    const cuisineTags =
+      item.all_tags?.filter((tag) => tag.type === "cuisine") || [];
+    const amenityTags =
+      item.all_tags?.filter((tag) => tag.type === "amenity") || [];
+    const cuisine = cuisineTags.map((tag) => tag.name).join(", ");
+    const amenities = amenityTags.map((tag) => tag.name);
 
     return (
       <View className="mb-4">
@@ -95,11 +121,11 @@ export default function PostListing({
           <EditPostHeader
             username={fullName}
             location={item.location?.address}
-            userAvatar={item.user.image_url}
+            userAvatar={item.user?.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}
             post_id={item.id.toString()}
-            post_type={postType}
+            post_type="post"
             anonymous={item.anonymous}
             post={item}
             onDelete={(postId) => {
@@ -113,30 +139,32 @@ export default function PostListing({
         <PostCard
           post={item}
           username={fullName}
-          userAvatar={item.user.image_url}
+          userAvatar={item.user?.image_url}
           anonymous={item.anonymous}
           postTimeAgo={formatDate(item.created_at)}
-          title={item.review || item.caption || ""}
+          title={dishName}
           user_id={item.user_id}
           restaurantName={item.restaurant_name}
           location={item.location?.address}
           description={description}
-          rating={item.rating}
-          price={item.price}
+          rating={dishRating}
+          price={dishPrice}
           cuisine={cuisine}
-          images={item.images}
+          images={allImages}
           likesCount={likesCount}
-          commentsCount={item?.commentsCount || 0}
-          isFavorited={item.isFavorited || false}
+          commentsCount={commentsCount}
+          isFavorited={false} // Will be updated dynamically
           amenities={amenities}
           isLiked={isLiked}
           post_id={item.id.toString()}
-          post_type={postType}
+          post_type="post"
           onLike={() => handleLike(item)}
-          onComment={() => console.log("Comment")}
-          onFavorite={() => console.log("Favorite")}
-          onShare={() => console.log("Share")}
-          onRestaurantPress={() => console.log("Restaurant")}
+          onComment={() => console.log("Comment on post:", item.id)}
+          onFavorite={() => console.log("Favorite post:", item.id)}
+          onShare={() => console.log("Share post:", item.id)}
+          onRestaurantPress={() =>
+            console.log("Restaurant press:", item.restaurant_name)
+          }
         />
       </View>
     );
@@ -171,23 +199,12 @@ export default function PostListing({
         refreshing={loading}
         ListEmptyComponent={
           <View className="mt-36 items-center justify-center">
-            {loading && (
+            {!loading && (
               <Text className="text-gray-500">No posts available</Text>
             )}
           </View>
         }
       />
-      // Dummy FlatList below:
-      // <FlatList
-      //   ref={flatListRef}
-      //   // Force showing dummy data instead of DB posts
-      //   data={[dummyPost]}
-      //   renderItem={renderItem}
-      //   keyExtractor={(item, index) => item.post_id || index.toString()}
-      //   ItemSeparatorComponent={() => <View className="h-2" />}
-      //   showsVerticalScrollIndicator={false}
-      //   ListHeaderComponent={ListHeaderComponent}
-      // />
     );
   };
 

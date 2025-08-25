@@ -7,84 +7,23 @@ import { PeoplesSection } from "./PeoplesSection";
 import { EngagementBar } from "./EngagementBar";
 import { useState, useCallback } from "react";
 
-export const dummyPost = {
-  id: "post123",
-  user_id: "user456",
-  user: {
-    first_name: "John",
-    last_name: "Doe",
-    image_url:
-      "https://sm.ign.com/ign_ap/cover/a/avatar-gen/avatar-generations_hugw.jpg",
-  },
-  created_at: new Date().toISOString(),
-  restaurant_name: "The Fancy Fork",
-  location: { address: "New York, NY" },
-  rating: 4.5,
-  price: 25,
-  caption: "Signature Truffle Pasta",
-  review: "Amazing truffle flavor, perfectly al dente pasta. A must-try!",
-  cuisines: ["Italian"],
-  images: [
-    "https://thetruffle.co.uk/wp-content/uploads/2022/09/IMG_6730.jpg",
-    "https://img.kidspot.com.au/IYMb6gix/w643-h428-cfill-q90/kk/2023/06/oonis-classic-margherita-pizza-608614-1.jpg",
-    "https://www.billyparisi.com/wp-content/uploads/2022/02/lava-cake-1.jpg",
-  ],
-  // Multiple dishes corresponding to images
-  dishes: [
-    {
-      id: 1,
-      name: "Signature Truffle Pasta",
-      price: 18,
-      category: "Main Course",
-      rating: 4.3,
-      review: "Authentic wood-fired pizza with fresh mozzarella and basil.",
-      dishType: "main",
-    },
-    {
-      id: 2,
-      name: "Classic Margherita Pizza",
-      price: 25,
-      category: "Pizza",
-      rating: 4.5,
-      review: "Amazing truffle flavor, perfectly al dente pasta. A must-try!",
-      dishType: "main",
-    },
-    {
-      id: 3,
-      name: "Chocolate Lava Cake",
-      price: 12,
-      category: "Dessert",
-      rating: 4.7,
-      review: "Rich, decadent dessert with a molten chocolate center.",
-      dishType: "dessert",
-    },
-  ],
-  likeCount: [{ count: 125 }],
-  review_likes: [{ user_id: "user456" }],
-  own_review_likes: [],
-  amenities: ["Vegetarian", "Romantic", "Good for groups"],
-  recommend_dsh: "Truffle Pasta",
-  commentsCount: 3,
-  anonymous: false,
-};
-
 export const PostCard = ({
-  post = dummyPost,
+  post,
   title,
   postTimeAgo,
-  restaurantName = dummyPost.restaurant_name,
-  location = dummyPost.location,
+  restaurantName,
+  location,
   description,
-  rating = dummyPost.rating,
-  price = dummyPost.price,
-  user_id = dummyPost.user_id,
-  cuisine = dummyPost.cuisine,
-  images = dummyPost.images,
-  likesCount = dummyPost.likesCount,
-  isLiked = dummyPost.isLiked,
-  isFavorited = dummyPost.isFavorited,
-  post_id = dummyPost.post_id,
-  post_type = dummyPost.post_type,
+  rating,
+  price,
+  user_id,
+  cuisine,
+  images = [],
+  likesCount = 0,
+  isLiked = false,
+  isFavorited = false,
+  post_id,
+  post_type = "post",
   onFavorite,
   onShare,
   onRestaurantPress,
@@ -93,27 +32,78 @@ export const PostCard = ({
   // State to track current dish/image index
   const [currentDishIndex, setCurrentDishIndex] = useState(0);
 
-  // Get dishes from post or use dummy data
-  const dishes = post?.dishes || dummyPost.dishes;
-  const currentDish = dishes[currentDishIndex];
+  // Get dishes from post data
+  const dishes = post?.dishes || [];
+
+  // Transform dishes to match the expected format
+  const formattedDishes = dishes.map((dish) => ({
+    id: dish.id,
+    name: dish.dish_name,
+    price: dish.dish_price,
+    category: dish.dish_type || "Main Course",
+    rating: dish.rating || rating,
+    review: description || post?.review,
+    dishType: dish.dish_type?.toLowerCase() || "main",
+    is_recommended: dish.is_recommended,
+    image_urls: dish.image_urls || [],
+  }));
+
+  // If no dishes, create a fallback dish
+  const fallbackDishes =
+    formattedDishes.length > 0
+      ? formattedDishes
+      : [
+          {
+            id: 1,
+            name: title || post?.review || "Post",
+            price: price,
+            category: "Main Course",
+            rating: rating || 4.0,
+            review: description || post?.review,
+            dishType: "main",
+            is_recommended: false,
+            image_urls: images,
+          },
+        ];
+
+  const currentDish = fallbackDishes[currentDishIndex] || fallbackDishes[0];
+
+  // Get all images from all dishes, or use provided images
+  const allImages =
+    images.length > 0
+      ? images
+      : fallbackDishes.reduce((allImgs, dish) => {
+          return [...allImgs, ...(dish.image_urls || [])];
+        }, []);
 
   // Handle image swipe to change dish
-  const handleImageChange = useCallback((imageIndex) => {
-    setCurrentDishIndex(imageIndex);
-  }, []);
+  const handleImageChange = useCallback(
+    (imageIndex, dishIndex, dish) => {
+      if (dishIndex !== undefined && dishIndex !== currentDishIndex) {
+        setCurrentDishIndex(dishIndex);
+      }
+    },
+    [currentDishIndex]
+  );
 
   // Handle dish selection from sidebar
   const handleDishSelect = useCallback(
     (dishId) => {
-      const dishIndex = dishes.findIndex((dish) => dish.id === dishId);
+      const dishIndex = fallbackDishes.findIndex((dish) => dish.id === dishId);
       if (dishIndex !== -1) {
         setCurrentDishIndex(dishIndex);
-        // Return the index so RestaurantInfo can trigger image carousel change
-        return dishIndex;
+
+        // Calculate the starting image index for this dish
+        let imageIndex = 0;
+        for (let i = 0; i < dishIndex; i++) {
+          const dishImages = fallbackDishes[i].image_urls || [];
+          imageIndex += dishImages.length;
+        }
+        return imageIndex;
       }
-      return currentDishIndex;
+      return 0;
     },
-    [dishes, currentDishIndex]
+    [fallbackDishes]
   );
 
   return (
@@ -121,24 +111,29 @@ export const PostCard = ({
       <View className="mx-3 mb-2">
         <RestaurantInfo
           restaurantName={restaurantName}
-          location={location?.address || location}
+          location={location}
           rating={currentDish?.rating || rating}
-          title={currentDish?.name || post?.caption || post?.dish_name}
+          title={currentDish?.name}
           price={currentDish?.price || price}
           cuisine={cuisine}
           onRestaurantPress={onRestaurantPress}
           isInModal={isInModal}
-          // Pass dishes data
-          restaurantDishes={dishes}
+          // Pass real dishes data
+          restaurantDishes={fallbackDishes}
           currentDishId={currentDish?.id}
           onDishSelect={handleDishSelect}
         />
       </View>
-      <ImageCarousel
-        images={images}
-        onImageChange={handleImageChange}
-        currentIndex={currentDishIndex}
-      />
+
+      {(allImages.length > 0 || fallbackDishes.length > 0) && (
+        <ImageCarousel
+          images={allImages}
+          dishes={fallbackDishes}
+          onImageChange={handleImageChange}
+          currentIndex={currentDishIndex}
+        />
+      )}
+
       <View className="mx-3">
         <EngagementBar
           likesCount={likesCount}
@@ -152,22 +147,25 @@ export const PostCard = ({
           title={currentDish?.name || title}
           description={currentDish?.review || description}
         />
+
+        <PeoplesSection people={post?.people} />
+
+        {post?.all_tags?.length > 0 && (
+          <AmenitiesSection
+            amenities={post.all_tags}
+            post_type={post_type}
+            showDiff={true}
+            recommend_dsh={fallbackDishes.find((d) => d.is_recommended)?.name}
+          />
+        )}
+
         <PostContent
-          location={location?.address || location}
-          title={currentDish?.name || post?.caption || post?.dish_name}
+          location={location}
+          title={currentDish?.name || title}
           description={post?.review}
           post_type={post_type}
           postTimeAgo={postTimeAgo}
         />
-        {/* {post?.all_tags.length > 0 && (
-          <AmenitiesSection
-            amenities={post?.all_tags}
-            post_type={post_type}
-            showDiff={true}
-            recommend_dsh={post?.recommend_dsh}
-          />
-        )} */}
-        <PeoplesSection people={post?.people} />
       </View>
       <View className="border-b-gray-100 border-b mx-2 py-1" />
     </View>

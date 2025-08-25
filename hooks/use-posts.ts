@@ -13,17 +13,49 @@ interface Post {
   id: string;
   user_id: string;
   updated_at: string;
+  created_at: string;
+  review: string;
+  is_review: boolean;
   anonymous?: boolean;
-  user: {
+  people?: string[];
+  restaurants: {
+    id: number;
+    location: string;
+    rating: number;
+  };
+  users: {
     username: string;
     first_name: string;
     last_name: string;
     updated_at: string;
     image_url: string;
   };
-  review_likes?: { user_id: string }[];
-  own_review_likes?: { user_id: string }[];
-  likeCount: { count: number }[];
+  post_dishes: Array<{
+    id: number;
+    dish_name: string;
+    dish_price: number;
+    dish_type: string;
+    rating: number;
+    is_recommended: boolean;
+    image_urls: string[];
+  }>;
+  post_tags: Array<{
+    tags: {
+      id: number;
+      name: string;
+      type: string;
+    };
+  }>;
+  post_likes: { user_id: string }[];
+  post_comments: { id: number }[];
+  // Computed fields
+  restaurant_name?: string;
+  location?: { address: string };
+  dishes?: any[];
+  all_tags?: any[];
+  likesCount?: number;
+  commentsCount?: number;
+  user?: any;
 }
 
 type TabType = "forYou" | "following";
@@ -53,25 +85,67 @@ export const usePosts = () => {
     return newArray;
   }, []);
 
-  const buildBaseQuery = useCallback(
-    (table: string) => {
-      return supabase.from(`${table}s`).select(`
-      *,
-      user:user_id (
+  const buildPostsQuery = useCallback(() => {
+    return supabase.from("posts").select(`
+      id,
+      review,
+      user_id,
+      is_review,
+      anonymous,
+      people,
+      created_at,
+      updated_at,
+      restaurants (
+        id,
+        location,
+        rating
+      ),
+      users (
+        id,
         username,
         first_name,
         last_name,
-        updated_at,
-        image_url
+        image_url,
+        updated_at
       ),
-      ${table}_likes (
+      post_dishes (
+        id,
+        dish_name,
+        dish_price,
+        dish_type,
+        rating,
+        is_recommended,
+        image_urls
+      ),
+      post_tags (
+        tags (
+          id,
+          name,
+          type
+        )
+      ),
+      post_likes (
         user_id
       ),
-      likeCount:${table}_likes(count)
+      post_comments (
+        id
+      )
     `);
-    },
-    [supabase]
-  );
+  }, [supabase]);
+
+  const transformPostData = useCallback((rawPosts: any[]): Post[] => {
+    return rawPosts.map(post => ({
+      ...post,
+      restaurant_name: post.restaurants?.location || "Unknown Restaurant",
+      location: { address: post.restaurants?.location },
+      rating: post.restaurants?.rating,
+      dishes: post.post_dishes || [],
+      all_tags: post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [],
+      likesCount: post.post_likes?.length || 0,
+      commentsCount: post.post_comments?.length || 0,
+      user: post.users
+    }));
+  }, []);
 
   const fetchPosts = useCallback(
     async (tab: TabType, loadMore = false) => {
@@ -82,8 +156,7 @@ export const usePosts = () => {
       }
 
       try {
-        let reviewsQuery = buildBaseQuery("review");
-        let ownReviewsQuery = buildBaseQuery("own_review");
+        let postsQuery = buildPostsQuery();
 
         // Handle following tab
         if (tab === "following" && user) {
@@ -101,55 +174,39 @@ export const usePosts = () => {
             return { data: [], fetchId: currentFetchId };
           }
 
-          reviewsQuery = reviewsQuery.in("user_id", followedUserIds);
-          ownReviewsQuery = ownReviewsQuery.in("user_id", followedUserIds);
+          postsQuery = postsQuery.in("user_id", followedUserIds);
         }
 
         // Handle pagination
         if (loadMore) {
-          reviewsQuery = reviewsQuery.lt(
-            "updated_at",
-            lastTimestampRef.current
-          );
-          ownReviewsQuery = ownReviewsQuery.lt(
-            "updated_at",
-            lastTimestampRef.current
-          );
+          postsQuery = postsQuery.lt("updated_at", lastTimestampRef.current);
         }
 
         // Apply ordering and limits
-        reviewsQuery = reviewsQuery
+        postsQuery = postsQuery
           .order("updated_at", { ascending: false })
           .limit(PAGE_SIZE);
 
-        ownReviewsQuery = ownReviewsQuery
-          .order("updated_at", { ascending: false })
-          .limit(PAGE_SIZE);
+        const { data: postsData, error: postsError } = await postsQuery;
 
-        const [reviewsResult, ownReviewsResult] = await Promise.all([
-          reviewsQuery,
-          ownReviewsQuery,
-        ]);
+        if (postsError) throw postsError;
 
-        if (reviewsResult.error) throw reviewsResult.error;
-        if (ownReviewsResult.error) throw ownReviewsResult.error;
-
-        let combined = [
-          ...(reviewsResult.data || []),
-          ...(ownReviewsResult.data || []),
-        ];
+        let posts = postsData || [];
 
         // Filter blocked users
         if (user) {
           const blockedUserIds = await getBlockedUserIds(supabase, user.id);
-          combined = combined.filter(
+          posts = posts.filter(
             (post) => !blockedUserIds.includes(post.user_id)
           );
         }
 
+        // Transform data to match frontend expectations
+        posts = transformPostData(posts);
+
         // Update timestamp for pagination
-        if (combined.length > 0) {
-          const timestamps = combined.map((post) =>
+        if (posts.length > 0) {
+          const timestamps = posts.map((post) =>
             new Date(post.updated_at).getTime()
           );
           const minTimestamp = new Date(Math.min(...timestamps)).toISOString();
@@ -158,12 +215,12 @@ export const usePosts = () => {
 
         // Shuffle for initial "For You" load
         if (tab === "forYou" && !loadMore) {
-          combined = shuffleArray(combined);
+          posts = shuffleArray(posts);
         }
 
-        // Remove duplicates
+        // Remove duplicates (shouldn't be needed with single table, but keeping for safety)
         const uniqueIds = new Set<string>();
-        const uniquePosts = combined.filter((post) => {
+        const uniquePosts = posts.filter((post) => {
           if (uniqueIds.has(post.id)) return false;
           uniqueIds.add(post.id);
           return true;
@@ -182,7 +239,7 @@ export const usePosts = () => {
         }
       }
     },
-    [buildBaseQuery, user, supabase, toast, shuffleArray]
+    [buildPostsQuery, user, supabase, toast, shuffleArray, transformPostData]
   );
 
   const loadPosts = useCallback(

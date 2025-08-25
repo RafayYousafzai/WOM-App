@@ -45,7 +45,7 @@ export const PeoplesSection = ({ people = [] }) => {
   };
 
   return (
-    <View className="px-1 pb-2">
+    <View className="px-1 pt-2">
       <View className="flex-row flex-wrap">
         {displayedPeople.map((username, index) => (
           <TouchableOpacity
