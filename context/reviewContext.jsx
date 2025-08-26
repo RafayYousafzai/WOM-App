@@ -115,6 +115,11 @@ export const ReviewProvider = ({ children }) => {
     setReviewData((prev) => ({ ...prev, [key]: data }));
 
   const handleAddDishType = (type) => {
+    if (reviewData.dishTypes.find((dish) => dish.id === type.id)) {
+      setActiveTab(type.id);
+      setShowModal(false);
+      return;
+    }
     const newDish = { ...dishTypesInit[0], ...type };
     handleChange("dishTypes", [...reviewData.dishTypes, newDish]);
     setActiveTab(type.id);
