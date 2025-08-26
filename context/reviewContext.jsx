@@ -3,12 +3,12 @@ import { Alert } from "react-native";
 import { router } from "expo-router";
 import { debounce } from "lodash";
 
-// Contexts & Hooks
+// -------------------- Contexts & Hooks -------------------- //
 import { useSupabase } from "@/context/supabaseContext";
 import { useUpload } from "@/context/upload-context";
 import { useUser } from "@clerk/clerk-expo";
 
-// Utils & Libs
+// -------------------- Utils & Libs -------------------- //
 import { handleReviewSubmit } from "@/lib/supabase/post";
 import { uploadDishImages } from "@/lib/supabase/imageUploads";
 import { postSchema } from "@/lib/yup/reviewValidationSchema";
@@ -70,23 +70,25 @@ export const ReviewProvider = ({ children }) => {
     isUploading,
   } = useUpload();
 
-  // UI States
+  // -------------------- UI States -------------------- //
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("main-course");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Review States
+  // -------------------- Review States -------------------- //
   const [reviewData, setReviewData] = useState(postStateInit);
   const [tags, setTags] = useState(initialTags);
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [allDrafts, setAllDrafts] = useState([]);
 
   // -------------------- Draft Management -------------------- //
-
   const saveDraft = async () => {
     const draftId =
-      currentDraftId || `draft_${Math.random().toString(36).slice(2, 11)}`;
+      currentDraftId ||
+      `draft_${Math.random().toString(36).slice(2, 11)}_${Math.random()
+        .toString(36)
+        .slice(2, 11)}_${Math.random().toString(36).slice(2, 11)}`;
 
     const draftData = {
       ...reviewData,
@@ -111,9 +113,22 @@ export const ReviewProvider = ({ children }) => {
   const debouncedSaveDraft = debounce(saveDraft, 1000);
 
   useEffect(() => {
-    debouncedSaveDraft();
+    const isNewDraft = !currentDraftId;
+    if (isNewDraft) {
+      const hasMeaningfulChanges =
+        reviewData.location ||
+        reviewData.review ||
+        JSON.stringify(reviewData.dishTypes) !== JSON.stringify(dishTypesInit);
+
+      if (hasMeaningfulChanges) {
+        debouncedSaveDraft();
+      }
+    } else {
+      debouncedSaveDraft();
+    }
+
     return () => debouncedSaveDraft.cancel();
-  }, [reviewData]);
+  }, [reviewData, currentDraftId]);
 
   const loadAllDrafts = async () => {
     let draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
@@ -249,7 +264,7 @@ export const ReviewProvider = ({ children }) => {
     return { ...dish, images: Array.isArray(dish.images) ? dish.images : [] };
   };
 
-  // main component file
+  // -------------------- Share Review -------------------- //
   const handleShare = async () => {
     console.log("Preparing to share review...");
     startUpload("Submitting review...");
@@ -332,6 +347,7 @@ export const ReviewProvider = ({ children }) => {
       console.error("Notification error:", error);
     }
   };
+
   // -------------------- Context Value -------------------- //
   return (
     <ReviewContext.Provider
