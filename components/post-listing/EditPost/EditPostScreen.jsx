@@ -27,37 +27,27 @@ export default function EditPostScreen() {
   const [loading, setLoading] = useState(false);
   const [postData, setPostData] = useState({
     location: null,
-    name: "",
+
     description: "",
-    restaurantName: "",
-    rating: 0,
   });
 
   const postId = params.postId;
-  const postType = params.postType;
 
   useEffect(() => {
-    // Only run this effect once when the component mounts
     if (params.postData) {
       try {
         const originalPostData = JSON.parse(params.postData);
-        const isRestaurantPost = params.postType === "review";
-
         setPostData({
           location: originalPostData.location,
-          name: isRestaurantPost
-            ? originalPostData.dish_name || originalPostData.dishName || ""
-            : originalPostData.caption || "",
           description: originalPostData.review || "",
-          restaurantName: originalPostData.restaurant_name || "",
-          rating: originalPostData.rating || 0,
         });
       } catch (error) {
         console.error("Error parsing post data:", error);
         Alert.alert("Error", "Failed to load post data");
       }
     }
-  }, []); // Empty dependency array - only run once on mount
+  }, []);
+  // Empty dependency array - only run once on mount
 
   const handleChange = (field, value) => {
     setPostData((prev) => ({
@@ -72,19 +62,8 @@ export default function EditPostScreen() {
       return;
     }
 
-    // Validation
-    if (!postData.name.trim()) {
-      Alert.alert("Error", "Name is required");
-      return;
-    }
-
     if (!postData.description.trim()) {
       Alert.alert("Error", "Description is required");
-      return;
-    }
-
-    if (postType === "review" && !postData.restaurantName.trim()) {
-      Alert.alert("Error", "Restaurant name is required");
       return;
     }
 
@@ -94,41 +73,35 @@ export default function EditPostScreen() {
     }
 
     setLoading(true);
-
     try {
-      const isRestaurantPost = postType === "review";
-      const tableName = isRestaurantPost ? "reviews" : "own_reviews";
-
-      // Prepare update data based on post type
-      const updateData = {
-        location: postData.location,
-        review: postData.description,
-        rating: postData.rating,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (isRestaurantPost) {
-        updateData.dish_name = postData.name;
-        updateData.restaurant_name = postData.restaurantName;
-      } else {
-        updateData.caption = postData.name;
-      }
-
-      const { error } = await supabase
-        .from(tableName)
-        .update(updateData)
+      // 1. Update post description
+      const { error: postError } = await supabase
+        .from("posts")
+        .update({
+          review: postData.description,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", postId)
-        .eq("user_id", user.id); // Ensure user can only edit their own posts
+        .eq("user_id", user.id);
 
-      if (error) {
-        throw error;
+      if (postError) throw postError;
+
+      // 2. Update restaurant location
+      if (params.postData) {
+        const originalPostData = JSON.parse(params.postData);
+        if (originalPostData.restaurant_id) {
+          const { error: restaurantError } = await supabase
+            .from("restaurants")
+            .update({ location: postData.location })
+            .eq("id", originalPostData.restaurant_id)
+            .eq("user_id", user.id);
+
+          if (restaurantError) throw restaurantError;
+        }
       }
 
       Alert.alert("Success", "Post updated successfully!", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
       console.error("Update error:", error);
@@ -191,49 +164,6 @@ export default function EditPostScreen() {
         className="flex-1"
       >
         <ScrollView className="flex-1 px-4" keyboardShouldPersistTaps="handled">
-          {/* Rating */}
-          <View className="mb-6 mt-4">
-            <Text className="text-base font-medium mb-3 text-gray-700">
-              Rating
-            </Text>
-            <RatingStars
-              rating={postData.rating}
-              setRating={(rating) => handleChange("rating", rating)}
-            />
-          </View>
-
-          {/* Name Field */}
-          <View className="mb-6">
-            <Text className="text-base font-medium mb-2 text-gray-700">
-              {postType === "review" ? "Dish Name" : "Post Title"}
-            </Text>
-            <Input variant="rounded" size="md" className="bg-gray-50">
-              <InputField
-                value={postData.name}
-                onChangeText={(text) => handleChange("name", text)}
-                placeholder={
-                  postType === "review" ? "Enter dish name" : "Enter post title"
-                }
-              />
-            </Input>
-          </View>
-
-          {/* Restaurant Name (only for restaurant posts) */}
-          {postType === "review" && (
-            <View className="mb-6">
-              <Text className="text-base font-medium mb-2 text-gray-700">
-                Restaurant Name
-              </Text>
-              <Input variant="rounded" size="md" className="bg-gray-50">
-                <InputField
-                  value={postData.restaurantName}
-                  onChangeText={(text) => handleChange("restaurantName", text)}
-                  placeholder="Enter restaurant name"
-                />
-              </Input>
-            </View>
-          )}
-
           {/* Location */}
           <View className="mb-6">
             <Text className="text-base font-medium mb-2 text-gray-700">
@@ -275,9 +205,8 @@ export default function EditPostScreen() {
                   Note about editing
                 </Text>
                 <Text className="text-blue-700 text-sm mt-1">
-                  You can only edit the location, name, description, restaurant
-                  name, and rating. Other details like images and tags cannot be
-                  modified.
+                  You can only edit the location, description, and other details
+                  like images and tags cannot be modified.
                 </Text>
               </View>
             </View>

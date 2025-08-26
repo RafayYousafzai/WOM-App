@@ -20,13 +20,11 @@ import { useUser } from "@clerk/clerk-expo";
 import { useSupabase } from "@/context/supabaseContext";
 import { Feather } from "@expo/vector-icons";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
-import { deleteReview } from "@/lib/supabase/reviewsActions";
-import { deleteOwnReview } from "@/lib/supabase/ownreviewsActions";
 import { blockUser } from "@/lib/supabase/user_blocks";
 import { useAuth } from "@clerk/clerk-expo";
 import { MapPin } from "lucide-react-native";
 import { Image } from "react-native";
-import mapIcon from "@/assets/icons/marker.png";
+import { deletePost } from "@/lib/supabase/postsAction";
 
 const { width } = Dimensions.get("window");
 
@@ -36,7 +34,6 @@ export const EditPostHeader = ({
   user_id,
   postTimeAgo,
   post_id,
-  post_type,
   anonymous,
   onDelete,
   location,
@@ -182,46 +179,33 @@ export const EditPostHeader = ({
       pathname: "/edit-post",
       params: {
         postId: post_id,
-        postType: post_type,
         postData: JSON.stringify(post),
       },
     });
   };
 
   const handleDelete = async () => {
-    const isReview = post_type === "review";
     hideMenu();
     Alert.alert(
       "Delete Post",
       "Are you sure you want to delete this post? This action cannot be undone.",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
-              if (isReview) {
-                await deleteReview(supabase, post_id);
+              if (user?.id === user_id) {
+                await deletePost(supabase, post_id); // only if owner
+                if (onDelete) onDelete(post_id);
+                Alert.alert("Success", "Post deleted successfully.");
               } else {
-                await deleteOwnReview(supabase, post_id);
+                Alert.alert("Error", "You can only delete your own posts.");
               }
-              if (onDelete) {
-                onDelete(post_id);
-              }
-              Alert.alert(
-                "Success",
-                "Post deleted successfully. Refresh page to see changes.",
-                [{ text: "OK" }]
-              );
             } catch (error) {
               console.error("Delete error:", error);
-              Alert.alert("Error", "Failed to delete post. Please try again.", [
-                { text: "OK" },
-              ]);
+              Alert.alert("Error", "Failed to delete post. Please try again.");
             }
           },
         },
@@ -294,7 +278,6 @@ export const EditPostHeader = ({
               const { error } = await supabase.from("reports").insert([
                 {
                   post_id,
-                  post_type,
                   user_id: user?.id,
                   reported_at: new Date().toISOString(),
                 },
