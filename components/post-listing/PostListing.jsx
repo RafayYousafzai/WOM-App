@@ -69,9 +69,8 @@ export default function PostListing({
   };
 
   const renderItem = ({ item }) => {
-    // Check if user has liked this post
-    const isLiked = item.post_likes?.some((like) => like.user_id === user?.id);
-
+    // Use flattened fields directly from formattedPosts
+    const isLiked = item.isLiked ?? false;
     const likesCount = item.likesCount ?? 0;
     const commentsCount = item.commentsCount ?? 0;
 
@@ -84,11 +83,9 @@ export default function PostListing({
     const dishPrice = primaryDish?.dish_price ?? 0;
     const dishRating = primaryDish?.rating ?? item.rating ?? 0;
 
-    // Get all images from dishes - flatten the arrays properly
     const allImages =
       item.dishes?.reduce((images, dish) => {
         if (dish.image_urls && Array.isArray(dish.image_urls)) {
-          // Filter out null/undefined/empty URLs
           const validUrls = dish.image_urls.filter(
             (url) => url && typeof url === "string" && url.trim().length > 0
           );
@@ -96,8 +93,6 @@ export default function PostListing({
         }
         return images;
       }, []) || [];
-
-    console.log(`Post ${item.id} images:`, allImages); // Debug log
 
     // Get recommended dish
     const recommendedDish = item.dishes?.find((dish) => dish.is_recommended);

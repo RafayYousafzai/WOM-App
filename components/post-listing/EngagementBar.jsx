@@ -15,8 +15,9 @@ import { useAuth, useUser } from "@clerk/clerk-expo";
 import { VStack, Button, ButtonText } from "@/components/ui";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { useSupabase } from "@/context/supabaseContext";
-import { toggleLike } from "@/lib/supabase/reviewsActions";
 import { fetchCommentCountByPost } from "@/lib/supabase/commentsActions";
+import { togglePostLike } from "@/lib/supabase/postsAction";
+
 import Share from "react-native-share";
 
 export const EngagementBar = ({
@@ -77,8 +78,80 @@ export const EngagementBar = ({
     getCommentCount();
   }, [post_id, post_type, supabase]);
 
-  const handleLike = async () => {
-    // ... (The handleLike function remains the same)
+  const handleLike = async (item) => {
+    // Prevent multiple rapid clicks
+    if (isLikeProcessing) return;
+
+    try {
+      const userId = user?.id;
+      const postId = post_id;
+      const postOwnerId = user_id;
+
+      if (!userId || !postId || !postOwnerId) {
+        console.warn("⛔ Invalid or missing postId or userId, exiting...");
+        return;
+      }
+
+      const newIsLiked = !isLiked;
+      const newLikesCount = newIsLiked ? likesCount + 1 : likesCount - 1;
+
+      setIsLiked(newIsLiked);
+      setLikesCount(newLikesCount);
+      setIsLikeProcessing(true);
+
+      const likeResult = await togglePostLike(supabase, userId, postId);
+
+      console.log("✅ Like toggle result:", likeResult);
+
+      if (likeResult?.liked !== undefined) {
+        if (likeResult.liked !== newIsLiked) {
+          console.warn(
+            "🔄 Server result differs from optimistic update, correcting..."
+          );
+          setIsLiked(likeResult.liked);
+          setLikesCount(likeResult.liked ? likesCount + 1 : likesCount - 1);
+        }
+      }
+
+      if (likeResult?.liked && userId !== postOwnerId) {
+        console.log(
+          "📨 Fetching token to send notification to user:",
+          postOwnerId
+        );
+
+        setTimeout(async () => {
+          try {
+            const { data, error } = await supabase
+              .from("user_notifications_tokens")
+              .select("token")
+              .eq("id", postOwnerId)
+              .single();
+
+            if (error) {
+              console.error("❌ Error fetching token:", error);
+            } else if (data?.token) {
+              console.log("🚀 Sending push notification to token:", data.token);
+              await sendPushNotification(
+                data.token,
+                `${user.firstName} ${user.lastName} liked your post ❤️`,
+                ""
+              );
+            } else {
+              console.warn("⚠️ No push token found for user:", postOwnerId);
+            }
+          } catch (notificationError) {
+            console.error("🔥 Error sending notification:", notificationError);
+          }
+        }, 0);
+      }
+    } catch (error) {
+      console.error("🔥 Error during like operation:", error);
+
+      setIsLiked(!isLiked); // Revert to original state
+      setLikesCount(likesCount); // Revert to original count
+    } finally {
+      setIsLikeProcessing(false);
+    }
   };
 
   const handleBookmark = async (collectionName) => {
