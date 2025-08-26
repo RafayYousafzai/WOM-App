@@ -33,7 +33,6 @@ export const CommentSection = ({
   isVisible,
   onClose,
   post_id,
-  post_type = "review",
   user_id: post_owner_id,
 }) => {
   const { user } = useUser();
@@ -133,7 +132,7 @@ export const CommentSection = ({
   useEffect(() => {
     if (isVisible && user) {
       setLoading(true);
-      fetchCommentsByPost(supabase, post_id, post_type)
+      fetchCommentsByPost(supabase, post_id)
         .then(enrichWithReplies)
         .then((enrichedComments) => {
           setComments(enrichedComments);
@@ -144,7 +143,7 @@ export const CommentSection = ({
           setLoading(false);
         });
     }
-  }, [isVisible, post_id, post_type, user]);
+  }, [isVisible, post_id, user]);
 
   if (!isVisible || !user) return null;
 
@@ -258,7 +257,6 @@ export const CommentSection = ({
       const created = await createComment({
         supabase,
         postId: post_id,
-        postType: post_type,
         userId: user.id,
         content: newComment,
       });
@@ -324,7 +322,6 @@ export const CommentSection = ({
       const created = await createComment({
         supabase,
         postId: post_id,
-        postType: post_type,
         userId: user.id,
         content: replyText,
         parentId: commentId,

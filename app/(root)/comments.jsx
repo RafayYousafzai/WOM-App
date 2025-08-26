@@ -3,7 +3,7 @@ import { CommentSection } from "../../components/post-listing/comments/CommentSe
 import { View } from "react-native";
 
 export default function CommentsScreen() {
-  const { post_id, post_type, post_owner_id } = useLocalSearchParams();
+  const { post_id, post_owner_id } = useLocalSearchParams();
 
   return (
     <View className="flex-1">
@@ -11,7 +11,6 @@ export default function CommentsScreen() {
         isVisible={true}
         onClose={() => router.back()}
         post_id={post_id}
-        post_type={post_type}
         user_id={post_owner_id}
       />
     </View>

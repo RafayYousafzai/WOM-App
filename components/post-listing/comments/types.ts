@@ -27,5 +27,4 @@ export interface CommentSectionProps {
   isVisible: boolean;
   onClose: () => void;
   post_id: string;
-  post_type: string;
 }

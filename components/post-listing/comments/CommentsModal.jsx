@@ -3,7 +3,6 @@ import { router } from "expo-router";
 
 export default function CommentsModal({
   post_id,
-  post_type = "review",
   user_id: post_owner_id,
   commentCount,
 }) {
@@ -12,7 +11,7 @@ export default function CommentsModal({
       <TouchableOpacity
         onPress={() =>
           router.push(
-            `/comments?post_id=${post_id}&post_type=${post_type}&post_owner_id=${post_owner_id}`
+            `/comments?post_id=${post_id}&post_owner_id=${post_owner_id}`
           )
         }
         className="mr-4 relative flex-row items-center justify-center"

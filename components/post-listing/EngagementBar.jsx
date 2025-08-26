@@ -26,7 +26,6 @@ export const EngagementBar = ({
   isFavorited: initialIsFavorited,
   title,
   post_id,
-  post_type,
   onFavorite,
   user_id,
   onLike,
@@ -73,11 +72,11 @@ export const EngagementBar = ({
   // Fetches comment count
   useEffect(() => {
     const getCommentCount = async () => {
-      const count = await fetchCommentCountByPost(supabase, post_id, post_type);
+      const count = await fetchCommentCountByPost(supabase, post_id);
       setCommentCount(count);
     };
     getCommentCount();
-  }, [post_id, post_type, supabase]);
+  }, [post_id, supabase]);
 
   const handleLike = async (item) => {
     // Prevent multiple rapid clicks
@@ -178,7 +177,7 @@ export const EngagementBar = ({
 
   const handleShare = async () => {
     try {
-      const universalUrl = `https://wom-panel.vercel.app/post/${post_id}?type=${post_type}`;
+      const universalUrl = `https://wom-panel.vercel.app/post/${post_id}`;
       const shareMessage = `Check out this post: ${
         title || "Shared post"
       }\n${universalUrl}`;
@@ -241,7 +240,6 @@ export const EngagementBar = ({
           </TouchableOpacity>
           <CommentsModal
             post_id={post_id}
-            post_type={post_type}
             user_id={user_id}
             commentCount={commentCount}
           />
