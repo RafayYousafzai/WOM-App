@@ -26,11 +26,7 @@ import { getTotalFollowersCount } from "@/lib/supabase/followActions";
 import { getTotalFollowingCount } from "@/lib/supabase/followActions";
 import { ProfileContentSkeleton } from "@/components/profile-view/ProfileSkeleton";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
-import {
-  blockUser,
-  unblockUser,
-  isUserBlocked,
-} from "@/lib/supabase/user_blocks";
+import { blockUser } from "@/lib/supabase/user_blocks";
 
 export default function VisitProfileScreen() {
   const { supabase } = useSupabase();
@@ -105,10 +101,11 @@ export default function VisitProfileScreen() {
 
   const fetchPosts = async () => {
     try {
-      const { data: reviews, error: reviewError } = await supabase
-        .from("reviews")
+      const { data: postsData, error: postError } = await supabase
+        .from("posts")
         .select(
-          `*,
+          `
+        *,
         user:user_id (
           username,
           first_name,
@@ -116,38 +113,36 @@ export default function VisitProfileScreen() {
           updated_at,
           image_url
         ),
-        review_likes (
-          user_id
-        )`
+        restaurant:restaurant_id (*),
+        post_dishes (*),
+        post_likes (user_id)
+      `
         )
         .eq("user_id", user_id)
-        .eq("anonymous", false);
+        .eq("anonymous", false)
+        .order("created_at", { ascending: false });
 
-      if (reviewError) throw reviewError;
+      if (postError) throw postError;
 
-      const { data: ownReviews, error: ownReviewError } = await supabase
-        .from("own_reviews")
-        .select(
-          `*,
-        user:user_id (
-          username,
-          first_name,
-          last_name,
-          updated_at,
-          image_url
-        ),
-        own_review_likes (
-          user_id
-        )`
-        )
-        .eq("user_id", user_id)
-        .eq("anonymous", false);
+      const postsWithImages = postsData.map((post) => {
+        const images =
+          post.post_dishes
+            ?.flatMap((dish) => dish.image_urls || [])
+            .filter((url) => url) || [];
 
-      if (ownReviewError) throw ownReviewError;
+        return {
+          ...post,
+          images,
+          dishes: post.post_dishes || [],
+          isLiked:
+            post.post_likes?.some((like) => like.user_id === authUser?.id) ||
+            false,
+        };
+      });
 
       setPosts({
-        reviews: reviews,
-        ownReviews: ownReviews,
+        reviews: postsWithImages.filter((p) => p.is_review),
+        ownReviews: postsWithImages.filter((p) => !p.is_review),
       });
     } catch (err) {
       console.error("Error fetching posts:", err.message);
@@ -246,52 +241,6 @@ export default function VisitProfileScreen() {
     );
   };
 
-  const handleUnBlockUser = async () => {
-    Alert.alert("Unblock User", "Are you sure you want to unblock this user?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-        onPress: () => setMenuOpen(false),
-      },
-      {
-        text: "Unblock",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const { error, count } = await unblockUser(
-              supabase,
-              user?.id,
-              user_id
-            );
-
-            if (error) throw error;
-
-            console.log("Rows deleted:", count);
-
-            if (count === 0) {
-              throw new Error(
-                "No records were deleted - user might not have been blocked"
-              );
-            }
-
-            Alert.alert(
-              "User Unblocked",
-              "The user has been successl;fully unblocked.",
-              [{ text: "OK" }]
-            );
-          } catch (err) {
-            console.error("Unblock error:", err);
-            Alert.alert("Error", err.message || "Failed to unblock user", [
-              { text: "OK" },
-            ]);
-          } finally {
-            setMenuOpen(false);
-          }
-        },
-      },
-    ]);
-  };
-
   if (!isSignedIn) {
     return <UnloggedState />;
   }
@@ -372,16 +321,6 @@ export default function VisitProfileScreen() {
                               Block User
                             </Text>
                           </TouchableOpacity>
-                          {/* <TouchableOpacity
-                            onPress={handleUnBlockUser}
-                            className="flex-row items-center px-4 py-3 bg-yellow-500"
-                            activeOpacity={0.7}
-                          >
-                            <Feather name="user-x" size={16} color="#fff" />
-                            <Text className="ml-2 text-base text-white font-medium">
-                              UnBlock User
-                            </Text>
-                          </TouchableOpacity> */}
                         </>
                       )}
                     </View>
@@ -445,25 +384,31 @@ export default function VisitProfileScreen() {
                 size={22}
                 color={activeTab === "reviews" ? "#f39f1e" : "#888"}
               />
+              <Text className="text-xs mt-1">
+                {activeTab === "reviews" ? "Reviews" : ""}
+              </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              onPress={() => setActiveTab("posts")}
+              onPress={() => setActiveTab("own_reviews")}
               className={`flex-1 py-3 items-center ${
-                activeTab === "posts" ? "border-b-2 border-[#f39f1e]" : ""
+                activeTab === "own_reviews" ? "border-b-2 border-[#f39f1e]" : ""
               }`}
             >
               <Feather
                 name="home"
                 size={22}
-                color={activeTab === "posts" ? "#f39f1e" : "#888"}
+                color={activeTab === "own_reviews" ? "#f39f1e" : "#888"}
               />
+              <Text className="text-xs mt-1">
+                {activeTab === "own_reviews" ? "Homemade" : ""}
+              </Text>
             </TouchableOpacity>
           </View>
 
           <GridDynamicCards
-            posts={activeTab === "posts" ? posts.ownReviews : posts.reviews}
+            posts={activeTab === "reviews" ? posts.reviews : posts.ownReviews}
             scroll={false}
-            key={posts?.reviews?.length + activeTab}
           />
         </View>
       </ScrollView>

@@ -4,8 +4,6 @@ import { View, Text, TouchableOpacity } from "react-native";
 export const PostContent = ({
   title,
   description,
-  recommendDish,
-  post_type,
   location,
   postTimeAgo,
 }) => {
