@@ -15,7 +15,7 @@ import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 
 export default function DraftManager() {
-  const { allDrafts, selectDraft, deleteDraft } = useReview();
+  const { allDrafts, selectDraft, deleteDraft, clearCurrentDraft } = useReview();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const draftFadeAnims = useRef(
     allDrafts.map(() => new Animated.Value(0))
@@ -45,6 +45,11 @@ export default function DraftManager() {
 
   const handleDelete = (draftId) => {
     deleteDraft(draftId);
+  };
+
+  const handleNewPost = () => {
+    clearCurrentDraft();
+    router.push("create-review");
   };
 
   const renderDraftItem = ({ item, index }) => {
@@ -114,9 +119,7 @@ export default function DraftManager() {
         </View>
 
         <TouchableOpacity
-          onPress={() => {
-            handleSelect(null);
-          }}
+          onPress={handleNewPost}
           activeOpacity={0.8}
           style={styles.newPostButton}
         >
