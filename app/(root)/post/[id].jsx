@@ -11,6 +11,7 @@ import { PostCard } from "@/components/post-listing/PostCard";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
 import { ChevronLeft } from "lucide-react-native";
+import { EditPostHeader } from "../../../components/post-listing/EditPost/EditPostHeader";
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -19,95 +20,116 @@ const formatDate = (dateString) =>
     day: "numeric",
   });
 
+// 🔧 normalize Supabase result to what PostCard expects
+const transformPost = (post, userId) => ({
+  ...post,
+  restaurant_name: post.restaurants?.location || "Unknown Restaurant",
+  location: { address: post.restaurants?.location },
+  rating: post.restaurants?.rating,
+  dishes: post.post_dishes || [],
+  all_tags: post.post_tags?.map((pt) => pt.tags).filter(Boolean) || [],
+  likesCount: post.post_likes?.length || 0,
+  commentsCount: post.post_comments?.length || 0,
+  isLiked: post.post_likes?.some((like) => like.user_id === userId) || false,
+  user: post.users,
+});
+
 export default function ViewPost() {
   const params = useLocalSearchParams();
-  // Convert id to number if your database uses numeric IDs
   const id = Number(params.id);
-  const postType = params.postType || "review";
-
-  console.log("ViewPost params:", { id, postType, allParams: params });
 
   const { supabase } = useSupabase();
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  console.log("ViewPost component mounted with params:", params);
-
   useEffect(() => {
-    console.log("useEffect triggered with id:", id, "postType:", postType);
-
-    if (!id || !postType) {
-      console.log("Missing id or postType, returning early");
-      setError("Missing post ID or type");
+    if (!id) {
+      setError("Missing post ID");
       setLoading(false);
       return;
     }
 
-    const table = postType === "review" ? "reviews" : "own_reviews";
-    console.log("Using table:", table);
-
     const fetchPost = async () => {
       try {
         setLoading(true);
-        console.log("Starting to fetch post...");
 
         const { data, error: supabaseError } = await supabase
-          .from(table)
+          .from("posts")
           .select(
             `
-              *,
-              user:user_id (
-                username,
+              id,
+              review,
+              user_id,
+              is_review,
+              anonymous,
+              people,
+              created_at,
+              updated_at,
+              restaurants (
+                id,
+                location,
+                rating
+              ),
+              users (
+                id,
                 first_name,
                 last_name,
                 image_url
               ),
-              ${
-                postType === "review"
-                  ? "review_likes(user_id)"
-                  : "own_review_likes(user_id)"
-              }
+              post_dishes (
+                id,
+                dish_name,
+                dish_price,
+                dish_type,
+                rating,
+                is_recommended,
+                image_urls
+              ),
+              post_tags (
+                tags (
+                  id,
+                  name,
+                  type
+                )
+              ),
+              post_likes (
+                user_id
+              ),
+              post_comments (
+                id
+              )
             `
           )
           .eq("id", id)
           .single();
 
-        console.log("Supabase query completed", { data, error: supabaseError });
-
         if (supabaseError) {
-          console.error("Error fetching post:", supabaseError);
           setError(supabaseError.message);
           setPost(null);
         } else if (!data) {
-          console.log("No data returned from query");
           setError("Post not found");
           setPost(null);
         } else {
-          console.log("Post fetched successfully:", data);
-          setPost(data);
+          const transformed = transformPost(data, user?.id);
+          setPost(transformed);
           setError(null);
         }
       } catch (err) {
-        console.error("Unexpected error in fetchPost:", err);
         setError(err.message);
         setPost(null);
       } finally {
-        console.log("Setting loading to false");
         setLoading(false);
       }
     };
 
     fetchPost();
-  }, [id, postType, supabase]);
-
-  console.log("Current state:", { loading, post, error });
+  }, [id, supabase, user?.id]);
 
   if (loading) {
-    console.log("Rendering loading state");
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" />
@@ -117,7 +139,6 @@ export default function ViewPost() {
   }
 
   if (error) {
-    console.log("Rendering error state:", error);
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <Text className="text-red-500 mb-2">Error: {error}</Text>
@@ -132,7 +153,6 @@ export default function ViewPost() {
   }
 
   if (!post) {
-    console.log("Rendering post not found state");
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <Text className="mb-2">Post not found</Text>
@@ -146,27 +166,18 @@ export default function ViewPost() {
     );
   }
 
-  console.log("Rendering post:", post);
-
-  const isLiked = (post?.review_likes || post?.own_review_likes || []).some(
-    (like) => like.user_id === user?.id
-  );
-
-  const likesCount =
-    post?.review_likes?.length || post?.own_review_likes?.length || 0;
-
   const fullName = `${post.user?.first_name || ""} ${
     post.user?.last_name || ""
   }`;
-  const description = post.recommended_dishes
-    ? `Recommendation: ${post.recommended_dishes}`
+  const description = post.dishes?.length
+    ? `Recommendation: ${post.dishes.map((d) => d.dish_name).join(", ")}`
     : "";
   const amenities = [...(post.cuisines || []), ...(post.amenities || [])];
   const cuisine = post.cuisines?.join(", ");
 
   return (
     <ScrollView className="flex-1 bg-white pt-12">
-      {/* Header with Back Button and Title */}
+      {/* Header */}
       <View className="flex-row items-center justify-between mb-4">
         <TouchableOpacity className="p-2" onPress={() => router.push("/home")}>
           <ChevronLeft size={28} color="#000" />
@@ -176,6 +187,23 @@ export default function ViewPost() {
         </Text>
       </View>
 
+      <View className="mx-3 mb-2">
+        <EditPostHeader
+          username={fullName}
+          location={post.location?.address}
+          userAvatar={post.user?.image_url}
+          user_id={post.user_id}
+          postTimeAgo={formatDate(post.created_at)}
+          post_id={post.id.toString()}
+          post_type="post"
+          anonymous={post.anonymous}
+          post={post}
+          onDelete={(postId) => {
+            console.log("Post deleted:", postId);
+            handleRefresh();
+          }}
+        />
+      </View>
       <PostCard
         post={post}
         username={fullName}
@@ -190,14 +218,13 @@ export default function ViewPost() {
         rating={post.rating}
         price={post.price}
         cuisine={cuisine}
-        images={post.images}
-        likesCount={likesCount}
-        commentsCount={post?.commentsCount || 0}
+        images={post.dishes?.flatMap((d) => d.image_urls) || []}
+        likesCount={post.likesCount}
+        commentsCount={post.commentsCount}
         isFavorited={post?.isFavorited || false}
         amenities={amenities}
-        isLiked={isLiked}
+        isLiked={post.isLiked}
         post_id={post.id.toString()}
-        post_type={postType}
         onLike={() => console.log("Like")}
         onComment={() => console.log("Comment")}
         onFavorite={() => console.log("Favorite")}

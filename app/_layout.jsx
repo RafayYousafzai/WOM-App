@@ -54,17 +54,14 @@ export default function RootLayoutNav() {
 
       if (path?.startsWith("post/")) {
         const postId = path.split("/")[1];
-        const postType = queryParams?.type || "review";
 
         console.log("📩 Post ID:", postId);
-        console.log("📄 Post Type:", postType);
 
         // Ensure navigation only happens when the app is ready
         router.push({
           pathname: "/(root)/post/[id]",
           params: {
             id: postId,
-            postType,
           },
         });
       }
