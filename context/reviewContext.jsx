@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { router } from "expo-router";
+import { debounce } from "lodash";
 
 // Contexts & Hooks
 import { useSupabase } from "@/context/supabaseContext";
@@ -13,6 +14,11 @@ import { uploadDishImages } from "@/lib/supabase/imageUploads";
 import { postSchema } from "@/lib/yup/reviewValidationSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import notifyPeoples from "@/utils/notification/notify_peoples";
+import {
+  save as saveToSecureStore,
+  getValueFor as getFromSecureStore,
+  remove as removeFromSecureStore,
+} from "@/lib/SecureStore/SecureStore";
 
 // -------------------- Context Setup -------------------- //
 const ReviewContext = createContext();
@@ -74,6 +80,71 @@ export const ReviewProvider = ({ children }) => {
   const [reviewData, setReviewData] = useState(postStateInit);
   const [tags, setTags] = useState(initialTags);
   const [currentDraftId, setCurrentDraftId] = useState(null);
+  const [allDrafts, setAllDrafts] = useState([]);
+
+  // -------------------- Draft Management -------------------- //
+
+  const saveDraft = async () => {
+    if (!reviewData.location) return; // Don't save draft without a location
+
+    const draftId = currentDraftId || `draft_${Date.now()}`;
+    const draftData = { ...reviewData, id: draftId, saved_at: new Date().toISOString() };
+
+    await saveToSecureStore(draftId, draftData);
+
+    if (!currentDraftId) {
+      setCurrentDraftId(draftId);
+      const drafts = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+      await saveToSecureStore(ALL_REVIEW_DRAFTS_KEY, [...drafts, draftId]);
+    }
+    loadAllDrafts();
+  };
+
+  const debouncedSaveDraft = debounce(saveDraft, 1000);
+
+  useEffect(() => {
+    debouncedSaveDraft();
+    return () => debouncedSaveDraft.cancel();
+  }, [reviewData]);
+
+  const loadAllDrafts = async () => {
+    const draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    const drafts = await Promise.all(
+      draftIds.map(async (id) => {
+        const draft = await getFromSecureStore(id);
+        return draft;
+      })
+    );
+    setAllDrafts(drafts.filter(Boolean));
+  };
+
+  const selectDraft = (draftId) => {
+    const draft = allDrafts.find((d) => d.id === draftId);
+    if (draft) {
+      setReviewData(draft);
+      setCurrentDraftId(draftId);
+    }
+  };
+
+  const deleteDraft = async (draftId) => {
+    await removeFromSecureStore(draftId);
+    const draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    await saveToSecureStore(
+      ALL_REVIEW_DRAFTS_KEY,
+      draftIds.filter((id) => id !== draftId)
+    );
+    loadAllDrafts();
+  };
+
+  const clearCurrentDraft = () => {
+    setReviewData(postStateInit);
+    setCurrentDraftId(null);
+  };
+
+  useEffect(() => {
+    loadAllDrafts();
+  }, []);
+
 
   // -------------------- Data Fetch -------------------- //
   async function fetchAllTags() {
@@ -216,7 +287,10 @@ export const ReviewProvider = ({ children }) => {
         user,
         supabase,
         setLoading,
-        onSuccess: () => {
+        onSuccess: async () => {
+          if (currentDraftId) {
+            await deleteDraft(currentDraftId);
+          }
           completeUpload();
           setReviewData(postStateInit);
           setStep(1);
@@ -256,6 +330,7 @@ export const ReviewProvider = ({ children }) => {
         activeTab,
         showModal,
         tags,
+        allDrafts,
 
         // State setters
         setStep,
@@ -280,6 +355,13 @@ export const ReviewProvider = ({ children }) => {
         handleDishChange,
         handleDishImagesChange,
         getCurrentDish,
+
+        // Draft Handlers
+        saveDraft,
+        loadAllDrafts,
+        selectDraft,
+        deleteDraft,
+        clearCurrentDraft,
       }}
     >
       {children}

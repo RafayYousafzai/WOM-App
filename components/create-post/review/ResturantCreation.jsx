@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, Pressable, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, useUser } from "@clerk/clerk-expo";
@@ -11,6 +11,7 @@ import UnloggedState from "@/components/auth/unlogged-state";
 import { Step1ImageSelection } from "./Step1ImageSelection";
 import { Step2DetailsInput } from "./Step2DetailsInput";
 import { Step3Summary } from "./Step3Summary";
+import { useState } from "react";
 
 export default function RestaurantCreation() {
   const { isSignedIn } = useAuth();
@@ -112,27 +113,29 @@ export default function RestaurantCreation() {
             {getStepTitle()}
           </Text>
 
-          <Pressable
-            onPress={handleNextOrShare}
-            className={`px-4 py-2 rounded-full ${
-              step === 3 && loading ? "bg-gray-400" : "bg-yellow-400"
-            }`}
-            disabled={step === 3 && loading}
-          >
-            <View className="flex-row items-center">
-              {loading && (
-                <Ionicons
-                  name="hourglass"
-                  size={16}
-                  color="white"
-                  style={{ marginRight: 4 }}
-                />
-              )}
-              <Text className="font-semibold text-white">
-                {getActionLabel()}
-              </Text>
-            </View>
-          </Pressable>
+          <View className="flex-row items-center">
+            <Pressable
+              onPress={handleNextOrShare}
+              className={`px-4 py-2 rounded-full ${
+                step === 3 && loading ? "bg-gray-400" : "bg-yellow-400"
+              }`}
+              disabled={step === 3 && loading}
+            >
+              <View className="flex-row items-center">
+                {loading && (
+                  <Ionicons
+                    name="hourglass"
+                    size={16}
+                    color="white"
+                    style={{ marginRight: 4 }}
+                  />
+                )}
+                <Text className="font-semibold text-white">
+                  {getActionLabel()}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
         </View>
 
         {renderProgressBar()}
