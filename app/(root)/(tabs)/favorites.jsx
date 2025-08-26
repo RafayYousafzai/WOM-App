@@ -1,90 +1,137 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  Modal,
+  TextInput,
+  Pressable,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScrollableCategories from "@/components/layout/ScrollableCategories";
 import GridFavoritesCards from "@/components/dynamic-cards/GridFavoritesCards";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import UnloggedState from "@/components/auth/unlogged-state";
-
-const categories = [
-  { id: "All", name: "All", icon: "home" },
-  { id: "Wishlist", name: "Wishlist", icon: "heart" },
-  { id: "Recipe", name: "Recipe", icon: "food" },
-  { id: "History", name: "History", icon: "history" },
-];
+import { Button, ButtonText } from "@/components/ui";
 
 export default function Favorites() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [posts, setPosts] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+
   const { isSignedIn } = useAuth();
   const { user } = useUser();
-  const { getUserBookmarks, getBookmarksByCategory, getReviewById } =
+  const { getUserCollections, getBookmarkedPosts, createCollection } =
     useBookmarks();
 
-  useEffect(() => {
-    fetchBookmarks();
-  }, [user, activeCategory]);
-
-  const fetchBookmarks = async () => {
+  // --- Fetch Data Functions ---
+  const fetchCollections = async () => {
     if (!user?.id) return;
-    setLoading(true);
-
     try {
-      const collection = activeCategory === "All" ? null : activeCategory;
-      let bookmarks = [];
+      const fetchedCollections = await getUserCollections(user.id);
+      setCollections(fetchedCollections);
+    } catch (err) {
+      console.error("Failed to fetch collections:", err);
+    }
+  };
 
-      if (!collection) {
-        bookmarks = await getUserBookmarks(user.id);
-      } else {
-        bookmarks = await getBookmarksByCategory(user.id, collection);
-      }
+  const fetchBookmarks = useCallback(async () => {
+    if (!user?.id) {
+      setPosts([]);
+      setLoading(false);
+      return;
+    }
 
-      const postPromises = bookmarks.map(async (bookmark) => {
-        try {
-          const post = await getReviewById(
-            bookmark.post_id,
-            bookmark.post_type
-          );
-          return post;
-        } catch (err) {
-          console.warn("Failed to fetch post for bookmark:", bookmark, err);
-          return null;
-        }
-      });
+    setLoading(true);
+    try {
+      const fetchedPosts = await getBookmarkedPosts(
+        user.id,
+        activeCategory === "All" ? null : activeCategory
+      );
+      const filteredPosts = fetchedPosts.filter(
+        (post) => post !== null && post !== undefined
+      );
 
-      const resolvedPosts = await Promise.all(postPromises);
-      const filteredPosts = resolvedPosts.filter(Boolean);
       setPosts(filteredPosts);
     } catch (err) {
       console.error("Failed to fetch bookmarks:", err);
     } finally {
       setLoading(false);
     }
+  }, [user, activeCategory, getBookmarkedPosts]);
+
+  // --- useEffect Hooks ---
+  useEffect(() => {
+    fetchCollections();
+  }, [user]);
+
+  useEffect(() => {
+    fetchBookmarks();
+  }, [user, activeCategory, fetchBookmarks]);
+
+  // --- Handlers ---
+  const handleAddCollection = async () => {
+    if (!newCollectionName.trim()) {
+      Alert.alert("Error", "Collection name cannot be empty.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await createCollection(user.id, newCollectionName);
+      setNewCollectionName("");
+      setIsModalVisible(false);
+      await fetchCollections();
+      await fetchBookmarks();
+    } catch (error) {
+      console.error("Failed to create collection:", error);
+      Alert.alert("Error", "Failed to create collection. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Pull-to-refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-
     try {
-      // Reload user data
-      await user?.reload();
-
-      // Refresh bookmarks data
+      await fetchCollections();
       await fetchBookmarks();
     } catch (error) {
       console.error("Error refreshing favorites:", error);
     } finally {
       setRefreshing(false);
     }
-  }, [user, fetchBookmarks]);
+  }, [fetchCollections, fetchBookmarks]);
+
+  const handleCategorySelect = (categoryName) => {
+    if (categoryName === "Add") {
+      setIsModalVisible(true);
+    } else {
+      setActiveCategory(categoryName);
+    }
+  };
 
   if (!isSignedIn) {
     return <UnloggedState />;
   }
+
+  const dynamicCategories = [
+    { id: "All", name: "All" },
+    { id: "Wishlist", name: "Wishlist" },
+    { id: "Recipe", name: "Recipe" },
+    ...collections.map((col) => ({ id: col.name, name: col.name })),
+    { id: "Add", name: "Add Collection", icon: "plus" },
+  ];
+
+  const uniqueCategories = dynamicCategories.filter(
+    (cat, index, self) => index === self.findIndex((t) => t.name === cat.name)
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -94,10 +141,10 @@ export default function Favorites() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#f39f1e"]} // Android
-            tintColor="#f39f1e" // iOS
-            title="Pull to refresh" // iOS
-            titleColor="#f39f1e" // iOS
+            colors={["#f39f1e"]}
+            tintColor="#f39f1e"
+            title="Pull to refresh"
+            titleColor="#f39f1e"
           />
         }
       >
@@ -112,9 +159,9 @@ export default function Favorites() {
 
         <View className="py-2 flex-1">
           <ScrollableCategories
-            categories={categories}
+            categories={uniqueCategories}
             selectedCategory={activeCategory}
-            onSelect={setActiveCategory}
+            onSelect={handleCategorySelect}
           />
 
           <GridFavoritesCards
@@ -125,6 +172,50 @@ export default function Favorites() {
           />
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 justify-center items-center"
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View
+            className="bg-white rounded-2xl p-6 w-[80%] shadow-lg"
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
+              Create New Collection
+            </Text>
+            <TextInput
+              className="border border-gray-300 rounded-lg p-3 mb-4"
+              placeholder="Enter collection name"
+              value={newCollectionName}
+              onChangeText={setNewCollectionName}
+            />
+            <Button
+              onPress={handleAddCollection}
+              className="bg-blue-500 rounded-xl mb-2"
+              disabled={loading}
+            >
+              <ButtonText className="text-white font-semibold">
+                Create
+              </ButtonText>
+            </Button>
+            <Button
+              onPress={() => setIsModalVisible(false)}
+              className="bg-red-50 rounded-xl"
+            >
+              <ButtonText className="text-red-600 font-semibold">
+                Cancel
+              </ButtonText>
+            </Button>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
