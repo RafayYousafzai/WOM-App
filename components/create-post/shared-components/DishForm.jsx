@@ -16,7 +16,7 @@ export const DishForm = ({ dishData, onDishChange }) => {
             <ImageEditor />
           </View>
 
-          <Divider className="mb-6" />
+          {/* <Divider className="mb-6" /> */}
 
           <View className="mb-6">
             <TextInput
@@ -68,7 +68,7 @@ export const DishForm = ({ dishData, onDishChange }) => {
             />
           </View>
 
-          <Divider className="mb-6" />
+          {/* <Divider className="mb-6" /> */}
 
           <View className="mb-6 bg-[#f9fafb] rounded-2xl elevation-2">
             <View className="p-5">
