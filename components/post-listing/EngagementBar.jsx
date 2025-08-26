@@ -208,22 +208,21 @@ export const EngagementBar = ({
               {isFavorited ? "Manage Bookmark" : "Save to Collection"}
             </Text>
             <VStack space="sm">
-              {/* This section now always shows all collections */}
-              {uniqueCollections.map((collection) => (
+              {!isFavorited ? (
+                uniqueCollections.map((collection) => (
+                  <Button
+                    key={collection.name}
+                    onPress={() => handleBookmark(collection.name)}
+                    className="bg-blue-50 rounded-xl"
+                  >
+                    <ButtonText className="text-blue-600 font-semibold">
+                      {`Add to ${collection.name}`}
+                    </ButtonText>
+                  </Button>
+                ))
+              ) : (
                 <Button
-                  key={collection.name}
-                  onPress={() => handleBookmark(collection.name)}
-                  className="bg-blue-50 rounded-xl"
-                >
-                  <ButtonText className="text-blue-600 font-semibold">
-                    {`Add to ${collection.name}`}
-                  </ButtonText>
-                </Button>
-              ))}
-
-              {isFavorited && (
-                <Button
-                  onPress={() => handleBookmark("")} // Pass an empty string to remove from all collections
+                  onPress={() => handleBookmark("")}
                   className="bg-red-50 rounded-xl"
                 >
                   <ButtonText className="text-red-600 font-semibold">

@@ -72,18 +72,17 @@ export default function PostListing({
     // Check if user has liked this post
     const isLiked = item.post_likes?.some((like) => like.user_id === user?.id);
 
-    const likesCount = item.likesCount || 0;
-    const commentsCount = item.commentsCount || 0;
+    const likesCount = item.likesCount ?? 0;
+    const commentsCount = item.commentsCount ?? 0;
 
     const fullName = item.user
       ? `${item.user.first_name} ${item.user.last_name}`
       : "Anonymous";
 
-    // Get primary dish for display (first dish or create from post data)
     const primaryDish = item.dishes?.[0];
     const dishName = primaryDish?.dish_name || item.review || "Post";
-    const dishPrice = primaryDish?.dish_price;
-    const dishRating = primaryDish?.rating || item.rating;
+    const dishPrice = primaryDish?.dish_price ?? 0;
+    const dishRating = primaryDish?.rating ?? item.rating ?? 0;
 
     // Get all images from dishes - flatten the arrays properly
     const allImages =
@@ -120,7 +119,7 @@ export default function PostListing({
         <View className="mx-3 mb-2">
           <EditPostHeader
             username={fullName}
-            location={item.location?.address}
+            location={item.restaurant?.location || item.location?.address}
             userAvatar={item.user?.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}

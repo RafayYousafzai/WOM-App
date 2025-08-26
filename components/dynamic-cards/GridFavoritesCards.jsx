@@ -11,6 +11,7 @@ import { useGlobal } from "@/context/globalContext";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import { router } from "expo-router";
 import { GridFavoritesSkeleton } from "../PageSkeletons/GridFavoritesSkeleton";
+import { Feather } from "@expo/vector-icons"; // 👈 add fallback icon
 
 const GRID_COLUMNS = 3;
 const ITEM_WIDTH = Dimensions.get("window").width * 0.33;
@@ -24,6 +25,10 @@ export default function GridFavoritesCards({
   const { setRenderPosts } = useGlobal();
 
   const renderGridItem = ({ item, index }) => {
+    // ✅ check image safely here
+    const firstImage =
+      item.images && item.images.length > 0 ? item.images[0] : null;
+
     return (
       <View
         style={{
@@ -53,15 +58,31 @@ export default function GridFavoritesCards({
             router.push("/posts");
           }}
         >
-          <Image
-            source={{ uri: item.images[0] }}
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: 8,
-            }}
-          />
+          {firstImage ? (
+            <Image
+              source={{ uri: firstImage }}
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 8,
+              }}
+            />
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 8,
+                backgroundColor: "#f0f0f0",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Feather name="image" size={24} color="#ccc" />
+            </View>
+          )}
 
+          {/* Overlay at bottom */}
           <View
             style={{
               position: "absolute",
@@ -73,17 +94,6 @@ export default function GridFavoritesCards({
               borderBottomRightRadius: 8,
             }}
           />
-
-          <View
-            style={{
-              position: "absolute",
-              bottom: 10,
-              left: 10,
-              right: 10,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          ></View>
         </TouchableOpacity>
       </View>
     );
@@ -91,9 +101,6 @@ export default function GridFavoritesCards({
 
   return (
     <View className="flex-1">
-      {/* {isLoading ? (
-        <GridFavoritesSkeleton count={6} /> // Render skeleton while loading
-      ) : ( */}
       <FlatList
         data={posts}
         numColumns={GRID_COLUMNS}
@@ -115,7 +122,6 @@ export default function GridFavoritesCards({
           </View>
         }
       />
-      {/* )} */}
     </View>
   );
 }
