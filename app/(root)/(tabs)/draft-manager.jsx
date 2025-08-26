@@ -15,7 +15,8 @@ import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 
 export default function DraftManager() {
-  const { allDrafts, selectDraft, deleteDraft, clearCurrentDraft } = useReview();
+  const { allDrafts, selectDraft, deleteDraft, clearCurrentDraft } =
+    useReview();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const draftFadeAnims = useRef(
     allDrafts.map(() => new Animated.Value(0))
@@ -73,7 +74,9 @@ export default function DraftManager() {
           <View className="flex-row justify-between items-center">
             <View className="flex-1 mr-4">
               <Text className="text-xl font-bold text-gray-900 mb-2">
-                {item.location?.name || "Untitled Draft"}
+                {item?.location ||
+                  item?.dishTypes[0]?.dishName ||
+                  "Untitled Draft"}
               </Text>
               <Text className="text-base text-gray-500">
                 {new Date(item.saved_at).toLocaleDateString("en-US", {

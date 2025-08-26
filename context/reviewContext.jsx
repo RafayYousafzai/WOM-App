@@ -85,16 +85,24 @@ export const ReviewProvider = ({ children }) => {
   // -------------------- Draft Management -------------------- //
 
   const saveDraft = async () => {
-    if (!reviewData.location) return; // Don't save draft without a location
+    const draftId =
+      currentDraftId || `draft_${Math.random().toString(36).slice(2, 11)}`;
 
-    const draftId = currentDraftId || `draft_${Date.now()}`;
-    const draftData = { ...reviewData, id: draftId, saved_at: new Date().toISOString() };
+    const draftData = {
+      ...reviewData,
+      id: draftId,
+      saved_at: new Date().toISOString(),
+    };
 
     await saveToSecureStore(draftId, draftData);
 
     if (!currentDraftId) {
       setCurrentDraftId(draftId);
-      const drafts = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+      let drafts = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+      if (!Array.isArray(drafts)) {
+        console.error("Corrupted draft IDs found, resetting.", drafts);
+        drafts = [];
+      }
       await saveToSecureStore(ALL_REVIEW_DRAFTS_KEY, [...drafts, draftId]);
     }
     loadAllDrafts();
@@ -108,7 +116,12 @@ export const ReviewProvider = ({ children }) => {
   }, [reviewData]);
 
   const loadAllDrafts = async () => {
-    const draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    let draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    if (!Array.isArray(draftIds)) {
+      console.error("Corrupted draft IDs found, resetting.", draftIds);
+      draftIds = [];
+      await saveToSecureStore(ALL_REVIEW_DRAFTS_KEY, []);
+    }
     const drafts = await Promise.all(
       draftIds.map(async (id) => {
         const draft = await getFromSecureStore(id);
@@ -128,7 +141,11 @@ export const ReviewProvider = ({ children }) => {
 
   const deleteDraft = async (draftId) => {
     await removeFromSecureStore(draftId);
-    const draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    let draftIds = (await getFromSecureStore(ALL_REVIEW_DRAFTS_KEY)) || [];
+    if (!Array.isArray(draftIds)) {
+      console.error("Corrupted draft IDs found, resetting.", draftIds);
+      draftIds = [];
+    }
     await saveToSecureStore(
       ALL_REVIEW_DRAFTS_KEY,
       draftIds.filter((id) => id !== draftId)
@@ -144,7 +161,6 @@ export const ReviewProvider = ({ children }) => {
   useEffect(() => {
     loadAllDrafts();
   }, []);
-
 
   // -------------------- Data Fetch -------------------- //
   async function fetchAllTags() {
