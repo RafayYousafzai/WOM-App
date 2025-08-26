@@ -90,7 +90,7 @@ export default function ImageEditor({}) {
             images?.map((img, index) => (
               <View
                 key={`${img}-${index}`}
-                style={{ position: "relative", marginHorizontal: 7 }}
+                style={{ position: "relative", marginRight: 14 }}
               >
                 <TouchableOpacity
                   onPress={() => handleImagePress(index)}

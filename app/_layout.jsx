@@ -18,6 +18,7 @@ import NotificationConfig from "@/lib/notifications/NotificationConfig";
 import * as Linking from "expo-linking";
 import { InteractionManager } from "react-native";
 import { UploadProvider } from "@/context/upload-context";
+import { LoadingPopover } from "@/components/LoadingPopover";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,6 +101,7 @@ export default function RootLayoutNav() {
                       <UploadProvider>
                         <DishProvider>
                           <ReviewProvider>
+                            <LoadingPopover />
                             <NotificationConfig />
                             <StatusBar backgroundColor="#fff" style="dark" />
 

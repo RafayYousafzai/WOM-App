@@ -9,13 +9,10 @@ import { useUser } from "@clerk/clerk-expo";
 
 // Utils & Libs
 import { handleReviewSubmit } from "@/lib/supabase/post";
+import { uploadDishImages } from "@/lib/supabase/imageUploads";
 import { postSchema } from "@/lib/yup/reviewValidationSchema";
 import notifyFollowers from "@/utils/notification/notify_followers";
 import notifyPeoples from "@/utils/notification/notify_peoples";
-import { uploadDishImages } from "@/lib/supabase/imageUploads";
-
-// SecureStore (unused here but imported for draft handling)
-import { save, getValueFor, remove } from "@/lib/SecureStore/SecureStore";
 
 // -------------------- Context Setup -------------------- //
 const ReviewContext = createContext();
@@ -161,14 +158,16 @@ export const ReviewProvider = ({ children }) => {
   };
 
   // main component file
-
   const handleShare = async () => {
     console.log("Preparing to share review...");
     startUpload("Submitting review...");
 
+    const peoplesFullDetails = reviewData?.peoplesTags || [];
+
     // --- 1. Prepare and Validate Data ---
     let postData = {
       ...reviewData,
+      is_review: reviewData.is_review === "restaurant" ? true : false,
       cuisineTags: reviewData.cuisineTags.map((tag) => tag.id),
       amenityTags: reviewData.amenityTags.map((tag) => tag.id),
       dietaryTags: reviewData.dietaryTags.map((tag) => tag.id),
@@ -179,8 +178,7 @@ export const ReviewProvider = ({ children }) => {
       await postSchema.validate(postData, { abortEarly: false });
       console.log("Validation passed ✅");
     } catch (err) {
-      const errors = err.errors || ["Unknown validation error."];
-      Alert.alert("Validation Error", errors.join("\n"));
+      Alert.alert("Validation Error", (err.errors || []).join("\n"));
       setError("Validation failed");
       completeUpload();
       return;
@@ -189,15 +187,14 @@ export const ReviewProvider = ({ children }) => {
     // --- 2. Upload Dish Images ---
     let updatedDishTypes = [];
     try {
-      if (postData.dishTypes && postData.dishTypes.length > 0) {
-        updateProgress(25, "Uploading dish images...");
+      if (postData.dishTypes?.length > 0) {
         updatedDishTypes = await uploadDishImages(
           postData.dishTypes,
           user,
-          supabase
+          supabase,
+          updateProgress
         );
       }
-      updateProgress(75, "Images uploaded successfully!");
     } catch (err) {
       console.error("Dish image upload failed ❌", err);
       Alert.alert("Upload Error", err.message);
@@ -206,7 +203,7 @@ export const ReviewProvider = ({ children }) => {
       return;
     }
 
-    // --- 3. Submit Review to Database ---
+    // --- 3. Submit Review ---
     try {
       const finalPostData = { ...postData, dishTypes: updatedDishTypes };
       await handleReviewSubmit({
@@ -230,8 +227,16 @@ export const ReviewProvider = ({ children }) => {
       setError(err.message || "Unexpected error");
       completeUpload();
     }
-  };
 
+    // --- 4. Notify ---
+    try {
+      await notifyFollowers(supabase, user);
+      await notifyPeoples(user, peoplesFullDetails);
+      updateProgress(100, "Completed");
+    } catch (error) {
+      console.error("Notification error:", error);
+    }
+  };
   // -------------------- Context Value -------------------- //
   return (
     <ReviewContext.Provider

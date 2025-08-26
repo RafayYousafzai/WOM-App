@@ -15,6 +15,8 @@ import { useSupabase } from "@/context/supabaseContext";
 import { Ionicons } from "@expo/vector-icons";
 
 const TagPeopleInput = ({ tags = [], setTags, title = "Tag people..." }) => {
+  console.log(tags);
+
   const { supabase } = useSupabase();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -46,7 +48,10 @@ const TagPeopleInput = ({ tags = [], setTags, title = "Tag people..." }) => {
           first_name, 
           last_name, 
           username, 
-          email
+          email,
+          user_notifications_tokens (
+            token
+          )
           `
         )
         .or(

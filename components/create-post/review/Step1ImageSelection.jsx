@@ -11,7 +11,7 @@ import {
 import { useEffect, useRef } from "react";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
 import { Textarea, TextareaInput } from "@/components/ui";
-import { Switch, Title, Paragraph } from "react-native-paper";
+import { Title } from "react-native-paper";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DishTypeModal } from "../shared-components/DishTypeModal";
 import { DishTabs } from "../shared-components/DishTabs";
@@ -125,7 +125,7 @@ export const Step1ImageSelection = () => {
                 <View style={{ padding: 20 }}>
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: 18,
                       color: "#374151",
                       marginBottom: 8,
                     }}

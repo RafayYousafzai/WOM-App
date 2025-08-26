@@ -153,7 +153,7 @@ export function RatingStars({ rating, setRating }: RatingStarsProps) {
       <View style={styles.topRow}>
         <Text
           style={{
-            fontSize: 16,
+            fontSize: 18,
             color: "#374151",
             marginLeft: 8,
           }}

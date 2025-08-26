@@ -2,12 +2,11 @@ import { sendBulkPushNotifications } from "../../lib/sendBulkPushNotifications";
 
 export default async function notifyPeoples(user, tags) {
   try {
-    // Transform tags into the format expected by sendBulkPushNotifications
     const peopleWithTokens = tags
-      .filter((tag) => tag.token) // Only include tags with tokens
+      .filter((tag) => tag?.user_notifications_tokens?.token) // check nested token
       .map((tag) => ({
-        token: tag.token,
-        username: tag.username || tag.id, // For logging purposes
+        token: tag.user_notifications_tokens.token, // correct path
+        username: tag.username || tag.id, // fallback for logging
       }));
 
     await sendBulkPushNotifications(
