@@ -61,7 +61,7 @@ export default function CreateReview() {
 
             <Animated.View
               entering={FadeInDown.duration(600).delay(200)}
-              className="px-10 pb-0 pt-6 flex-1 mt-12"
+              className="px-4 pb-16 pt-2 flex-1"
             >
               <View>
                 <ScrollView
