@@ -130,7 +130,7 @@ export default function CreateReview() {
                           color="#F59E0B"
                         />
                       </Box>
-                      <View className="ml-5 flex-1">
+                      <View className="ml-4 flex-1">
                         <RNText className="font-bold text-2xl text-slate-900">
                           Review a Restaurant
                         </RNText>
@@ -182,7 +182,7 @@ export default function CreateReview() {
                           color="#F59E0B"
                         />
                       </Box>
-                      <View className="ml-5 flex-1">
+                      <View className="ml-4 flex-1">
                         <RNText className="font-bold text-2xl text-slate-900">
                           Review Your Own Dish
                         </RNText>
