@@ -39,7 +39,8 @@ export default function RenderFilteredPosts({
             image_url
           ),
           restaurant:restaurant_id (*),
-          post_dishes (*)
+          post_dishes (*),
+            post_likes(user_id)
         `
         )
         .eq("user_id", user.id)
@@ -60,7 +61,9 @@ export default function RenderFilteredPosts({
         return {
           ...post,
           images, // Add images array to the post object
-          dishes: post.post_dishes || [], // 👈 rename for consistency
+          dishes: post.post_dishes || [],
+          isLiked:
+            post.post_likes?.some((like) => like.user_id === user.id) || false,
         };
       });
 

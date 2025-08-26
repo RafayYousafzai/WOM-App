@@ -41,55 +41,46 @@ export default function PostListing({
     }
   }, [route.params?.scrollToTop, navigation]);
 
-  const handleLike = async (item) => {
-    try {
-      const result = await togglePostLike(supabase, user?.id, item.id);
-      if (result.error) {
-        console.error("Error toggling like:", result.error);
+  const handleLike = async (postId, newIsLiked, newLikesCount) => {
+    const updatedPosts = posts.map((post) => {
+      if (post.id.toString() === postId) {
+        return {
+          ...post,
+          isLiked: newIsLiked,
+          likesCount: newLikesCount,
+          // Also update the post_likes array
+          post_likes: newIsLiked
+            ? [...(post.post_likes || []), { user_id: user.id }]
+            : post.post_likes.filter((like) => like.user_id !== user.id),
+        };
       }
-      // Refresh posts to get updated like counts
+      return post;
+    });
+    setTimeout(() => {
       handleRefresh();
-    } catch (error) {
-      console.error("Error in handleLike:", error);
-    }
-  };
-
-  const handleBookmarkCheck = async (postId) => {
-    if (!user?.id) return false;
-    try {
-      return await isPostBookmarked({
-        postId,
-        postType: "post",
-        userId: user.id,
-      });
-    } catch (error) {
-      console.error("Error checking bookmark:", error);
-      return false;
-    }
+    }, 500);
   };
 
   const renderItem = ({ item }) => {
-    // Check if user has liked this post
-    const isLiked = item.post_likes?.some((like) => like.user_id === user?.id);
-
-    const likesCount = item.likesCount || 0;
-    const commentsCount = item.commentsCount || 0;
+    // Use flattened fields directly from formattedPosts
+    const isLiked = user
+      ? item.post_likes?.some((like) => like.user_id === user.id)
+      : false;
+    const likesCount = item.likesCount ?? 0;
+    const commentsCount = item.commentsCount ?? 0;
 
     const fullName = item.user
       ? `${item.user.first_name} ${item.user.last_name}`
       : "Anonymous";
 
-    // Get primary dish for display (first dish or create from post data)
     const primaryDish = item.dishes?.[0];
     const dishName = primaryDish?.dish_name || item.review || "Post";
-    const dishPrice = primaryDish?.dish_price;
-    const dishRating = primaryDish?.rating || item.rating;
+    const dishPrice = primaryDish?.dish_price ?? 0;
+    const dishRating = primaryDish?.rating ?? item.rating ?? 0;
 
-    // Get all images from dishes - flatten the arrays properly
     const allImages =
       item.dishes?.reduce((images, dish) => {
         if (dish.image_urls && Array.isArray(dish.image_urls)) {
-          // Filter out null/undefined/empty URLs
           const validUrls = dish.image_urls.filter(
             (url) => url && typeof url === "string" && url.trim().length > 0
           );
@@ -97,8 +88,6 @@ export default function PostListing({
         }
         return images;
       }, []) || [];
-
-    console.log(`Post ${item.id} images:`, allImages); // Debug log
 
     // Get recommended dish
     const recommendedDish = item.dishes?.find((dish) => dish.is_recommended);
@@ -120,7 +109,7 @@ export default function PostListing({
         <View className="mx-3 mb-2">
           <EditPostHeader
             username={fullName}
-            location={item.location?.address}
+            location={item.restaurant?.location || item.location?.address}
             userAvatar={item.user?.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}
@@ -158,7 +147,7 @@ export default function PostListing({
           isLiked={isLiked}
           post_id={item.id.toString()}
           post_type="post"
-          onLike={() => handleLike(item)}
+          onLike={handleLike}
           onComment={() => console.log("Comment on post:", item.id)}
           onFavorite={() => console.log("Favorite post:", item.id)}
           onShare={() => console.log("Share post:", item.id)}

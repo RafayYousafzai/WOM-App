@@ -30,9 +30,18 @@ export const RestaurantInfo = ({
 
   const currentDish = restaurantDishes.find(
     (dish) => dish.id === currentDishId
-  ) || [0];
+  ) ||
+    restaurantDishes[0] || { name: title, category: "Main", rating, price };
+
   const otherDishes = restaurantDishes.filter(
     (dish) => dish.id !== currentDishId
+  );
+
+  console.log(
+    "RestaurantInfo currentDish:",
+    currentDish,
+    "dishes:",
+    restaurantDishes
   );
 
   const renderRating = (dishRating = rating) => {

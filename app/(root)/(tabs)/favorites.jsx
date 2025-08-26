@@ -5,7 +5,6 @@ import {
   ScrollView,
   RefreshControl,
   Modal,
-  TextInput,
   Pressable,
   Alert,
 } from "react-native";
@@ -16,6 +15,7 @@ import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import UnloggedState from "@/components/auth/unlogged-state";
 import { Button, ButtonText } from "@/components/ui";
+import { TextInput } from "react-native-paper";
 
 export default function Favorites() {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -190,15 +190,32 @@ export default function Favorites() {
             <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
               Create New Collection
             </Text>
+
             <TextInput
-              className="border border-gray-300 rounded-lg p-3 mb-4"
-              placeholder="Enter collection name"
+              label="Create New Collection"
               value={newCollectionName}
               onChangeText={setNewCollectionName}
+              placeholder="Enter collection name"
+              mode="outlined"
+              outlineColor="#e5e7eb"
+              activeOutlineColor="#6366f1"
+              style={{
+                backgroundColor: "#f8fafc",
+                fontSize: 14,
+              }}
+              contentStyle={{
+                fontSize: 14,
+                paddingVertical: 6,
+              }}
+              outlineStyle={{
+                borderRadius: 16,
+                borderWidth: 3,
+              }}
+              required
             />
             <Button
               onPress={handleAddCollection}
-              className="bg-blue-500 rounded-xl mb-2"
+              className="bg-blue-500 rounded-xl my-2"
               disabled={loading}
             >
               <ButtonText className="text-white font-semibold">
