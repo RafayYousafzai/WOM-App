@@ -29,6 +29,7 @@ export const EngagementBar = ({
   post_type,
   onFavorite,
   user_id,
+  onLike,
 }) => {
   const { user } = useUser();
   const { isSignedIn } = useAuth();
@@ -102,6 +103,9 @@ export const EngagementBar = ({
       const likeResult = await togglePostLike(supabase, userId, postId);
 
       console.log("✅ Like toggle result:", likeResult);
+      if (onLike) {
+        onLike(postId, newIsLiked, newLikesCount);
+      }
 
       if (likeResult?.liked !== undefined) {
         if (likeResult.liked !== newIsLiked) {

@@ -28,6 +28,7 @@ export const PostCard = ({
   onShare,
   onRestaurantPress,
   isInModal = false,
+  onLike,
 }) => {
   const [currentDishIndex, setCurrentDishIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -150,6 +151,7 @@ export const PostCard = ({
           user_id={user_id}
           title={currentDish?.name || title}
           description={currentDish?.review || description}
+          onLike={onLike}
         />
 
         <PeoplesSection people={post?.people} />

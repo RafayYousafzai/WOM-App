@@ -41,36 +41,31 @@ export default function PostListing({
     }
   }, [route.params?.scrollToTop, navigation]);
 
-  const handleLike = async (item) => {
-    try {
-      const result = await togglePostLike(supabase, user?.id, item.id);
-      if (result.error) {
-        console.error("Error toggling like:", result.error);
+  const handleLike = async (postId, newIsLiked, newLikesCount) => {
+    const updatedPosts = posts.map((post) => {
+      if (post.id.toString() === postId) {
+        return {
+          ...post,
+          isLiked: newIsLiked,
+          likesCount: newLikesCount,
+          // Also update the post_likes array
+          post_likes: newIsLiked
+            ? [...(post.post_likes || []), { user_id: user.id }]
+            : post.post_likes.filter((like) => like.user_id !== user.id),
+        };
       }
-      // Refresh posts to get updated like counts
+      return post;
+    });
+    setTimeout(() => {
       handleRefresh();
-    } catch (error) {
-      console.error("Error in handleLike:", error);
-    }
-  };
-
-  const handleBookmarkCheck = async (postId) => {
-    if (!user?.id) return false;
-    try {
-      return await isPostBookmarked({
-        postId,
-        postType: "post",
-        userId: user.id,
-      });
-    } catch (error) {
-      console.error("Error checking bookmark:", error);
-      return false;
-    }
+    }, 500);
   };
 
   const renderItem = ({ item }) => {
     // Use flattened fields directly from formattedPosts
-    const isLiked = item.isLiked ?? false;
+    const isLiked = user
+      ? item.post_likes?.some((like) => like.user_id === user.id)
+      : false;
     const likesCount = item.likesCount ?? 0;
     const commentsCount = item.commentsCount ?? 0;
 
@@ -152,7 +147,7 @@ export default function PostListing({
           isLiked={isLiked}
           post_id={item.id.toString()}
           post_type="post"
-          onLike={() => handleLike(item)}
+          onLike={handleLike}
           onComment={() => console.log("Comment on post:", item.id)}
           onFavorite={() => console.log("Favorite post:", item.id)}
           onShare={() => console.log("Share post:", item.id)}
