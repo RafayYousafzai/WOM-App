@@ -1,3 +1,5 @@
+"use client";
+
 import { useLocalSearchParams } from "expo-router";
 import {
   View,
@@ -11,6 +13,8 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { getPostsByRestaurantLocation } from "@/lib/supabase/postsAction";
+import { useSupabase } from "@/context/supabaseContext"; // Adjust path as needed
 
 // --- SECURITY WARNING ---
 // It is NOT recommended to store your API key directly in your app's code.
@@ -26,7 +30,10 @@ export default function VisitProfileScreen() {
   const [restaurantData, setRestaurantData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [activeTab, setActiveTab] = useState("google");
+  const [wordOfMouthPosts, setWordOfMouthPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const { supabase } = useSupabase();
   useEffect(() => {
     if (!location) return;
 
@@ -63,6 +70,8 @@ export default function VisitProfileScreen() {
         }
 
         setRestaurantData(detailsResult.result);
+
+        await fetchWordOfMouthPosts(location);
       } catch (err) {
         setError(err.message);
         console.error("API Fetch Error:", err);
@@ -73,6 +82,129 @@ export default function VisitProfileScreen() {
 
     fetchRestaurantData();
   }, [location]);
+  const fetchWordOfMouthPosts = async (restaurantLocation) => {
+    if (!supabase) {
+      console.log("[v0] Supabase client not available yet");
+      return;
+    }
+
+    setPostsLoading(true);
+    try {
+      console.log("[v0] Fetching posts for location:", restaurantLocation);
+      const posts = await getPostsByRestaurantLocation(
+        supabase,
+        restaurantLocation
+      );
+      console.log("[v0] Fetched posts:", posts.length);
+      setWordOfMouthPosts(posts);
+    } catch (error) {
+      console.error("Error fetching word of mouth posts:", error);
+      setWordOfMouthPosts([]);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Ionicons key={i} name="star" size={16} color="#fbbf24" />);
+    }
+
+    if (hasHalfStar) {
+      stars.push(
+        <Ionicons key="half" name="star-half" size={16} color="#fbbf24" />
+      );
+    }
+
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <Ionicons
+          key={`empty-${i}`}
+          name="star-outline"
+          size={16}
+          color="#d1d5db"
+        />
+      );
+    }
+
+    return stars;
+  };
+
+  const renderWordOfMouthPost = (post) => (
+    <View key={post.id} className="bg-gray-50 rounded-xl p-4 mb-4">
+      <View className="flex-row items-start justify-between mb-2">
+        <View className="flex-1">
+          <Text className="text-gray-900 font-semibold text-base">
+            {post.anonymous
+              ? "Anonymous"
+              : `${post.user?.first_name} ${post.user?.last_name}`}
+          </Text>
+          <Text className="text-gray-500 text-sm">
+            {new Date(post.created_at).toLocaleDateString()}
+          </Text>
+        </View>
+        {post.rating && (
+          <View className="flex-row">{renderStars(post.rating)}</View>
+        )}
+      </View>
+      <Text className="text-gray-700 leading-relaxed mb-3">{post.review}</Text>
+
+      {/* Render dishes if available */}
+      {post.dishes && post.dishes.length > 0 && (
+        <View className="space-y-2">
+          <Text className="text-gray-600 font-medium text-sm">Dishes:</Text>
+          {post.dishes.map((dish, index) => (
+            <View key={index} className="bg-white rounded-lg p-3">
+              <View className="flex-row justify-between items-start">
+                <View className="flex-1">
+                  <Text className="font-medium text-gray-900">
+                    {dish.dish_name}
+                  </Text>
+                  {dish.dish_price && (
+                    <Text className="text-gray-600 text-sm">
+                      ${dish.dish_price}
+                    </Text>
+                  )}
+                </View>
+                {dish.rating && (
+                  <View className="flex-row">{renderStars(dish.rating)}</View>
+                )}
+              </View>
+              {dish.is_recommended && (
+                <View className="mt-2">
+                  <Text className="text-green-600 text-xs font-medium">
+                    ✓ Recommended
+                  </Text>
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-200">
+        <View className="flex-row items-center space-x-4">
+          <View className="flex-row items-center">
+            <Ionicons name="heart-outline" size={16} color="#9ca3af" />
+            <Text className="text-gray-500 text-sm ml-1">
+              {post.likesCount}
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            <Ionicons name="chatbubble-outline" size={16} color="#9ca3af" />
+            <Text className="text-gray-500 text-sm ml-1">
+              {post.commentsCount}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -126,36 +258,6 @@ export default function VisitProfileScreen() {
       </SafeAreaView>
     );
   }
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Ionicons key={i} name="star" size={16} color="#fbbf24" />);
-    }
-
-    if (hasHalfStar) {
-      stars.push(
-        <Ionicons key="half" name="star-half" size={16} color="#fbbf24" />
-      );
-    }
-
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <Ionicons
-          key={`empty-${i}`}
-          name="star-outline"
-          size={16}
-          color="#d1d5db"
-        />
-      );
-    }
-
-    return stars;
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -271,57 +373,142 @@ export default function VisitProfileScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Reviews Section */}
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold text-gray-900">Reviews</Text>
-              <View className="bg-gray-100 rounded-full px-3 py-1">
-                <Text className="text-gray-600 text-sm font-medium">
-                  {restaurantData.reviews?.length || 0} reviews
+          <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Tab Headers */}
+            <View className="flex-row">
+              <TouchableOpacity
+                className={`flex-1 py-4 px-6 ${
+                  activeTab === "google" ? "bg-indigo-500" : "bg-gray-50"
+                }`}
+                onPress={() => setActiveTab("google")}
+              >
+                <Text
+                  className={`text-center font-semibold ${
+                    activeTab === "google" ? "text-white" : "text-gray-600"
+                  }`}
+                >
+                  Google Map Reviews
                 </Text>
-              </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`flex-1 py-4 px-6 ${
+                  activeTab === "wordOfMouth" ? "bg-indigo-500" : "bg-gray-50"
+                }`}
+                onPress={() => setActiveTab("wordOfMouth")}
+              >
+                <Text
+                  className={`text-center font-semibold ${
+                    activeTab === "wordOfMouth" ? "text-white" : "text-gray-600"
+                  }`}
+                >
+                  Word of Mouth Reviews
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {restaurantData.reviews && restaurantData.reviews.length > 0 ? (
-              <View className="space-y-4">
-                {restaurantData.reviews.slice(0, 3).map((review, index) => (
-                  <View
-                    key={index}
-                    className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
-                  >
-                    <View className="flex-row items-start justify-between mb-2">
-                      <View className="flex-1">
-                        <Text className="text-gray-900 font-semibold text-base">
-                          {review.author_name}
-                        </Text>
-                        <Text className="text-gray-500 text-sm">
-                          {review.relative_time_description}
-                        </Text>
-                      </View>
-                      <View className="flex-row">
-                        {renderStars(review.rating)}
-                      </View>
-                    </View>
-                    <Text className="text-gray-700 leading-relaxed">
-                      {review.text}
+            {/* Tab Content */}
+            <View className="p-6">
+              {activeTab === "google" ? (
+                // Google Reviews Content
+                <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-xl font-bold text-gray-900">
+                      Google Reviews
                     </Text>
+                    <View className="bg-gray-100 rounded-full px-3 py-1">
+                      <Text className="text-gray-600 text-sm font-medium">
+                        {restaurantData.reviews?.length || 0} reviews
+                      </Text>
+                    </View>
                   </View>
-                ))}
-              </View>
-            ) : (
-              <View className="items-center py-8">
-                <View className="bg-gray-100 rounded-full p-4 mb-3">
-                  <Ionicons
-                    name="chatbubble-outline"
-                    size={32}
-                    color="#9ca3af"
-                  />
+
+                  {restaurantData.reviews &&
+                  restaurantData.reviews.length > 0 ? (
+                    <View className="space-y-4">
+                      {restaurantData.reviews
+                        .slice(0, 3)
+                        .map((review, index) => (
+                          <View
+                            key={index}
+                            className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0"
+                          >
+                            <View className="flex-row items-start justify-between mb-2">
+                              <View className="flex-1">
+                                <Text className="text-gray-900 font-semibold text-base">
+                                  {review.author_name}
+                                </Text>
+                                <Text className="text-gray-500 text-sm">
+                                  {review.relative_time_description}
+                                </Text>
+                              </View>
+                              <View className="flex-row">
+                                {renderStars(review.rating)}
+                              </View>
+                            </View>
+                            <Text className="text-gray-700 leading-relaxed">
+                              {review.text}
+                            </Text>
+                          </View>
+                        ))}
+                    </View>
+                  ) : (
+                    <View className="items-center py-8">
+                      <View className="bg-gray-100 rounded-full p-4 mb-3">
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={32}
+                          color="#9ca3af"
+                        />
+                      </View>
+                      <Text className="text-gray-500 text-center">
+                        No Google reviews available yet
+                      </Text>
+                    </View>
+                  )}
                 </View>
-                <Text className="text-gray-500 text-center">
-                  No reviews available yet
-                </Text>
-              </View>
-            )}
+              ) : (
+                // Word of Mouth Reviews Content
+                <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-xl font-bold text-gray-900">
+                      Word of Mouth Reviews
+                    </Text>
+                    <View className="bg-gray-100 rounded-full px-3 py-1">
+                      <Text className="text-gray-600 text-sm font-medium">
+                        {wordOfMouthPosts.length} reviews
+                      </Text>
+                    </View>
+                  </View>
+
+                  {postsLoading ? (
+                    <View className="items-center py-8">
+                      <ActivityIndicator size="large" color="#6366f1" />
+                      <Text className="text-gray-500 text-center mt-2">
+                        Loading community reviews...
+                      </Text>
+                    </View>
+                  ) : wordOfMouthPosts.length > 0 ? (
+                    <View>{wordOfMouthPosts.map(renderWordOfMouthPost)}</View>
+                  ) : (
+                    <View className="items-center py-8">
+                      <View className="bg-gray-100 rounded-full p-4 mb-3">
+                        <Ionicons
+                          name="people-outline"
+                          size={32}
+                          color="#9ca3af"
+                        />
+                      </View>
+                      <Text className="text-gray-500 text-center">
+                        No community reviews yet
+                      </Text>
+                      <Text className="text-gray-400 text-sm text-center mt-1">
+                        Be the first to share your experience!
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>

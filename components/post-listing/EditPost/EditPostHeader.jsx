@@ -37,26 +37,28 @@ export const EditPostHeader = ({
   onDelete,
   location,
   onRestaurantPress,
-  post, // Add the full post object for editing
-  onGatekeepingUpdate, // Callback to update parent component
+  post,
+  onGatekeepingUpdate,
 }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
   const [following, setFollowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [gatekeepingEnabled, setGatekeepingEnabled] = useState(false);
-  const [gatekeepingLoading, setGatekeepingLoading] = useState(false);
   const { isSignedIn } = useAuth();
 
-  // New state for bottom modal
   const [bottomModalVisible, setBottomModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(height)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
-  const handleLocationPress = () => {
-    router.push(`/restaurant-info/${encodeURIComponent(location)}`);
-  };
+  const [gatekeepingEnabled, setGatekeepingEnabled] = useState(() => {
+    const initial = post?.gatekeeping === true;
+    console.log(
+      `Initial gatekeeping for post ${post_id}: ${post?.gatekeeping} -> ${initial}`
+    );
+    return initial;
+  });
 
+  const [gatekeepingLoading, setGatekeepingLoading] = useState(false);
   // Animation values
   const scaleValue = useRef(new Animated.Value(0)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
@@ -80,10 +82,119 @@ export const EditPostHeader = ({
 
   // Set initial gatekeeping state from post data
   useEffect(() => {
-    if (post) {
-      setGatekeepingEnabled(post.gatekeeping === true);
+    if (post && post.gatekeeping !== undefined) {
+      const newGatekeeping = post.gatekeeping === true;
+      console.log(
+        `Post ${post_id} gatekeeping changed from props: ${post.gatekeeping} -> ${newGatekeeping}`
+      );
+
+      // Only update if different to avoid unnecessary re-renders
+      if (newGatekeeping !== gatekeepingEnabled) {
+        setGatekeepingEnabled(newGatekeeping);
+      }
     }
-  }, [post]);
+  }, [post?.gatekeeping, post_id]); // Remove gatekeepingEnabled from deps to avoid loops
+
+  // FIX: Add effect to sync with database after operations
+  useEffect(() => {
+    const syncGatekeeping = async () => {
+      if (post_id && user?.id === user_id) {
+        try {
+          const { data, error } = await supabase
+            .from("posts")
+            .select("gatekeeping")
+            .eq("id", post_id)
+            .single();
+
+          if (!error && data) {
+            const dbGatekeeping = data.gatekeeping === true;
+            console.log(
+              `Database sync for post ${post_id}: ${data.gatekeeping} -> ${dbGatekeeping}`
+            );
+
+            if (dbGatekeeping !== gatekeepingEnabled) {
+              console.log(
+                `Syncing gatekeeping state: ${gatekeepingEnabled} -> ${dbGatekeeping}`
+              );
+              setGatekeepingEnabled(dbGatekeeping);
+            }
+          }
+        } catch (error) {
+          console.error("Error syncing gatekeeping:", error);
+        }
+      }
+    };
+
+    // Sync periodically or when component mounts
+    syncGatekeeping();
+
+    // Optional: Set up an interval to check periodically
+    const interval = setInterval(syncGatekeeping, 5000); // Every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [post_id, user_id, user?.id, supabase]); // Removed gatekeepingEnabled to avoid loops
+
+  const handleGatekeeping = async () => {
+    hideMenu();
+    setGatekeepingLoading(true);
+
+    const currentState = gatekeepingEnabled;
+    console.log(`Toggling gatekeeping from: ${currentState}`);
+
+    try {
+      const result = await togglePostGatekeeping(supabase, post_id, user?.id);
+
+      if (result.success) {
+        const newState = result.gatekeeping;
+        console.log(`Toggle successful: ${currentState} -> ${newState}`);
+
+        // Update local state immediately
+        setGatekeepingEnabled(newState);
+
+        // Notify parent component
+        if (onGatekeepingUpdate) {
+          onGatekeepingUpdate(post_id, newState);
+        }
+
+        Alert.alert("Success", result.message, [{ text: "OK" }]);
+
+        // Force a database sync after a short delay
+        setTimeout(async () => {
+          try {
+            const { data } = await supabase
+              .from("posts")
+              .select("gatekeeping")
+              .eq("id", post_id)
+              .single();
+
+            if (data) {
+              const dbState = data.gatekeeping === true;
+              console.log(`Post-toggle sync: ${newState} vs DB: ${dbState}`);
+              if (dbState !== newState) {
+                setGatekeepingEnabled(dbState);
+              }
+            }
+          } catch (err) {
+            console.error("Post-toggle sync error:", err);
+          }
+        }, 1000);
+      } else {
+        console.error("Gatekeeping toggle failed:", result.error);
+        Alert.alert(
+          "Error",
+          result.error || "Failed to update gatekeeping setting",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Gatekeeping error:", error);
+      Alert.alert("Error", "Something went wrong while updating gatekeeping", [
+        { text: "OK" },
+      ]);
+    } finally {
+      setGatekeepingLoading(false);
+    }
+  };
 
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
 
@@ -248,39 +359,6 @@ export const EditPostHeader = ({
         postData: JSON.stringify(post),
       },
     });
-  };
-
-  const handleGatekeeping = async () => {
-    hideMenu();
-    setGatekeepingLoading(true);
-
-    try {
-      const result = await togglePostGatekeeping(supabase, post_id, user?.id);
-
-      if (result.success) {
-        setGatekeepingEnabled(result.gatekeeping);
-
-        // Call the callback to update parent component if provided
-        if (onGatekeepingUpdate) {
-          onGatekeepingUpdate(post_id, result.gatekeeping);
-        }
-
-        Alert.alert("Success", result.message, [{ text: "OK" }]);
-      } else {
-        Alert.alert(
-          "Error",
-          result.error || "Failed to update gatekeeping setting",
-          [{ text: "OK" }]
-        );
-      }
-    } catch (error) {
-      console.error("Gatekeeping error:", error);
-      Alert.alert("Error", "Something went wrong while updating gatekeeping", [
-        { text: "OK" },
-      ]);
-    } finally {
-      setGatekeepingLoading(false);
-    }
   };
 
   const handleDelete = async () => {
@@ -459,7 +537,7 @@ export const EditPostHeader = ({
 
   const menuItems =
     user_id === user?.id ? ownPostMenuItems : otherPostMenuItems;
-
+  const shouldShowLocation = !gatekeepingEnabled && location;
   return (
     <>
       <View className="flex-row justify-between items-center px-1 pt-3">
@@ -476,7 +554,13 @@ export const EditPostHeader = ({
           <View className="ml-3 flex-1">
             <Text className="font-medium text-gray-900">{username}</Text>
             <View className="flex-row ml-0.5 items-center">
-              {!gatekeepingEnabled && location ? (
+              {(() => {
+                const shouldShow = !gatekeepingEnabled && location;
+                console.log(
+                  `Post ${post_id} location display: gatekeeping=${gatekeepingEnabled}, location=${location}, shouldShow=${shouldShow}`
+                );
+                return shouldShow;
+              })() && (
                 <View className="text-gray-600 text-sm flex-row align-middle justify-center">
                   <Image
                     source={require("../../../assets/icons/marker.png")}
@@ -486,7 +570,7 @@ export const EditPostHeader = ({
                     {location.split(",")[0]}
                   </Text>
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
         </TouchableOpacity>

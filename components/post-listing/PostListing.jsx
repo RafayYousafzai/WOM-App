@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 import { PostCard } from "./PostCard";
 import { PostListingSkeleton } from "../PageSkeletons/PostCardSkeleton";
@@ -34,6 +34,14 @@ export default function PostListing({
   const navigation = useNavigation();
   const flatListRef = useRef(null);
 
+  const handleGatekeepingUpdate = (postId, newGatekeepingValue) => {
+    console.log(
+      `PostListing: Gatekeeping updated for post ${postId}: ${newGatekeepingValue}`
+    );
+
+    handleRefresh();
+  };
+
   useEffect(() => {
     if (route.params?.scrollToTop) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -62,7 +70,6 @@ export default function PostListing({
   };
 
   const renderItem = ({ item }) => {
-    // Use flattened fields directly from formattedPosts
     const isLiked = user
       ? item.post_likes?.some((like) => like.user_id === user.id)
       : false;
@@ -121,6 +128,7 @@ export default function PostListing({
               console.log("Post deleted:", postId);
               handleRefresh();
             }}
+            onGatekeepingUpdate={handleGatekeepingUpdate}
           />
         </View>
 
