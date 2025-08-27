@@ -24,7 +24,7 @@ import { blockUser } from "@/lib/supabase/user_blocks";
 import { useAuth } from "@clerk/clerk-expo";
 import { MapPin } from "lucide-react-native";
 import { Image } from "react-native";
-import { deletePost } from "@/lib/supabase/postsAction";
+import { deletePost, togglePostGatekeeping } from "@/lib/supabase/postsAction";
 
 const { width } = Dimensions.get("window");
 
@@ -38,11 +38,14 @@ export const EditPostHeader = ({
   onDelete,
   location,
   post, // Add the full post object for editing
+  onGatekeepingUpdate, // Callback to update parent component
 }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
   const [following, setFollowing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [gatekeepingEnabled, setGatekeepingEnabled] = useState(false);
+  const [gatekeepingLoading, setGatekeepingLoading] = useState(false);
   const { isSignedIn } = useAuth();
 
   // Animation values
@@ -66,14 +69,21 @@ export const EditPostHeader = ({
     };
   }, [user_id, user, supabase]);
 
+  // Set initial gatekeeping state from post data
+  useEffect(() => {
+    if (post) {
+      setGatekeepingEnabled(post.gatekeeping === true);
+    }
+  }, [post]);
+
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
 
   const threeDotRef = useRef(null);
-  DropdownMenu;
+
   const showMenu = () => {
     if (threeDotRef.current) {
       threeDotRef.current.measure((fx, fy, width, height, px, py) => {
-        setMenuPosition({ top: py + height + 5, right: 16 }); // position menu below button
+        setMenuPosition({ top: py + height + 5, right: 16 });
         setMenuOpen(true);
 
         Animated.parallel([
@@ -184,6 +194,39 @@ export const EditPostHeader = ({
     });
   };
 
+  const handleGatekeeping = async () => {
+    hideMenu();
+    setGatekeepingLoading(true);
+
+    try {
+      const result = await togglePostGatekeeping(supabase, post_id, user?.id);
+
+      if (result.success) {
+        setGatekeepingEnabled(result.gatekeeping);
+
+        // Call the callback to update parent component if provided
+        if (onGatekeepingUpdate) {
+          onGatekeepingUpdate(post_id, result.gatekeeping);
+        }
+
+        Alert.alert("Success", result.message, [{ text: "OK" }]);
+      } else {
+        Alert.alert(
+          "Error",
+          result.error || "Failed to update gatekeeping setting",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Gatekeeping error:", error);
+      Alert.alert("Error", "Something went wrong while updating gatekeeping", [
+        { text: "OK" },
+      ]);
+    } finally {
+      setGatekeepingLoading(false);
+    }
+  };
+
   const handleDelete = async () => {
     hideMenu();
     Alert.alert(
@@ -197,7 +240,7 @@ export const EditPostHeader = ({
           onPress: async () => {
             try {
               if (user?.id === user_id) {
-                await deletePost(supabase, post_id); // only if owner
+                await deletePost(supabase, post_id);
                 if (onDelete) onDelete(post_id);
                 Alert.alert("Success", "Post deleted successfully.");
               } else {
@@ -315,11 +358,12 @@ export const EditPostHeader = ({
 
   const ownPostMenuItems = [
     {
-      icon: "shield",
-      label: "Enable Gatekeeping",
-      onPress: handleEdit,
-      color: "#2563EB",
-      backgroundColor: "#E0F2FE",
+      icon: gatekeepingEnabled ? "shield-off" : "shield",
+      label: gatekeepingEnabled ? "Disable Gatekeeping" : "Enable Gatekeeping",
+      onPress: handleGatekeeping,
+      color: gatekeepingEnabled ? "#F97316" : "#2563EB",
+      backgroundColor: gatekeepingEnabled ? "#FFF7ED" : "#E0F2FE",
+      loading: gatekeepingLoading,
     },
     {
       icon: "edit-2",
@@ -386,24 +430,40 @@ export const EditPostHeader = ({
               {menuItems.map((item, index) => (
                 <Pressable
                   key={index}
-                  onPress={item.onPress}
-                  className="flex-row items-center px-2 py-2 mx-2 rounded-xl active:scale-95"
+                  onPress={item.loading ? null : item.onPress}
+                  className={`flex-row items-center px-2 py-2 mx-2 rounded-xl ${
+                    item.loading ? "opacity-50" : "active:scale-95"
+                  }`}
                   style={({ pressed }) => ({
-                    backgroundColor: pressed
-                      ? item.backgroundColor
-                      : "transparent",
-                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                    backgroundColor:
+                      pressed && !item.loading
+                        ? item.backgroundColor
+                        : "transparent",
+                    transform: [{ scale: pressed && !item.loading ? 0.98 : 1 }],
                   })}
+                  disabled={item.loading}
                 >
                   <View
                     className="w-4 h-4 rounded-full items-center justify-center mr-3"
                     style={{ backgroundColor: item.backgroundColor }}
                   >
-                    <Feather name={item.icon} size={16} color={item.color} />
+                    {item.loading ? (
+                      <View className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Feather name={item.icon} size={16} color={item.color} />
+                    )}
                   </View>
                   <Text
-                    className="text-sm font-medium flex-1"
-                    style={{ color: item.destructive ? item.color : "#1F2937" }}
+                    className={`text-sm font-medium flex-1 ${
+                      item.loading ? "text-gray-400" : ""
+                    }`}
+                    style={{
+                      color: item.loading
+                        ? "#9CA3AF"
+                        : item.destructive
+                        ? item.color
+                        : "#1F2937",
+                    }}
                   >
                     {item.label}
                   </Text>
@@ -432,28 +492,25 @@ export const EditPostHeader = ({
           <View className="ml-3 flex-1">
             <Text className="font-medium text-gray-900">{username}</Text>
             <View className="flex-row ml-0.5 items-center">
-              {(() => {
-                const [firstPart, ...rest] = (location || "").split(",");
-                return (
-                  <View
-                    className="text-gray-600 text-sm flex-row align-middle justify-center"
-                    numberOfLines={1}
-                  >
-                    <Image
-                      source={require("../../../assets/icons/marker.png")}
-                      className="w-3.5 h-4 mr-1 mt-0.5"
-                    />
-                    <Text className="text-gray-500 font-semibold">
-                      {firstPart}
-                    </Text>
-                    {/* {rest.length > 0 && (
-                      <Text className="text-gray-500">{`, ${rest.join(
-                        ","
-                      )}`}</Text>
-                    )} */}
-                  </View>
-                );
-              })()}
+              {!gatekeepingEnabled && location
+                ? (() => {
+                    const [firstPart] = location.split(",");
+                    return (
+                      <View
+                        className="text-gray-600 text-sm flex-row align-middle justify-center"
+                        numberOfLines={1}
+                      >
+                        <Image
+                          source={require("../../../assets/icons/marker.png")}
+                          className="w-3.5 h-4 mr-1 mt-0.5"
+                        />
+                        <Text className="text-gray-500 font-semibold">
+                          {firstPart}
+                        </Text>
+                      </View>
+                    );
+                  })()
+                : null}
             </View>
           </View>
         </TouchableOpacity>
