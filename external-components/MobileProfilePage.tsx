@@ -61,28 +61,24 @@ const MobileProfilePage = ({ isActive }: any) => {
         <VStack className="flex-1" space="lg">
           {/* Header Section */}
           <Box className="px-6 pt-6 pb-4 bg-gradient-to-b from-primary-50 to-background-0">
-            <View>
+            <View className="flex-row justify-between items-center">
               <Button
                 variant="link"
                 onPress={() => router.back()}
-                className="self-start bg-white/80 w-12 h-12 mt-2 rounded-full shadow-sm"
+                className="self-start bg-gray-200 w-12 h-12 mt-2 rounded-full shadow-sm"
                 accessibilityLabel="Go back"
               >
                 <Icon as={ArrowLeft} size="md" className="text-gray-700" />
               </Button>
+
               <Heading
-                size="4xl"
+                size="3xl"
                 className="font-bold mt-4 text-typography-900"
               >
                 Settings
               </Heading>
+              <View />
             </View>
-            <Text
-              size="lg"
-              className="text-typography-600 mt-2 leading-relaxed"
-            >
-              Manage your account and get the help you need
-            </Text>
           </Box>
 
           {/* Profile Card */}
