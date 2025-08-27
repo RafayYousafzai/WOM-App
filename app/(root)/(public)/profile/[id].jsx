@@ -27,6 +27,7 @@ import { getTotalFollowingCount } from "@/lib/supabase/followActions";
 import { ProfileContentSkeleton } from "@/components/profile-view/ProfileSkeleton";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { blockUser } from "@/lib/supabase/user_blocks";
+import Share from "react-native-share";
 
 export default function VisitProfileScreen() {
   const { supabase } = useSupabase();
@@ -46,7 +47,24 @@ export default function VisitProfileScreen() {
     ownReviews: null,
   });
 
-  console.log(posts);
+  const handleShare = async (id, username) => {
+    try {
+      const universalUrl = `https://wordofmouth.vercel.app/profile/${id}`;
+      const shareMessage = `Check out ${
+        username || "this user's"
+      } profile on Word of Mouth!\n${universalUrl}`;
+
+      const shareOptions = {
+        title: "Share this profile",
+        message: shareMessage,
+        url: universalUrl,
+        failOnCancel: false,
+      };
+      await Share.open(shareOptions);
+    } catch (error) {
+      console.error("Error sharing profile:", error.message);
+    }
+  };
 
   const [counts, setCounts] = useState({
     posts: 0,
@@ -63,7 +81,7 @@ export default function VisitProfileScreen() {
   const fetchUser = async () => {
     setLoading(true);
     try {
-      const user = await getUserById(supabase, user_id);
+      const fetchedUser = await getUserById(supabase, user_id);
       const allPosts = await getTotalPostsCount(supabase, user_id);
       const totalFollowersCount = await getTotalFollowersCount(
         supabase,
@@ -79,8 +97,7 @@ export default function VisitProfileScreen() {
         followers: totalFollowersCount,
         following: totalFollowingCount,
       });
-
-      setUser(user);
+      setUser(fetchedUser);
     } catch (error) {
       console.error(error);
     } finally {
@@ -96,6 +113,8 @@ export default function VisitProfileScreen() {
 
     if (!error && data && data.length > 0) {
       setIsFollowing(true);
+    } else {
+      setIsFollowing(false);
     }
   };
 
@@ -105,18 +124,18 @@ export default function VisitProfileScreen() {
         .from("posts")
         .select(
           `
-        *,
-        user:user_id (
-          username,
-          first_name,
-          last_name,
-          updated_at,
-          image_url
-        ),
-        restaurant:restaurant_id (*),
-        post_dishes (*),
-        post_likes (user_id)
-      `
+          *,
+          user:user_id (
+            username,
+            first_name,
+            last_name,
+            updated_at,
+            image_url
+          ),
+          restaurant:restaurant_id (*),
+          post_dishes (*),
+          post_likes (user_id)
+        `
         )
         .eq("user_id", user_id)
         .eq("anonymous", false)
@@ -150,7 +169,10 @@ export default function VisitProfileScreen() {
   };
 
   const fetchData = async () => {
-    if (!user_id) router.replace("/");
+    if (!user_id) {
+      router.replace("/");
+      return;
+    }
     setLoading(true);
     try {
       await fetchUser();
@@ -164,8 +186,10 @@ export default function VisitProfileScreen() {
   };
 
   useEffect(() => {
-    if (isSignedIn) handleRefresh();
-  }, [user_id]);
+    if (isSignedIn && user_id) {
+      fetchData();
+    }
+  }, [user_id, isSignedIn]);
 
   const handleFollowToggle = async () => {
     try {
@@ -195,7 +219,7 @@ export default function VisitProfileScreen() {
   const handleBlockUser = async () => {
     Alert.alert(
       "Block User",
-      "Are you sure you want to unblock this user? They won't be able to interact with you.",
+      "Are you sure you want to block this user? They won't be able to interact with you.",
       [
         {
           text: "Cancel",
@@ -207,7 +231,11 @@ export default function VisitProfileScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const { error } = await blockUser(supabase, user?.id, user_id);
+              const { error } = await blockUser(
+                supabase,
+                authUser?.id,
+                user_id
+              );
               if (error) {
                 if (error.code === "23505") {
                   Alert.alert(
@@ -224,6 +252,8 @@ export default function VisitProfileScreen() {
                   "The user has been successfully blocked.",
                   [{ text: "OK" }]
                 );
+                // Optional: Navigate away from the blocked user's profile
+                router.replace("/home");
               }
             } catch (err) {
               console.error("Block error:", err);
@@ -311,6 +341,16 @@ export default function VisitProfileScreen() {
                     <View className="bg-white rounded-xl shadow-lg min-w-[150px] overflow-hidden">
                       {user_id !== authUser?.id && (
                         <>
+                          {/* <TouchableOpacity
+                            onPress={() => handleShare(user_id, user.username)}
+                            className="flex-row items-center px-4 py-3 bg-gray-200"
+                            activeOpacity={0.7}
+                          >
+                            <Feather name="share" size={16} color="#000" />
+                            <Text className="ml-2 text-base text-black font-medium">
+                              Share Profile
+                            </Text>
+                          </TouchableOpacity> */}
                           <TouchableOpacity
                             onPress={handleBlockUser}
                             className="flex-row items-center px-4 py-3 bg-red-500"
@@ -356,19 +396,30 @@ export default function VisitProfileScreen() {
               <Text className="text-gray-600">Following</Text>
             </TouchableOpacity>
           </View>
-
-          {user_id !== authUser?.id && (
-            <TouchableOpacity
-              onPress={handleFollowToggle}
-              disabled={followLoading}
-              className="flex flex-row justify-center w-full px-4 py-2 mt-8 mb-2 bg-[#f39f1e] rounded-full self-start"
-            >
-              {followLoading && <ActivityIndicator size="small" color="#fff" />}
-              <Text className="ml-3 text-white text-center font-medium">
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <View className="flex-row mt-4 gap-2">
+            {user_id !== authUser?.id && (
+              <>
+                <TouchableOpacity
+                  onPress={handleFollowToggle}
+                  disabled={followLoading}
+                  className="flex-1 flex-row py-2.5 rounded-xl border bg-gray-200 border-gray-200 mt-8 items-center justify-center"
+                >
+                  {followLoading && (
+                    <ActivityIndicator size="small" color="#000" />
+                  )}
+                  <Text className="ml-3 text-center font-medium">
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleShare(user_id, user.username)}
+                  className="flex-1 flex-row py-2.5 rounded-xl border bg-gray-200 border-gray-200 mt-8 items-center justify-center"
+                >
+                  <Text className="font-semibold">Share Profile</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
 
         <View className="border-gray-200">
