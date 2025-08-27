@@ -23,6 +23,7 @@ import {
 } from "@/lib/supabase/followActions";
 import { useSupabase } from "@/context/supabaseContext";
 import { ProfileContentSkeleton } from "./ProfileSkeleton";
+import Share from "react-native-share";
 
 const ProfileStats = ({ counts, userId }) => (
   <View className="flex-row justify-between mt-3 bg-white rounded-2xl p-2 border-gray-100">
@@ -57,24 +58,44 @@ const ProfileStats = ({ counts, userId }) => (
   </View>
 );
 
-const ProfileActions = ({ setIsEditing }) => (
-  <View className="flex-row mt-4 gap-2">
-    <TouchableOpacity
-      onPress={() => setIsEditing(true)}
-      className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
-    >
-      <Text className="font-semibold">Edit Profile</Text>
-    </TouchableOpacity>
+const ProfileActions = ({ setIsEditing, userId, username }) => {
+  const handleShare = async () => {
+    try {
+      const universalUrl = `https://wordofmouth.vercel.app/profile/${userId}`;
+      const shareMessage = `Check out ${
+        username || "this user's"
+      } profile on Word of Mouth!\n${universalUrl}`;
 
-    <TouchableOpacity
-      onPress={() => setIsEditing(true)}
-      className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
-    >
-      <Text className="font-semibold">Share Profile</Text>
-    </TouchableOpacity>
-  </View>
-);
+      const shareOptions = {
+        title: "Share this profile",
+        message: shareMessage,
+        url: universalUrl,
+        failOnCancel: false,
+      };
+      await Share.open(shareOptions);
+    } catch (error) {
+      console.error("Error sharing profile:", error.message);
+    }
+  };
 
+  return (
+    <View className="flex-row mt-4 gap-2">
+      <TouchableOpacity
+        onPress={() => setIsEditing(true)}
+        className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
+      >
+        <Text className="font-semibold">Edit Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => handleShare(userId, username)}
+        className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
+      >
+        <Text className="font-semibold">Share Profile</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 const ProfileHeader = ({ user, pickImage }) => (
   <View className="flex-row justify-between items-start">
     <TouchableOpacity onPress={pickImage} className="relative">
@@ -127,6 +148,7 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
   const { user } = useUser();
   const [activeFilter, setActiveFilter] = useState("reviews");
   const [scrollY] = useState(new Animated.Value(0));
+
   const [counts, setCounts] = useState({
     posts: 0,
     followers: 0,
@@ -240,7 +262,11 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
         <View className="pt-6 pb-4 px-5 bg-white">
           <ProfileHeader user={user} pickImage={pickImage} />
           <ProfileStats counts={counts} userId={user.id} />
-          <ProfileActions setIsEditing={setIsEditing} />
+          <ProfileActions
+            userId={user.id} // <-- Pass the user ID here
+            username={user.username}
+            setIsEditing={setIsEditing}
+          />
         </View>
       ),
     },

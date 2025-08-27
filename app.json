@@ -13,7 +13,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "associatedDomains": ["applinks:wom-panel.vercel.app"],
+      "associatedDomains": ["applinks:wordofmouth.vercel.app"],
       "supportsTablet": true,
       "bundleIdentifier": "com.wordofmouth.limited",
       "infoPlist": {

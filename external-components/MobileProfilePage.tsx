@@ -221,7 +221,7 @@ const SupportSection = ({
       subtitle: "Found an issue? Help us fix it quickly",
       color: "error",
       onPress: () =>
-        handleNavigation("https://wom-panel.vercel.app/report-bug"),
+        handleNavigation("https://wordofmouth.vercel.app/report-bug"),
     },
     {
       icon: Lightbulb,
@@ -229,7 +229,7 @@ const SupportSection = ({
       subtitle: "Share your ideas to make our app better",
       color: "warning",
       onPress: () =>
-        handleNavigation("https://wom-panel.vercel.app/suggest-improvement"),
+        handleNavigation("https://wordofmouth.vercel.app/suggest-improvement"),
     },
     {
       icon: MessageSquare,
@@ -240,7 +240,7 @@ const SupportSection = ({
         const userId = clerkUser?.id;
         if (userId) {
           handleNavigation(
-            `https://wom-panel.vercel.app/new-complain/${userId}`
+            `https://wordofmouth.vercel.app/new-complain/${userId}`
           );
         } else {
           Alert.alert(

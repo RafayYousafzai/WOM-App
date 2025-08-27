@@ -54,15 +54,17 @@ export default function RootLayoutNav() {
 
       if (path?.startsWith("post/")) {
         const postId = path.split("/")[1];
-
-        console.log("📩 Post ID:", postId);
-
-        // Ensure navigation only happens when the app is ready
         router.push({
           pathname: "/(root)/post/[id]",
-          params: {
-            id: postId,
-          },
+          params: { id: postId },
+        });
+      } else if (path?.startsWith("profile/")) {
+        const userId = path.split("/")[1];
+        console.log("📩 User ID from deep link:", userId);
+        // Ensure the correct route for the user profile page
+        router.push({
+          pathname: "/(root)/(public)/profile/[id]",
+          params: { id: userId },
         });
       }
     };

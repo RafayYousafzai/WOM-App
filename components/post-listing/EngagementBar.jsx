@@ -177,7 +177,7 @@ export const EngagementBar = ({
 
   const handleShare = async () => {
     try {
-      const universalUrl = `https://wom-panel.vercel.app/post/${post_id}`;
+      const universalUrl = `https://wordofmouth.vercel.app/post/${post_id}`;
       const shareMessage = `Check out this post: ${
         title || "Shared post"
       }\n${universalUrl}`;
