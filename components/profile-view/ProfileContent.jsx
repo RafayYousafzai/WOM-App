@@ -66,9 +66,9 @@ const ProfileActions = ({ setIsEditing }) => (
       <Text className="font-semibold">Edit Profile</Text>
     </TouchableOpacity>
 
-    {/* <TouchableOpacity className="bg-white py-2.5 px-4 rounded-xl border border-gray-400 items-center justify-center">
+    <TouchableOpacity className="bg-white py-2.5 px-4 rounded-xl border border-gray-400 items-center justify-center">
       <Feather name="share" size={20} color="#666" />
-    </TouchableOpacity> */}
+    </TouchableOpacity>
   </View>
 );
 
@@ -98,12 +98,15 @@ const ProfileHeader = ({ user, pickImage }) => (
           <Text className="text-sm text-gray-500 mb-1">@{user?.username}</Text>
         </View>
 
-        <View className="flex-row">
+        <View className="flex-row mr-4">
           <TouchableOpacity
             onPress={() => router.push("/account-settings")}
             className="rounded-full"
           >
-            <Feather name="settings" size={20} color="#666" />
+            <Image
+              source={require("../../assets/home-icons/settings.png")}
+              className="w-8 h-8"
+            />
           </TouchableOpacity>
         </View>
       </View>

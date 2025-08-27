@@ -184,7 +184,7 @@ export default function CreateReview() {
                       </Box>
                       <View className="ml-4 flex-1">
                         <RNText className="font-bold text-2xl text-slate-900">
-                          Review Your Own Dish
+                          Review Your Homemade Dish
                         </RNText>
                         <RNText className="text-base text-slate-600 mt-1">
                           Showcase your homemade creation

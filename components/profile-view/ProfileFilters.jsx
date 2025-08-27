@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import RenderFilteredPosts from "./RenderFilteredPosts";
 
 const FILTER_TITLES = {
@@ -27,13 +27,19 @@ const ProfileFilters = ({
             activeFilter === "reviews" ? "border-b-2 border-[#f39f1e]" : ""
           }`}
         >
-          <Feather
-            name="star"
-            size={22}
-            color={activeFilter === "reviews" ? "#f39f1e" : "#888"}
-          />
+          {activeFilter === "reviews" ? (
+            <Image
+              source={require("../../assets/home-icons/resturant.png")}
+              className="w-6 h-6"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/resturant-thick.png")}
+              className="w-5 h-5"
+            />
+          )}
           <Text className="text-xs mt-1">
-            {activeFilter === "reviews" ? "Reviews" : ""}
+            {activeFilter === "reviews" ? "Restaurant Review" : ""}
           </Text>
         </TouchableOpacity>
 
@@ -43,11 +49,17 @@ const ProfileFilters = ({
             activeFilter === "own_reviews" ? "border-b-2 border-[#f39f1e]" : ""
           }`}
         >
-          <Feather
-            name="home"
-            size={22}
-            color={activeFilter === "own_reviews" ? "#f39f1e" : "#888"}
-          />
+          {activeFilter === "own_reviews" ? (
+            <Image
+              source={require("../../assets/home-icons/home-solid.png")}
+              className="w-6 h-6"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/home-thick.png")}
+              className="w-5 h-5"
+            />
+          )}
           <Text className="text-xs mt-1">
             {activeFilter === "own_reviews" ? "Homemade" : ""}
           </Text>
