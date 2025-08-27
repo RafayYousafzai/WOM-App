@@ -5,10 +5,8 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  Modal,
-  Pressable,
-  Animated,
   Dimensions,
+  Animated,
 } from "react-native";
 import { Avatar } from "react-native-paper";
 import { router } from "expo-router";
@@ -22,11 +20,12 @@ import { Feather } from "@expo/vector-icons";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { blockUser } from "@/lib/supabase/user_blocks";
 import { useAuth } from "@clerk/clerk-expo";
-import { MapPin } from "lucide-react-native";
 import { Image } from "react-native";
 import { deletePost, togglePostGatekeeping } from "@/lib/supabase/postsAction";
+import { DropdownMenu } from "./DropdownMenu";
+import { BottomModal } from "./BottomModal";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 export const EditPostHeader = ({
   username,
@@ -37,6 +36,7 @@ export const EditPostHeader = ({
   anonymous,
   onDelete,
   location,
+  onRestaurantPress,
   post, // Add the full post object for editing
   onGatekeepingUpdate, // Callback to update parent component
 }) => {
@@ -47,6 +47,15 @@ export const EditPostHeader = ({
   const [gatekeepingEnabled, setGatekeepingEnabled] = useState(false);
   const [gatekeepingLoading, setGatekeepingLoading] = useState(false);
   const { isSignedIn } = useAuth();
+
+  // New state for bottom modal
+  const [bottomModalVisible, setBottomModalVisible] = useState(false);
+  const slideAnim = useRef(new Animated.Value(height)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  const handleLocationPress = () => {
+    router.push(`/restaurant-info/${encodeURIComponent(location)}`);
+  };
 
   // Animation values
   const scaleValue = useRef(new Animated.Value(0)).current;
@@ -79,6 +88,42 @@ export const EditPostHeader = ({
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 16 });
 
   const threeDotRef = useRef(null);
+
+  // Bottom Modal Functions
+  const showBottomModal = () => {
+    setBottomModalVisible(true);
+
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0.5,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 8,
+      }),
+    ]).start();
+  };
+
+  const hideBottomModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: height,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setBottomModalVisible(false);
+    });
+  };
 
   const showMenu = () => {
     if (threeDotRef.current) {
@@ -173,13 +218,24 @@ export const EditPostHeader = ({
     setFollowing(!following);
   };
 
-  const handleProfilePress = (e) => {
+  // Modified handlers for profile and location
+  const handleProfileOrLocationPress = (e) => {
     e.stopPropagation();
     if (anonymous) {
       console.warn("Anonymous user profile cannot be accessed");
       return;
     }
+    showBottomModal();
+  };
+
+  const navigateToProfile = () => {
+    hideBottomModal();
     router.push(`/(public)/profile/${user_id}`);
+  };
+
+  const navigateToLocation = () => {
+    hideBottomModal();
+    router.push(`/restaurant-info/${encodeURIComponent(location)}`);
   };
 
   const handleEdit = () => {
@@ -404,84 +460,12 @@ export const EditPostHeader = ({
   const menuItems =
     user_id === user?.id ? ownPostMenuItems : otherPostMenuItems;
 
-  const DropdownMenu = () => (
-    <Modal
-      transparent
-      visible={menuOpen}
-      animationType="none"
-      onRequestClose={hideMenu}
-    >
-      <Pressable style={{ flex: 1 }} onPress={hideMenu} className="flex-1">
-        <View className="flex-1 relative">
-          <Animated.View
-            style={{
-              position: "absolute",
-              top: menuPosition.top,
-              right: menuPosition.right,
-              transform: [{ scale: scaleValue }],
-              opacity: opacityValue,
-            }}
-            className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
-          >
-            {/* Dropdown Arrow */}
-            <View className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-gray-100 transform rotate-45" />
-
-            <View className="py-2 min-w-[200px]">
-              {menuItems.map((item, index) => (
-                <Pressable
-                  key={index}
-                  onPress={item.loading ? null : item.onPress}
-                  className={`flex-row items-center px-2 py-2 mx-2 rounded-xl ${
-                    item.loading ? "opacity-50" : "active:scale-95"
-                  }`}
-                  style={({ pressed }) => ({
-                    backgroundColor:
-                      pressed && !item.loading
-                        ? item.backgroundColor
-                        : "transparent",
-                    transform: [{ scale: pressed && !item.loading ? 0.98 : 1 }],
-                  })}
-                  disabled={item.loading}
-                >
-                  <View
-                    className="w-4 h-4 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: item.backgroundColor }}
-                  >
-                    {item.loading ? (
-                      <View className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Feather name={item.icon} size={16} color={item.color} />
-                    )}
-                  </View>
-                  <Text
-                    className={`text-sm font-medium flex-1 ${
-                      item.loading ? "text-gray-400" : ""
-                    }`}
-                    style={{
-                      color: item.loading
-                        ? "#9CA3AF"
-                        : item.destructive
-                        ? item.color
-                        : "#1F2937",
-                    }}
-                  >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </Animated.View>
-        </View>
-      </Pressable>
-    </Modal>
-  );
-
   return (
     <>
       <View className="flex-row justify-between items-center px-1 pt-3">
         <TouchableOpacity
           className="flex-row items-center flex-1"
-          onPress={handleProfilePress}
+          onPress={handleProfileOrLocationPress}
           activeOpacity={0.7}
         >
           <Avatar.Image
@@ -492,25 +476,17 @@ export const EditPostHeader = ({
           <View className="ml-3 flex-1">
             <Text className="font-medium text-gray-900">{username}</Text>
             <View className="flex-row ml-0.5 items-center">
-              {!gatekeepingEnabled && location
-                ? (() => {
-                    const [firstPart] = location.split(",");
-                    return (
-                      <View
-                        className="text-gray-600 text-sm flex-row align-middle justify-center"
-                        numberOfLines={1}
-                      >
-                        <Image
-                          source={require("../../../assets/icons/marker.png")}
-                          className="w-3.5 h-4 mr-1 mt-0.5"
-                        />
-                        <Text className="text-gray-500 font-semibold">
-                          {firstPart}
-                        </Text>
-                      </View>
-                    );
-                  })()
-                : null}
+              {!gatekeepingEnabled && location ? (
+                <View className="text-gray-600 text-sm flex-row align-middle justify-center">
+                  <Image
+                    source={require("../../../assets/icons/marker.png")}
+                    className="w-3.5 h-4 mr-1 mt-0.5"
+                  />
+                  <Text className="text-gray-500 font-semibold">
+                    {location.split(",")[0]}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -554,7 +530,26 @@ export const EditPostHeader = ({
         )}
       </View>
 
-      <DropdownMenu />
+      <DropdownMenu
+        menuOpen={menuOpen}
+        hideMenu={hideMenu}
+        menuPosition={menuPosition}
+        scaleValue={scaleValue}
+        opacityValue={opacityValue}
+        menuItems={menuItems}
+      />
+      <BottomModal
+        bottomModalVisible={bottomModalVisible}
+        hideBottomModal={hideBottomModal}
+        overlayOpacity={overlayOpacity}
+        slideAnim={slideAnim}
+        navigateToProfile={navigateToProfile}
+        navigateToLocation={navigateToLocation}
+        userAvatar={userAvatar}
+        username={username}
+        gatekeepingEnabled={gatekeepingEnabled}
+        location={location}
+      />
     </>
   );
 };

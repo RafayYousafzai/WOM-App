@@ -25,7 +25,7 @@ import { useSupabase } from "@/context/supabaseContext";
 import { ProfileContentSkeleton } from "./ProfileSkeleton";
 
 const ProfileStats = ({ counts, userId }) => (
-  <View className="flex-row justify-between mt-6 bg-white rounded-2xl p-4 border border-gray-100">
+  <View className="flex-row justify-between mt-3 bg-white rounded-2xl p-2 border-gray-100">
     <TouchableOpacity className="items-center flex-1">
       <Text className="text-xl font-bold text-gray-800">{counts.posts}</Text>
       <Text className="text-gray-600 text-sm">Posts</Text>
@@ -61,13 +61,16 @@ const ProfileActions = ({ setIsEditing }) => (
   <View className="flex-row mt-4 gap-2">
     <TouchableOpacity
       onPress={() => setIsEditing(true)}
-      className="flex-1 py-2.5 rounded-xl border border-gray-400 items-center justify-center"
+      className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
     >
       <Text className="font-semibold">Edit Profile</Text>
     </TouchableOpacity>
 
-    <TouchableOpacity className="bg-white py-2.5 px-4 rounded-xl border border-gray-400 items-center justify-center">
-      <Feather name="share" size={20} color="#666" />
+    <TouchableOpacity
+      onPress={() => setIsEditing(true)}
+      className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
+    >
+      <Text className="font-semibold">Share Profile</Text>
     </TouchableOpacity>
   </View>
 );
@@ -105,7 +108,7 @@ const ProfileHeader = ({ user, pickImage }) => (
           >
             <Image
               source={require("../../assets/home-icons/settings.png")}
-              className="w-8 h-8"
+              className="w-7 h-7"
             />
           </TouchableOpacity>
         </View>
