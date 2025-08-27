@@ -116,7 +116,11 @@ export default function PostListing({
         <View className="mx-3 mb-2">
           <EditPostHeader
             username={fullName}
-            location={item.restaurant?.location || item.location?.address}
+            location={
+              item.gatekeeping
+                ? null
+                : item.restaurant?.location || item.location?.address
+            }
             userAvatar={item.user?.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}
