@@ -37,13 +37,6 @@ export const RestaurantInfo = ({
     (dish) => dish.id !== currentDishId
   );
 
-  console.log(
-    "RestaurantInfo currentDish:",
-    currentDish,
-    "dishes:",
-    restaurantDishes
-  );
-
   const renderRating = (dishRating = rating) => {
     const stars = [];
     const fullStars = Math.floor(dishRating);

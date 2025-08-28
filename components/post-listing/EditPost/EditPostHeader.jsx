@@ -556,9 +556,7 @@ export const EditPostHeader = ({
             <View className="flex-row ml-0.5 items-center">
               {(() => {
                 const shouldShow = !gatekeepingEnabled && location;
-                console.log(
-                  `Post ${post_id} location display: gatekeeping=${gatekeepingEnabled}, location=${location}, shouldShow=${shouldShow}`
-                );
+
                 return shouldShow;
               })() && (
                 <View className="text-gray-600 text-sm flex-row align-middle justify-center">

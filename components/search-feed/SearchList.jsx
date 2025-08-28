@@ -164,9 +164,9 @@ export default function SearchList() {
           </Input>
         </View>
       </View>
-      <View className="flex-1">
+      <FilterOptions />
+      {/* <View className="flex-1">
         <View className="px-3">
-          <FilterOptions />
         </View>
         <View className="-mt-3">
           {debouncedSearchQuery.trim() !== "" && (
@@ -178,7 +178,7 @@ export default function SearchList() {
           )}
         </View>
         {renderContent()}
-      </View>
+      </View> */}
     </View>
   );
 }
