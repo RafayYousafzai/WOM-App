@@ -24,7 +24,6 @@ const FilterOptions = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const { selectedFilters, setSelectedFilters, searchQuery } = useSearch();
-  console.log("Selected Filters:", searchQuery);
   const [tempSelectedFilters, setTempSelectedFilters] = useState(new Set());
   const slideAnim = new Animated.Value(0);
 

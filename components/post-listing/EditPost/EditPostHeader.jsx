@@ -108,9 +108,6 @@ export const EditPostHeader = ({
 
           if (!error && data) {
             const dbGatekeeping = data.gatekeeping === true;
-            console.log(
-              `Database sync for post ${post_id}: ${data.gatekeeping} -> ${dbGatekeeping}`
-            );
 
             if (dbGatekeeping !== gatekeepingEnabled) {
               console.log(
