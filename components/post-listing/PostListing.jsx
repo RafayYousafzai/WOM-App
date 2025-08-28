@@ -92,7 +92,6 @@ export default function PostListing({
           ...post,
           isLiked: newIsLiked,
           likesCount: newLikesCount,
-          // Also update the post_likes array
           post_likes: newIsLiked
             ? [...(post.post_likes || []), { user_id: user.id }]
             : post.post_likes.filter((like) => like.user_id !== user.id),
@@ -100,9 +99,11 @@ export default function PostListing({
       }
       return post;
     });
-    setTimeout(() => {
-      handleRefresh();
-    }, 500);
+
+    setPosts(updatedPosts);
+
+    // sync with backend (no await needed for smoothness)
+    togglePostLike(supabase, postId, user.id, newIsLiked);
   };
 
   const renderItem = ({ item }) => {
