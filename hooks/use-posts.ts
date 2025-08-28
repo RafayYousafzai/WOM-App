@@ -9,6 +9,7 @@ import { Alert } from "react-native";
 
 const PAGE_SIZE = 10;
 
+// Post interface remains the same
 interface Post {
   id: string;
   user_id: string;
@@ -72,69 +73,27 @@ export const usePosts = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [countryFilterActive, setCountryFilterActive] = useState(false);
 
-  const fetchIdRef = useRef(0);
+  // Use page for "For You" and timestamp for "Following"
+  const pageRef = useRef(1);
   const lastTimestampRef = useRef(new Date().toISOString());
-  const randomSeedRef = useRef(Math.random());
-
-  const shuffleArray = useCallback((array: Post[]) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(randomSeedRef.current * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  }, []);
+  const fetchIdRef = useRef(0);
 
   const buildPostsQuery = useCallback(() => {
+    // This function remains the same, it builds the main select query
     return supabase.from("posts").select(`
-      id,
-      review,
-      user_id,
-      is_review,
-      anonymous,
-      people,
-      created_at,
-      updated_at,
-      restaurants (
-        id,
-        location,
-        rating
-      ),
-      users (
-        id,
-        username,
-        first_name,
-        last_name,
-        image_url,
-        updated_at
-      ),
-      post_dishes (
-        id,
-        dish_name,
-        dish_price,
-        dish_type,
-        rating,
-        is_recommended,
-        image_urls
-      ),
-      post_tags (
-        tags (
-          id,
-          name,
-          type
-        )
-      ),
-      post_likes (
-        user_id
-      ),
-      post_comments (
-        id
-      )
+      id, review, user_id, is_review, anonymous, people, created_at, updated_at,
+      restaurants (id, location, rating),
+      users (id, username, first_name, last_name, image_url, updated_at),
+      post_dishes (id, dish_name, dish_price, dish_type, rating, is_recommended, image_urls),
+      post_tags (tags (id, name, type)),
+      post_likes (user_id),
+      post_comments (id)
     `);
   }, [supabase]);
 
   const transformPostData = useCallback((rawPosts: any[]): Post[] => {
-    return rawPosts.map(post => ({
+    // This utility function remains the same
+    return rawPosts.map((post) => ({
       ...post,
       restaurant_name: post.restaurants?.location || "Unknown Restaurant",
       location: { address: post.restaurants?.location },
@@ -143,7 +102,7 @@ export const usePosts = () => {
       all_tags: post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [],
       likesCount: post.post_likes?.length || 0,
       commentsCount: post.post_comments?.length || 0,
-      user: post.users
+      user: post.users,
     }));
   }, []);
 
@@ -153,13 +112,56 @@ export const usePosts = () => {
 
       if (loadMore) {
         setIsLoadingMore(true);
+      } else {
+        // Reset pagination cursors on a fresh load/tab switch
+        pageRef.current = 1;
+        lastTimestampRef.current = new Date().toISOString();
       }
 
       try {
-        let postsQuery = buildPostsQuery();
+        let finalPosts: Post[] = [];
 
-        // Handle following tab
-        if (tab === "following" && user) {
+        if (tab === "forYou") {
+          // --- NEW "FOR YOU" LOGIC ---
+          const { data: rankedPosts, error: rpcError } = await supabase.rpc(
+            "get_for_you_feed",
+            {
+              page_limit: PAGE_SIZE,
+              page_offset: (pageRef.current - 1) * PAGE_SIZE,
+              requesting_user_id:
+                user?.id ?? "00000000-0000-0000-0000-000000000000", // Provide a dummy UUID for logged-out users
+            }
+          );
+
+          if (rpcError) throw rpcError;
+          if (!rankedPosts || rankedPosts.length === 0) {
+            return { data: [], fetchId: currentFetchId };
+          }
+
+          const postIds = rankedPosts.map((p) => p.id);
+
+          const { data: postsData, error: postsError } =
+            await buildPostsQuery().in("id", postIds);
+
+          if (postsError) throw postsError;
+
+          // Re-order the fetched posts to match the ranked order from the RPC
+          const postsById = new Map(postsData.map((p) => [p.id, p]));
+          const orderedPosts = postIds
+            .map((id) => postsById.get(id))
+            .filter(Boolean);
+
+          finalPosts = transformPostData(orderedPosts as any[]);
+          pageRef.current += 1; // Increment page for next fetch
+        } else {
+          // --- EXISTING "FOLLOWING" LOGIC (Chronological) ---
+          if (!user) {
+            toast.show(
+              "You need to be logged in to view your following feed.",
+              { type: "info" }
+            );
+            return { data: [], fetchId: currentFetchId };
+          }
           const { data: follows, error: followError } = await supabase
             .from("user_follows")
             .select("followed_id")
@@ -168,65 +170,34 @@ export const usePosts = () => {
           if (followError) throw followError;
 
           const followedUserIds = follows?.map((f) => f.followed_id) || [];
-
           if (followedUserIds.length === 0) {
-            toast.show("You are not following anyone yet.", { type: "info" });
+            // No need to show toast here, an empty state is better UX
             return { data: [], fetchId: currentFetchId };
           }
 
-          postsQuery = postsQuery.in("user_id", followedUserIds);
+          let postsQuery = buildPostsQuery().in("user_id", followedUserIds);
+
+          if (loadMore) {
+            postsQuery = postsQuery.lt("created_at", lastTimestampRef.current);
+          }
+
+          const { data: postsData, error: postsError } = await postsQuery
+            .order("created_at", { ascending: false })
+            .limit(PAGE_SIZE);
+
+          if (postsError) throw postsError;
+
+          const transformed = transformPostData(postsData || []);
+
+          if (transformed.length > 0) {
+            const lastPost = transformed[transformed.length - 1];
+            lastTimestampRef.current = lastPost.created_at;
+          }
+
+          finalPosts = transformed;
         }
 
-        // Handle pagination
-        if (loadMore) {
-          postsQuery = postsQuery.lt("updated_at", lastTimestampRef.current);
-        }
-
-        // Apply ordering and limits
-        postsQuery = postsQuery
-          .order("updated_at", { ascending: false })
-          .limit(PAGE_SIZE);
-
-        const { data: postsData, error: postsError } = await postsQuery;
-
-        if (postsError) throw postsError;
-
-        let posts = postsData || [];
-
-        // Filter blocked users
-        if (user) {
-          const blockedUserIds = await getBlockedUserIds(supabase, user.id);
-          posts = posts.filter(
-            (post) => !blockedUserIds.includes(post.user_id)
-          );
-        }
-
-        // Transform data to match frontend expectations
-        posts = transformPostData(posts);
-
-        // Update timestamp for pagination
-        if (posts.length > 0) {
-          const timestamps = posts.map((post) =>
-            new Date(post.updated_at).getTime()
-          );
-          const minTimestamp = new Date(Math.min(...timestamps)).toISOString();
-          lastTimestampRef.current = minTimestamp;
-        }
-
-        // Shuffle for initial "For You" load
-        if (tab === "forYou" && !loadMore) {
-          posts = shuffleArray(posts);
-        }
-
-        // Remove duplicates (shouldn't be needed with single table, but keeping for safety)
-        const uniqueIds = new Set<string>();
-        const uniquePosts = posts.filter((post) => {
-          if (uniqueIds.has(post.id)) return false;
-          uniqueIds.add(post.id);
-          return true;
-        });
-
-        return { data: uniquePosts, fetchId: currentFetchId };
+        return { data: finalPosts, fetchId: currentFetchId };
       } catch (error) {
         console.error("Error fetching posts:", error);
         toast.show("Failed to load posts. Please try again later.", {
@@ -239,31 +210,29 @@ export const usePosts = () => {
         }
       }
     },
-    [buildPostsQuery, user, supabase, toast, shuffleArray, transformPostData]
+    [buildPostsQuery, user, supabase, toast, transformPostData]
   );
 
   const loadPosts = useCallback(
-    async (loadMore = false) => {
-      try {
-        if (!loadMore) {
-          setLoading(true);
-        }
+    async (isLoadMore = false) => {
+      if (!isLoadMore) {
+        setLoading(true);
+      }
 
-        const { data: newPosts, fetchId } = await fetchPosts(
-          activeTab,
-          loadMore
-        );
+      const { data: newPosts, fetchId } = await fetchPosts(
+        activeTab,
+        isLoadMore
+      );
 
-        // Prevent race conditions
-        if (fetchId === fetchIdRef.current) {
-          setPosts((prev) => (loadMore ? [...prev, ...newPosts] : newPosts));
-          setHasMore(newPosts.length >= PAGE_SIZE);
-          setCountryFilterActive(!!user);
-        }
-      } finally {
-        if (!loadMore) {
-          setLoading(false);
-        }
+      // Prevent race conditions from old fetches
+      if (fetchId === fetchIdRef.current) {
+        setPosts((prev) => (isLoadMore ? [...prev, ...newPosts] : newPosts));
+        setHasMore(newPosts.length === PAGE_SIZE);
+        setCountryFilterActive(!!user);
+      }
+
+      if (!isLoadMore) {
+        setLoading(false);
       }
     },
     [activeTab, fetchPosts, user]
@@ -281,17 +250,15 @@ export const usePosts = () => {
       }
 
       setActiveTab(tab);
-      setPosts([]);
+      setPosts([]); // Clear posts immediately for better UX
       setHasMore(true);
-      setCountryFilterActive(false);
       setLoading(true);
-      lastTimestampRef.current = new Date().toISOString();
-      randomSeedRef.current = Math.random();
 
-      // Reset fetch ID to prevent race conditions
-      fetchIdRef.current = 0;
+      // Resetting fetch ID prevents race conditions from the previous tab
+      fetchIdRef.current += 1;
+      await loadPosts(false);
     },
-    [user]
+    [user, loadPosts]
   );
 
   const handleEndReached = useCallback(() => {
@@ -301,9 +268,6 @@ export const usePosts = () => {
   }, [isLoadingMore, hasMore, loading, loadPosts]);
 
   const handleRefresh = useCallback(() => {
-    randomSeedRef.current = Math.random();
-    lastTimestampRef.current = new Date().toISOString();
-    fetchIdRef.current = 0;
     loadPosts(false);
   }, [loadPosts]);
 
@@ -320,3 +284,17 @@ export const usePosts = () => {
     loadPosts,
   };
 };
+
+// Client Request: When you open the "For You" feed, your app asks the Supabase database for the first page of posts by calling the get_for_you_feed function.
+
+// Scoring Each Post: The function runs on the server and calculates a "relevance score" for every post in your posts table. This score is based on two key factors:
+
+// Engagement: It counts the number of likes and comments for each post. It gives more weight to comments (multiplying them by 2.0) than likes (multiplied by 1.5), treating comments as a stronger signal of interest.
+
+// Recency (Time Decay): It checks how old a post is. Using an exponential decay formula (EXP(...)), it systematically lowers the score of older posts. This ensures that a new, moderately popular post can rank higher than a very old, viral post, keeping the feed fresh.
+
+// Filtering and Ranking: After scoring all posts, the function filters out any posts from users you've blocked. Then, it sorts all the remaining posts from the highest score to the lowest.
+
+// Pagination: The function only returns a small batch of the top-scoring posts (a "page," which is 10 posts in your code). When you scroll to the bottom, the app requests the next page, and the process repeats.
+
+// Display: Your app receives this pre-sorted list of post IDs and fetches their full details to display them in the correct, dynamically ranked order.

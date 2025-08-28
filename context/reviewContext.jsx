@@ -82,6 +82,9 @@ export const ReviewProvider = ({ children }) => {
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [allDrafts, setAllDrafts] = useState([]);
 
+  console.log(tags);
+  console.log(tags);
+
   // -------------------- Draft Management -------------------- //
   const saveDraft = async () => {
     const draftId =
