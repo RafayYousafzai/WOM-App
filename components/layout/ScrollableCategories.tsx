@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import FilterOptions from "../search-feed/FilterOptions";
 
 interface Category {
   id: number;
@@ -42,6 +43,7 @@ const ScrollableCategories: React.FC<ScrollableCategoriesProps> = ({
           paddingVertical: 8,
         }}
       >
+        {/* <FilterOptions /> */}
         {categories.map((category) => {
           const isSelected =
             (selectedCategory ?? internalSelected) === category.id;
@@ -53,11 +55,12 @@ const ScrollableCategories: React.FC<ScrollableCategoriesProps> = ({
               style={{
                 backgroundColor: isSelected ? primaryColor : "#F5F5F5",
                 borderRadius: 20,
-                paddingHorizontal: 16,
+                paddingHorizontal: 17.3,
                 paddingVertical: 10,
                 marginHorizontal: 3,
                 flexDirection: "row",
                 alignItems: "center",
+                height: 36,
                 shadowColor: isSelected ? primaryColor : "transparent",
 
                 elevation: isSelected ? 4 : 0,

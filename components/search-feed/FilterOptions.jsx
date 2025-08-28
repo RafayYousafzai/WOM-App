@@ -27,13 +27,15 @@ const FilterOptions = () => {
   const [tempSelectedFilters, setTempSelectedFilters] = useState(new Set());
   const slideAnim = new Animated.Value(0);
 
+  console.log("Tag Categories:", selectedFilters);
+
   // Get popular tags for horizontal scroll
   const popularTags = useMemo(
     () => [
       { id: "all", name: "All", type: "special", icon: "options" },
-      ...tagCategories.amenity,
-      ...tagCategories.cuisine,
-      ...tagCategories.dietary,
+      // ...tagCategories.amenity,
+      // ...tagCategories.cuisine,
+      // ...tagCategories.dietary,
     ],
     []
   );
@@ -118,41 +120,22 @@ const FilterOptions = () => {
           key={tag.id}
           onPress={() => toggleFilter(tag.id)}
           style={{
-            marginRight: 12,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 25,
-            backgroundColor: isSelected
-              ? "#F59E0B"
-              : isSpecial
-              ? "#EF4444"
-              : "#F8F9FA",
-
-            minWidth: isSpecial ? 120 : 80,
+            borderRadius: 21,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            height: 46,
+            marginHorizontal: 3,
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: selectedFilters.size === 0 ? "#f3f4f6" : "#F59E0B",
           }}
           activeOpacity={0.8}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: isSelected
-                  ? "#FFFFFF"
-                  : isSpecial
-                  ? "#FFFFFF"
-                  : "#374151",
-              }}
-            >
-              {tag.name}
-            </Text>
-          </View>
+          <Ionicons
+            name={isSpecial ? "options" : "pricetag-outline"}
+            size={16}
+            color={selectedFilters.size === 0 ? "#666" : "#f3f4f6"}
+          />
         </TouchableOpacity>
       );
     },
@@ -175,7 +158,6 @@ const FilterOptions = () => {
           key={filterId}
           onPress={() => removeFilter(filterId)}
           style={{
-            marginRight: 8,
             marginBottom: 8,
             paddingHorizontal: 16,
             paddingVertical: 8,
@@ -186,16 +168,6 @@ const FilterOptions = () => {
           }}
           activeOpacity={0.7}
         >
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "500",
-              color: "#92400E",
-              marginRight: 6,
-            }}
-          >
-            {tag.name}
-          </Text>
           <Ionicons name="close-outline" size={16} color="#92400E" />
         </TouchableOpacity>
       );
@@ -206,7 +178,7 @@ const FilterOptions = () => {
   return (
     <View style={{ backgroundColor: "#FFFFFF" }}>
       {/* Horizontal Scrollable Tags */}
-      <View style={{ paddingVertical: 16 }}>
+      <View style={{ paddingVertical: 0 }}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -216,33 +188,6 @@ const FilterOptions = () => {
           {popularTags.map(renderHorizontalChip)}
         </ScrollView>
       </View>
-
-      {/* Selected Filters */}
-      {selectedFilters.size > 0 && (
-        <View style={{ paddingBottom: 16 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            snapToInterval={100}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: "#374151",
-                marginTop: 6,
-                paddingRight: 20,
-              }}
-            >
-              Active Filters ({selectedFilters.size})
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {Array.from(selectedFilters).map(renderSelectedChip)}
-            </View>
-          </ScrollView>
-        </View>
-      )}
 
       {/* Filter Modal */}
       <FilterModal
@@ -346,7 +291,7 @@ const FilterModal = ({
         <Animated.View
           style={{
             flex: 1,
-            backgroundColor: "#FFFFF3",
+            backgroundColor: "#fff",
             borderTopLeftRadius: 25,
             borderTopRightRadius: 25,
           }}

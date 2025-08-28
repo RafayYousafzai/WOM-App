@@ -7,6 +7,8 @@ import {
   View,
   ActivityIndicator,
   Image,
+  TextInput,
+  StyleSheet,
 } from "react-native";
 import FoodMap from "./FoodMap";
 import PostList from "./PostList";
@@ -17,15 +19,14 @@ import ScrollableCategories from "@/components/layout/ScrollableCategories";
 import { useSearch } from "@/context/searchContext";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Input, InputField } from "@/components/ui";
-import FilterOptions from "./FilterOptions";
+import FilterOptions from "../search-feed/FilterOptions";
 
 const FILTER_OPTIONS = [
-  { id: 1, name: "All", icon: "" },
-  { id: 2, name: "Reviews", icon: "star" },
-  { id: 3, name: "Dish", icon: "store" },
-  { id: 4, name: "Users", icon: "account-circle" },
-  { id: 5, name: "Reviews (Map)", icon: "map" },
+  { id: 1, name: "All" },
+  { id: 2, name: "Reviews" },
+  { id: 3, name: "Dish" },
+  { id: 4, name: "Users" },
+  { id: 5, name: "Map" },
 ];
 
 const DEBOUNCE_DELAY = 500; // milliseconds
@@ -35,7 +36,6 @@ export default function SearchList() {
   const [displaySearchQuery, setDisplaySearchQuery] = useState(""); // State for the input field
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); // Debounced state for actual search
   const [isLoading, setIsLoading] = useState(false);
-  console.log(activeFilter);
 
   const { searchQuery, setSearchQuery: setSearchContextQuery } = useSearch(); // Renamed to avoid conflict
 
@@ -124,7 +124,7 @@ export default function SearchList() {
         return <UsersList searchQuery={debouncedSearchQuery} />;
       case "Reviews":
         return <ReviewsList />;
-      case "Reviews (Map)":
+      case "Map":
         return <FoodMap searchQuery={debouncedSearchQuery} />;
       case "Dish":
         return <PostList searchQuery={debouncedSearchQuery} />;
@@ -141,45 +141,49 @@ export default function SearchList() {
 
       {/* Search Input with Back Button */}
       <View className="px-3 pt-3 flex-row items-center">
-        <View className="flex-1">
-          <Input
-            variant="rounded"
-            leftIcon={<Ionicons name="search" size={20} color="#666" />}
-            size="md"
-            rightIcon={
-              displaySearchQuery ? ( // Use displaySearchQuery here for immediate clear button visibility
-                <TouchableOpacity onPress={clearSearch}>
-                  <Ionicons name="close-circle" size={20} color="#666" />
-                </TouchableOpacity>
-              ) : null
-            }
-          >
-            <InputField
-              // ref={inputRef} // inputRef is not strictly needed here unless you plan to focus it programmatically
-              placeholder="Search for restaurants, dishes, or reviews"
-              value={displaySearchQuery} // Bind input value to displaySearchQuery
-              onChangeText={handleSearchChange}
-              autoCapitalize="none"
-              returnKeyType="search"
-            />
-          </Input>
+        <View
+          className="flex-1 flex-row items-center bg-gray-100 rounded-full px-3"
+          style={{
+            height: 46,
+          }}
+        >
+          <Ionicons name="search" size={20} color="#666" className="ml-2" />
+          <TextInput
+            style={styles.input}
+            placeholder="Search..."
+            value={displaySearchQuery}
+            onChangeText={handleSearchChange}
+            autoCapitalize="none"
+            returnKeyType="search"
+          />
+          {displaySearchQuery ? (
+            <TouchableOpacity onPress={clearSearch}>
+              <Ionicons name="close-circle" size={20} color="#666" />
+            </TouchableOpacity>
+          ) : null}
         </View>
+        <FilterOptions />
       </View>
-      <View className="flex-1">
-        <View className="px-3">
-          <FilterOptions />
-        </View>
+      <View className="flex-1 mt-2">
+        <View className="px-3">{/* <FilterOptions /> */}</View>
         <View className="-mt-3">
-          {debouncedSearchQuery.trim() !== "" && (
-            <ScrollableCategories
-              categories={FILTER_OPTIONS}
-              activeCategory={activeFilter}
-              onSelect={handleFilterChange}
-            />
-          )}
+          <ScrollableCategories
+            categories={FILTER_OPTIONS}
+            activeCategory={activeFilter}
+            onSelect={handleFilterChange}
+          />
         </View>
         {renderContent()}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  input: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    color: "#333",
+  },
+});
