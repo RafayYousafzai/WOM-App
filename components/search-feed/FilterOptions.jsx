@@ -335,13 +335,12 @@ const FilterModal = ({
   return (
     <Modal
       animationType="slide"
-      transparent={true}
       visible={visible}
       onRequestClose={onClose}
       statusBarTranslucent
     >
       <StatusBar barStyle="dark-content" />
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginTop: StatusBar.currentHeight || 5 }}>
         <Animated.View
           style={{
             flex: 1,
