@@ -81,7 +81,7 @@ export const usePosts = () => {
   const buildPostsQuery = useCallback(() => {
     // This function remains the same, it builds the main select query
     return supabase.from("posts").select(`
-      id, review, user_id, is_review, anonymous, people, created_at, updated_at,
+      id, review, user_id, is_review, anonymous, gatekeeping, people, created_at, updated_at,
       restaurants (id, location, rating),
       users (id, username, first_name, last_name, image_url, updated_at),
       post_dishes (id, dish_name, dish_price, dish_type, rating, is_recommended, image_urls),
