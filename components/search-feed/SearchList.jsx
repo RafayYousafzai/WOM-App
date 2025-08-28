@@ -35,6 +35,7 @@ export default function SearchList() {
   const [displaySearchQuery, setDisplaySearchQuery] = useState(""); // State for the input field
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(""); // Debounced state for actual search
   const [isLoading, setIsLoading] = useState(false);
+  console.log(activeFilter);
 
   const { searchQuery, setSearchQuery: setSearchContextQuery } = useSearch(); // Renamed to avoid conflict
 
@@ -122,7 +123,7 @@ export default function SearchList() {
       case "Users":
         return <UsersList searchQuery={debouncedSearchQuery} />;
       case "Reviews":
-        return <ReviewsList searchQuery={debouncedSearchQuery} />;
+        return <ReviewsList />;
       case "Reviews (Map)":
         return <FoodMap searchQuery={debouncedSearchQuery} />;
       case "Dish":
@@ -164,9 +165,9 @@ export default function SearchList() {
           </Input>
         </View>
       </View>
-      <FilterOptions />
-      {/* <View className="flex-1">
+      <View className="flex-1">
         <View className="px-3">
+          <FilterOptions />
         </View>
         <View className="-mt-3">
           {debouncedSearchQuery.trim() !== "" && (
@@ -178,7 +179,7 @@ export default function SearchList() {
           )}
         </View>
         {renderContent()}
-      </View> */}
+      </View>
     </View>
   );
 }
