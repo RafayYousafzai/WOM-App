@@ -340,7 +340,7 @@ const FilterModal = ({
       statusBarTranslucent
     >
       <StatusBar barStyle="dark-content" />
-      <View style={{ flex: 1, marginTop: StatusBar.currentHeight || 5 }}>
+      <View style={{ flex: 1, marginTop: 10 }}>
         <Animated.View
           style={{
             flex: 1,
