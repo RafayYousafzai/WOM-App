@@ -3,29 +3,23 @@ import { useEffect, useState, useCallback } from "react";
 import { useSupabase } from "@/context/supabaseContext";
 
 /**
- * Custom hook to handle fetching and filtering of posts based on
- * selected tags and a search query from the search context.
+ * Custom hook to handle fetching and filtering of posts.
  */
 export const useDishesHandler = () => {
   const { supabase } = useSupabase();
-
-  // Destructure values from the search context
   const { selectedFilters, searchQuery, setSearchQuery, setSelectedFilters } =
     useSearch();
 
-  // State to store the fetched posts
   const [posts, setPosts] = useState([]);
-  // State to manage loading status
   const [loading, setLoading] = useState(false);
-  // State for any potential errors during fetch
   const [error, setError] = useState(null);
 
-  /**
-   * Fetches posts from the database using a more robust two-step query process.
-   */
+  // 1. ADD NEW STATE for the review filter. 'all', true, or false.
+  const [reviewStatus, setReviewStatus] = useState("all");
+
   const fetchPosts = useCallback(async () => {
-    // Reset state if there are no active filters or search query.
-    if (selectedFilters.size === 0 && !searchQuery) {
+    // 2. UPDATE BAIL-OUT CONDITION to include the new filter.
+    if (selectedFilters.size === 0 && !searchQuery && reviewStatus === "all") {
       setPosts([]);
       return;
     }
@@ -37,8 +31,9 @@ export const useDishesHandler = () => {
       let postIdsFromTags = null;
       let postIdsFromSearch = null;
 
-      // Step 1: Get post IDs based on selected tags.
+      // Step 1: Get post IDs based on selected tags (no changes here).
       if (selectedFilters.size > 0) {
+        // ... (this logic remains the same)
         const tagIds = Array.from(selectedFilters);
         const { data: postTagsData, error: postTagsError } = await supabase
           .from("post_tags")
@@ -46,67 +41,73 @@ export const useDishesHandler = () => {
           .in("tag_id", tagIds);
 
         if (postTagsError) throw postTagsError;
-
         if (!postTagsData || postTagsData.length === 0) {
-          setPosts([]); // No posts match the tags, so we can stop.
+          setPosts([]);
           setLoading(false);
           return;
         }
         postIdsFromTags = new Set(postTagsData.map((pt) => pt.post_id));
       }
 
-      // Step 2: Get post IDs based on search query using RPC.
-      if (searchQuery) {
+      // 3. REFACTOR RPC CALL to handle search query OR review status.
+      // We run the search if a query exists OR if a review filter is active.
+      if (searchQuery || reviewStatus !== "all") {
+        // Prepare parameters for the RPC call
+        const rpcParams = {
+          search_term: searchQuery || "", // Pass empty string if no query
+          is_review_filter: reviewStatus === "all" ? null : reviewStatus,
+        };
+
         const { data: searchData, error: rpcError } = await supabase.rpc(
           "search_posts",
-          { search_term: searchQuery } // Pass the search query to the function
+          rpcParams
         );
 
         if (rpcError) throw rpcError;
-
         if (!searchData || searchData.length === 0) {
-          setPosts([]); // No posts match the search, so we can stop.
+          setPosts([]);
           setLoading(false);
           return;
         }
         postIdsFromSearch = new Set(searchData.map((p) => p.id));
       }
 
-      // Step 3: Determine the final set of post IDs to fetch.
-      // We need the intersection of IDs if both filters are active.
+      // Step 3: Determine the final set of post IDs (logic updated slightly)
       let finalPostIds;
-      if (postIdsFromTags && postIdsFromSearch) {
+      // If ONLY one filter type is active
+      if (postIdsFromTags && !postIdsFromSearch) {
+        finalPostIds = [...postIdsFromTags];
+      } else if (!postIdsFromTags && postIdsFromSearch) {
+        finalPostIds = [...postIdsFromSearch];
+      } else if (postIdsFromTags && postIdsFromSearch) {
+        // If BOTH are active, find the intersection
         finalPostIds = [...postIdsFromTags].filter((id) =>
           postIdsFromSearch.has(id)
         );
       } else {
-        finalPostIds = [...(postIdsFromTags || postIdsFromSearch)];
+        // This case handles when filters were active but yielded no results
+        setPosts([]);
+        setLoading(false);
+        return;
       }
 
-      // If after all filtering there are no IDs, stop.
       if (finalPostIds.length === 0) {
         setPosts([]);
         setLoading(false);
         return;
       }
 
-      // Step 4: Fetch the full post data for the final IDs.
+      // Step 4: Fetch the full post data (no changes here).
       const { data, error: fetchError } = await supabase
         .from("posts")
-        .select(
-          `
-          *,
-          post_dishes (*),
-          restaurants (*),
-          post_tags!inner(tags(*))
-        `
-        )
+        .select(`*, post_dishes (*), restaurants (*), post_tags(tags(*))`)
         .in("id", finalPostIds);
 
       if (fetchError) throw fetchError;
 
-      // Final client-side filter: Ensure posts have ALL selected tags.
+      // Final client-side filter for ALL tags (no changes here).
       if (data && selectedFilters.size > 0) {
+        // ... (this logic remains the same)
         const filteredData = data.filter((post) => {
           const postTagIds = new Set(post.post_tags.map((pt) => pt.tags.id));
           return Array.from(selectedFilters).every((filterId) =>
@@ -123,7 +124,7 @@ export const useDishesHandler = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedFilters, supabase]);
+  }, [searchQuery, selectedFilters, supabase, reviewStatus]); // 4. ADD reviewStatus to dependencies.
 
   useEffect(() => {
     fetchPosts();
@@ -136,5 +137,8 @@ export const useDishesHandler = () => {
     setSearchQuery,
     setSelectedFilters,
     fetchPosts,
+    // 5. EXPOSE the new state and setter.
+    reviewStatus,
+    setReviewStatus,
   };
 };
