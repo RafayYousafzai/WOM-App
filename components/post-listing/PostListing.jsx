@@ -35,30 +35,43 @@ export default function PostListing({
   const navigation = useNavigation();
   const flatListRef = useRef(null);
 
-  const viewedPostsRef = useRef(new Set()); // Track viewed posts to avoid duplicates
+  const viewedPostsRef = useRef(new Set());
 
-  // Debounced function to upsert views in batch
   const debouncedTrackViews = useCallback(
     _.debounce(async (postIds) => {
       if (!user || postIds.length === 0) return;
       const views = postIds.map((id) => ({ user_id: user.id, post_id: id }));
+
       const { error } = await supabase
         .from("viewed_posts")
         .upsert(views, { onConflict: "user_id, post_id" });
-      if (error) console.error("Error tracking views:", error);
-      postIds.forEach((id) => viewedPostsRef.current.delete(id)); // Clear after send
-    }, 1000), // Debounce 1s
+
+      if (error) {
+        console.error("Error tracking views:", error);
+        return; // 🚨 don’t delete from ref if failed
+      }
+
+      // ✅ Only clear after successful save
+      postIds.forEach((id) => viewedPostsRef.current.delete(id));
+    }, 1000),
     [user, supabase]
   );
 
-  // Handle viewable items
+  // 🚨 Flush pending views when component unmounts
+  useEffect(() => {
+    return () => {
+      debouncedTrackViews.flush();
+    };
+  }, [debouncedTrackViews]);
+
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }) => {
       const newViewedIds = viewableItems
         .map((item) => item.item.id)
         .filter((id) => !viewedPostsRef.current.has(id));
-      newViewedIds.forEach((id) => viewedPostsRef.current.add(id));
+
       if (newViewedIds.length > 0) {
+        newViewedIds.forEach((id) => viewedPostsRef.current.add(id));
         debouncedTrackViews(newViewedIds);
       }
     },
@@ -66,8 +79,8 @@ export default function PostListing({
   );
 
   const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-    minimumViewTime: 500,
+    itemVisiblePercentThreshold: 30, // 👈 lower to catch quicker scrolls
+    minimumViewTime: 100, // 👈 faster detection
   };
 
   const handleGatekeepingUpdate = (postId, newGatekeepingValue) => {

@@ -82,7 +82,7 @@ export const BottomModal = ({
                 <Text className="text-black font-semibold text-base">
                   {username}
                 </Text>
-                <Text className="text-blue-100 text-sm">View Profile</Text>
+                <Text className="text-gray-700 text-sm">View Profile</Text>
               </View>
               <Feather name="user" size={20} color="black" />
             </View>
@@ -106,7 +106,7 @@ export const BottomModal = ({
                   <Text className="text-black font-semibold text-base">
                     {location.split(",")[0]}
                   </Text>
-                  <Text className=" text-sm">View Restaurant</Text>
+                  <Text className="text-gray-700 text-sm">View Restaurant</Text>
                 </View>
                 <Feather name="map-pin" size={20} color="black" />
               </View>
