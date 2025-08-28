@@ -15,13 +15,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useReview } from "@/context/reviewContext";
+import { useSearch } from "@/context/searchContext";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const FilterOptions = () => {
   const { tags: tagCategories } = useReview();
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState(new Set());
+  const { selectedFilters, setSelectedFilters, searchQuery } = useSearch();
+  console.log("Selected Filters:", searchQuery);
   const [tempSelectedFilters, setTempSelectedFilters] = useState(new Set());
   const slideAnim = new Animated.Value(0);
 
