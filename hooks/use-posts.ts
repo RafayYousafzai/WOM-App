@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
 import { useToast } from "react-native-toast-notifications";
 import { getBlockedUserIds } from "@/lib/supabase/user_blocks";
 import { Alert } from "react-native";
+import * as Location from "expo-location";
 
 const PAGE_SIZE = 10;
 
@@ -71,15 +72,36 @@ export const usePosts = () => {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [countryFilterActive, setCountryFilterActive] = useState(false);
+  const [countryFilterActive, setCountryFilterActive] = useState(false); // Can repurpose for location active
 
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap (if needed)
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        toast.show("Location permission denied. Feed won't prioritize nearby posts.", { type: "warning" });
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        // Remove latitudeDelta/longitudeDelta unless using maps; assume region is defined elsewhere if needed
+      });
+      setCountryFilterActive(true); // Activate if location available
+    })();
+  }, []);
   // Use page for "For You" and timestamp for "Following"
   const pageRef = useRef(1);
   const lastTimestampRef = useRef(new Date().toISOString());
   const fetchIdRef = useRef(0);
 
   const buildPostsQuery = useCallback(() => {
-    // This function remains the same, it builds the main select query
+   // This function remains the same, it builds the main select query
     return supabase.from("posts").select(`
       id, review, user_id, is_review, anonymous, gatekeeping, people, created_at, updated_at,
       restaurants (id, location, rating),
@@ -91,7 +113,7 @@ export const usePosts = () => {
     `);
   }, [supabase]);
 
-  const transformPostData = useCallback((rawPosts: any[]): Post[] => {
+ const transformPostData = useCallback((rawPosts: any[]): Post[] => {
     // This utility function remains the same
     return rawPosts.map((post) => ({
       ...post,
@@ -106,7 +128,7 @@ export const usePosts = () => {
     }));
   }, []);
 
-  const fetchPosts = useCallback(
+const fetchPosts = useCallback(
     async (tab: TabType, loadMore = false) => {
       const currentFetchId = ++fetchIdRef.current;
 
@@ -122,7 +144,7 @@ export const usePosts = () => {
         let finalPosts: Post[] = [];
 
         if (tab === "forYou") {
-          // --- NEW "FOR YOU" LOGIC ---
+          // --- UPDATED "FOR YOU" LOGIC: Pass location to RPC for distance calculation ---
           const { data: rankedPosts, error: rpcError } = await supabase.rpc(
             "get_for_you_feed",
             {
@@ -130,6 +152,8 @@ export const usePosts = () => {
               page_offset: (pageRef.current - 1) * PAGE_SIZE,
               requesting_user_id:
                 user?.id ?? "00000000-0000-0000-0000-000000000000", // Provide a dummy UUID for logged-out users
+              user_latitude: userLocation?.latitude ?? null, // Pass location
+              user_longitude: userLocation?.longitude ?? null,
             }
           );
 
@@ -210,7 +234,7 @@ export const usePosts = () => {
         }
       }
     },
-    [buildPostsQuery, user, supabase, toast, transformPostData]
+    [buildPostsQuery, user, supabase, toast, transformPostData, userLocation]
   );
 
   const loadPosts = useCallback(
@@ -250,11 +274,10 @@ export const usePosts = () => {
       }
 
       setActiveTab(tab);
-      setPosts([]); // Clear posts immediately for better UX
+      setPosts([]);
       setHasMore(true);
       setLoading(true);
 
-      // Resetting fetch ID prevents race conditions from the previous tab
       fetchIdRef.current += 1;
       await loadPosts(false);
     },
@@ -284,17 +307,3 @@ export const usePosts = () => {
     loadPosts,
   };
 };
-
-// Client Request: When you open the "For You" feed, your app asks the Supabase database for the first page of posts by calling the get_for_you_feed function.
-
-// Scoring Each Post: The function runs on the server and calculates a "relevance score" for every post in your posts table. This score is based on two key factors:
-
-// Engagement: It counts the number of likes and comments for each post. It gives more weight to comments (multiplying them by 2.0) than likes (multiplied by 1.5), treating comments as a stronger signal of interest.
-
-// Recency (Time Decay): It checks how old a post is. Using an exponential decay formula (EXP(...)), it systematically lowers the score of older posts. This ensures that a new, moderately popular post can rank higher than a very old, viral post, keeping the feed fresh.
-
-// Filtering and Ranking: After scoring all posts, the function filters out any posts from users you've blocked. Then, it sorts all the remaining posts from the highest score to the lowest.
-
-// Pagination: The function only returns a small batch of the top-scoring posts (a "page," which is 10 posts in your code). When you scroll to the bottom, the app requests the next page, and the process repeats.
-
-// Display: Your app receives this pre-sorted list of post IDs and fetches their full details to display them in the correct, dynamically ranked order.

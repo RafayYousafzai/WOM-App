@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react"; // Added useCallback for debounce
 import { FlatList, Text, View } from "react-native";
 import { PostCard } from "./PostCard";
 import { PostListingSkeleton } from "../PageSkeletons/PostCardSkeleton";
@@ -11,6 +11,7 @@ import { togglePostLike } from "../../lib/supabase/postsAction";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
 import { EditPostHeader } from "./EditPost/EditPostHeader";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import _ from "lodash"; // Assume lodash for debounce; install if needed: expo install lodash
 
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString("en-US", {
@@ -33,6 +34,41 @@ export default function PostListing({
   const route = useRoute();
   const navigation = useNavigation();
   const flatListRef = useRef(null);
+
+  const viewedPostsRef = useRef(new Set()); // Track viewed posts to avoid duplicates
+
+  // Debounced function to upsert views in batch
+  const debouncedTrackViews = useCallback(
+    _.debounce(async (postIds) => {
+      if (!user || postIds.length === 0) return;
+      const views = postIds.map((id) => ({ user_id: user.id, post_id: id }));
+      const { error } = await supabase
+        .from("viewed_posts")
+        .upsert(views, { onConflict: "user_id, post_id" });
+      if (error) console.error("Error tracking views:", error);
+      postIds.forEach((id) => viewedPostsRef.current.delete(id)); // Clear after send
+    }, 1000), // Debounce 1s
+    [user, supabase]
+  );
+
+  // Handle viewable items
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }) => {
+      const newViewedIds = viewableItems
+        .map((item) => item.item.id)
+        .filter((id) => !viewedPostsRef.current.has(id));
+      newViewedIds.forEach((id) => viewedPostsRef.current.add(id));
+      if (newViewedIds.length > 0) {
+        debouncedTrackViews(newViewedIds);
+      }
+    },
+    [debouncedTrackViews]
+  );
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 500,
+  };
 
   const handleGatekeepingUpdate = (postId, newGatekeepingValue) => {
     console.log(
@@ -205,6 +241,8 @@ export default function PostListing({
             )}
           </View>
         }
+        onViewableItemsChanged={handleViewableItemsChanged} // ADDED: For view tracking
+        viewabilityConfig={viewabilityConfig} // ADDED
       />
     );
   };
