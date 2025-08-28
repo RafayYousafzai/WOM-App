@@ -100,7 +100,15 @@ export const useDishesHandler = () => {
       // Step 4: Fetch the full post data (no changes here).
       const { data, error: fetchError } = await supabase
         .from("posts")
-        .select(`*, post_dishes (*), restaurants (*), post_tags(tags(*))`)
+        .select(
+          `
+          *,
+          post_dishes (*),
+          restaurants (*),
+          post_tags(tags(*)),
+          users (id, username, full_name, image_url)
+        `
+        )
         .in("id", finalPostIds);
 
       if (fetchError) throw fetchError;
