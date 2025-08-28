@@ -71,7 +71,7 @@ export default function VisitProfileScreen() {
     followers: 0,
     following: 0,
   });
-
+  console.log("total posts:", counts.posts);
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -93,7 +93,7 @@ export default function VisitProfileScreen() {
       );
 
       setCounts({
-        posts: allPosts.all,
+        posts: allPosts.reviewCount,
         followers: totalFollowersCount,
         following: totalFollowingCount,
       });
@@ -341,16 +341,6 @@ export default function VisitProfileScreen() {
                     <View className="bg-white rounded-xl shadow-lg min-w-[150px] overflow-hidden">
                       {user_id !== authUser?.id && (
                         <>
-                          {/* <TouchableOpacity
-                            onPress={() => handleShare(user_id, user.username)}
-                            className="flex-row items-center px-4 py-3 bg-gray-200"
-                            activeOpacity={0.7}
-                          >
-                            <Feather name="share" size={16} color="#000" />
-                            <Text className="ml-2 text-base text-black font-medium">
-                              Share Profile
-                            </Text>
-                          </TouchableOpacity> */}
                           <TouchableOpacity
                             onPress={handleBlockUser}
                             className="flex-row items-center px-4 py-3 bg-red-500"
