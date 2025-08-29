@@ -34,9 +34,8 @@ export default function AllResultsList({ searchQuery }) {
     const ComponentToRender = item.component; // Get the component itself
 
     return (
-      <View className="mb-4">
+      <View className="">
         {/* Label for the section */}
-        <Text className="text-xl font-bold mb-2 ml-4">{item.title}</Text>
         {/* Render the actual list component, passing its props */}
         <ComponentToRender {...item.props} />
       </View>
@@ -48,7 +47,7 @@ export default function AllResultsList({ searchQuery }) {
       data={sectionsData}
       keyExtractor={(item) => item.id}
       renderItem={renderSection}
-      className="flex-1 mt-4 mb-32 bg-white"
+      className="flex-1 bg-slate-50"
       // Important: Setting these props to prevent outer FlatList from taking over
       // the scroll, and hoping the inner ScrollViews handle it.
       // However, this often leads to a poor UX and janky scrolling.
