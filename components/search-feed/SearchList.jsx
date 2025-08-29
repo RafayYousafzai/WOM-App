@@ -109,7 +109,7 @@ export default function SearchList() {
   const renderContent = useCallback(() => {
     if (debouncedSearchQuery.trim() === "") {
       return (
-        <View className="flex-1 px-12">
+        <View className="flex-1 px-12 items-center justify-center">
           <Image
             source={require("@/assets/images/search-food.png")}
             style={{ width: 350, height: 350, marginBottom: 20 }}

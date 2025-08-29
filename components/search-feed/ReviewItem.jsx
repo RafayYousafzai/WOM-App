@@ -62,150 +62,164 @@ const ReviewsList = ({ limit = 20 }) => {
           <Text className="text-5xl font-bold text-gray-900 mb-2">Reviews</Text>
         </View>
 
-        {posts.slice(0, limit).map((post, index) => (
-          <TouchableOpacity
-            key={`${post.uuid_id}-${index}`}
-            className="bg-white rounded-2xl mb-6 shadow-md"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.1,
-              shadowRadius: 12,
-              elevation: 8,
-            }}
-          >
-            <View className="overflow-hidden rounded-2xl">
-              <View className="flex-row">
-                <View style={{ width: "42%" }} className="relative flex">
-                  <Image
-                    source={{
-                      uri:
-                        post?.post_dishes[0]?.image_urls[0] ||
-                        "https://via.placeholder.com/150",
-                    }}
-                    style={{
-                      width: "100%",
-                      flex: 1,
-                      borderTopLeftRadius: 16,
-                      borderBottomLeftRadius: 16,
-                    }}
-                    resizeMode="cover"
-                  />
-                </View>
-
-                <View className="flex-1 p-3">
-                  <Text
-                    className="text-gray-800 text-lg font-semibold capitalize"
-                    numberOfLines={1}
-                  >
-                    {post.gatekeeping
-                      ? post.restaurants?.location || "Unnamed Restaurant"
-                      : "Private."}
-                  </Text>
-
-                  {post.review && (
-                    <Text
-                      className="text-gray-800 text-base leading-relaxed font-normal"
-                      numberOfLines={2}
-                    >
-                      {post.review}
-                    </Text>
-                  )}
-
-                  <View className="flex-row flex-wrap">
-                    {post?.post_dishes?.map((dish, index) => (
-                      <View key={index} className="mr-2 mb-2">
-                        <Text className="text-xs capitalize font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full tracking-wide">
-                          {dish.dish_name || "?"}
-                        </Text>
-                      </View>
-                    ))}
+        <View
+          className="bg-white rounded-2xl mb-6 shadow-md gap-4 p-4"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 8,
+          }}
+        >
+          {posts.slice(0, limit).map((post, index) => (
+            <TouchableOpacity
+              key={`${post.uuid_id}-${index}`}
+              className="my-2"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <View className="overflow-hidden rounded-2xl">
+                <View className="flex-row">
+                  <View style={{ width: "42%" }} className="relative flex">
+                    <Image
+                      source={{
+                        uri:
+                          post?.post_dishes[0]?.image_urls[0] ||
+                          "https://via.placeholder.com/150",
+                      }}
+                      style={{
+                        width: "100%",
+                        flex: 1,
+                        borderRadius: 16,
+                      }}
+                      resizeMode="cover"
+                    />
                   </View>
 
-                  {!post.gatekeeping && post.restaurants.location && (
-                    <View className="flex-row items-center mb-2 mt-auto">
-                      <Ionicons name="location" size={14} color="#ffd100" />
-                      <Text
-                        className="text-gray-600 ml-1 text-xs font-medium flex-1"
-                        numberOfLines={1}
-                      >
-                        {shortenString(post.restaurants.location, 20)}
-                      </Text>
-                    </View>
-                  )}
+                  <View className="flex-1 px-3 py-1">
+                    <Text
+                      className="text-gray-800 text-lg font-semibold capitalize"
+                      numberOfLines={1}
+                    >
+                      {post.gatekeeping
+                        ? post.restaurants?.location || "Unnamed Restaurant"
+                        : "Private."}
+                    </Text>
 
-                  <View className="flex-row items-center justify-between  ">
-                    <View className="flex-row items-center">
-                      <View className="flex-row items-center gap-4">
-                        <View className="flex-row items-center  rounded-full">
-                          <Ionicons name="star" size={14} color="#ffd100" />
-                          <Text className="text-yellow-700 ml-1 text-xs font-semibold">
-                            {(post.restaurants?.rating || 0).toFixed(1)}
+                    {post.review && (
+                      <Text
+                        className="text-gray-800 text-base leading-relaxed font-normal"
+                        numberOfLines={2}
+                      >
+                        {post.review}
+                      </Text>
+                    )}
+
+                    <View className="flex-row flex-wrap">
+                      {post?.post_dishes?.map((dish, index) => (
+                        <View key={index} className="mr-2 mb-2">
+                          <Text className="text-xs capitalize font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full tracking-wide">
+                            {dish.dish_name || "?"}
                           </Text>
                         </View>
-                        {post.people?.length > 0 && (
-                          <View className="flex-row items-center   rounded-full ">
-                            <Ionicons name="people" size={14} color="#e73c3e" />
-                            <Text className="text-pink-700 ml-1 text-xs font-semibold">
-                              +{post.people.length}
+                      ))}
+                    </View>
+
+                    {!post.gatekeeping && post.restaurants.location && (
+                      <View className="flex-row items-center mb-2 mt-auto">
+                        <Ionicons name="location" size={14} color="#ffd100" />
+                        <Text
+                          className="text-gray-600 ml-1 text-xs font-medium flex-1"
+                          numberOfLines={1}
+                        >
+                          {shortenString(post.restaurants.location, 20)}
+                        </Text>
+                      </View>
+                    )}
+
+                    <View className="flex-row items-center justify-between  ">
+                      <View className="flex-row items-center">
+                        <View className="flex-row items-center gap-4">
+                          <View className="flex-row items-center  rounded-full">
+                            <Ionicons name="star" size={14} color="#ffd100" />
+                            <Text className="text-yellow-700 ml-1 text-xs font-semibold">
+                              {(post.restaurants?.rating || 0).toFixed(1)}
+                            </Text>
+                          </View>
+                          {post.people?.length > 0 && (
+                            <View className="flex-row items-center   rounded-full ">
+                              <Ionicons
+                                name="people"
+                                size={14}
+                                color="#e73c3e"
+                              />
+                              <Text className="text-pink-700 ml-1 text-xs font-semibold">
+                                +{post.people.length}
+                              </Text>
+                            </View>
+                          )}
+                          <Text className="text-gray-400 text-xs">
+                            {formatDate(post.created_at)}
+                          </Text>
+                        </View>
+
+                        {post.gatekeeping && (
+                          <View className="flex-row items-center bg-amber-100 px-3 py-1 rounded-full">
+                            <Ionicons
+                              name="lock-closed"
+                              size={14}
+                              color="#ffd100"
+                            />
+                            <Text className="text-amber-700 ml-1 text-xs font-bold uppercase tracking-wide">
+                              Private
                             </Text>
                           </View>
                         )}
-                        <Text className="text-gray-400 text-xs">
-                          {formatDate(post.created_at)}
+                      </View>
+                    </View>
+                    <View className="flex-row items-center mt-2">
+                      <View className="relative">
+                        <Image
+                          source={{
+                            uri:
+                              post.users.image_url ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                post.users.full_name || "User"
+                              )}&background=ffd100&color=fff&size=80`,
+                          }}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: 22,
+                            borderWidth: 2,
+                            borderColor: "#ffd100",
+                          }}
+                          className="mr-3"
+                        />
+                      </View>
+                      <View className="flex-1 " style={{ minWidth: 0 }}>
+                        <Text
+                          className=" text-gray-700 text-base"
+                          numberOfLines={1}
+                        >
+                          {post.anonymous
+                            ? "Anonymous Foodie"
+                            : post.users.full_name || "User"}
                         </Text>
                       </View>
-
-                      {post.gatekeeping && (
-                        <View className="flex-row items-center bg-amber-100 px-3 py-1 rounded-full">
-                          <Ionicons
-                            name="lock-closed"
-                            size={14}
-                            color="#ffd100"
-                          />
-                          <Text className="text-amber-700 ml-1 text-xs font-bold uppercase tracking-wide">
-                            Private
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                  <View className="flex-row items-center mt-2">
-                    <View className="relative">
-                      <Image
-                        source={{
-                          uri:
-                            post.users.image_url ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              post.users.full_name || "User"
-                            )}&background=ffd100&color=fff&size=80`,
-                        }}
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 22,
-                          borderWidth: 2,
-                          borderColor: "#ffd100",
-                        }}
-                        className="mr-3"
-                      />
-                    </View>
-                    <View className="flex-1 " style={{ minWidth: 0 }}>
-                      <Text
-                        className=" text-gray-700 text-base"
-                        numberOfLines={1}
-                      >
-                        {post.anonymous
-                          ? "Anonymous Foodie"
-                          : post.users.full_name || "User"}
-                      </Text>
                     </View>
                   </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {(!posts || posts.length === 0) && (
           <View className="items-center py-16">
