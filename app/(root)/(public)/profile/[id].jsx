@@ -82,7 +82,9 @@ export default function VisitProfileScreen() {
     setLoading(true);
     try {
       const fetchedUser = await getUserById(supabase, user_id);
+
       const allPosts = await getTotalPostsCount(supabase, user_id);
+
       const totalFollowersCount = await getTotalFollowersCount(
         supabase,
         user_id
@@ -99,7 +101,6 @@ export default function VisitProfileScreen() {
       });
       setUser(fetchedUser);
     } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -124,18 +125,18 @@ export default function VisitProfileScreen() {
         .from("posts")
         .select(
           `
-          *,
-          user:user_id (
-            username,
-            first_name,
-            last_name,
-            updated_at,
-            image_url
-          ),
-          restaurant:restaurant_id (*),
-          post_dishes (*),
-          post_likes (user_id)
-        `
+        *,
+        user:user_id (
+          username,
+          first_name,
+          last_name,
+          updated_at,
+          image_url
+        ),
+        restaurant:restaurant_id (*),
+        post_dishes (*),
+        post_likes (user_id)
+      `
         )
         .eq("user_id", user_id)
         .eq("anonymous", false)
@@ -164,10 +165,9 @@ export default function VisitProfileScreen() {
         ownReviews: postsWithImages.filter((p) => !p.is_review),
       });
     } catch (err) {
-      console.error("Error fetching posts:", err.message);
+      console.error("[fetchPosts] error:", err.message);
     }
   };
-
   const fetchData = async () => {
     if (!user_id) {
       router.replace("/");
@@ -448,7 +448,11 @@ export default function VisitProfileScreen() {
           </View>
 
           <GridDynamicCards
-            posts={activeTab === "reviews" ? posts.reviews : posts.ownReviews}
+            posts={
+              activeTab === "reviews"
+                ? posts.reviews || [] // 👈 fallback to []
+                : posts.ownReviews || [] // 👈 fallback to []
+            }
             scroll={false}
           />
         </View>
