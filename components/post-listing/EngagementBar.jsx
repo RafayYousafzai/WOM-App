@@ -32,9 +32,13 @@ export const EngagementBar = ({
 }) => {
   const { user } = useUser();
   const { isSignedIn } = useAuth();
-  const { supabase} = useSupabase();
-  const { addPostToCollection, getUserCollections, isPostBookmarked, removeAllBookmarksForPost } = 
-    useBookmarks();
+  const { supabase } = useSupabase();
+  const {
+    addPostToCollection,
+    getUserCollections,
+    isPostBookmarked,
+    removeAllBookmarksForPost,
+  } = useBookmarks();
 
   const [isLiked, setIsLiked] = useState(initialIsLiked || false);
   const [likesCount, setLikesCount] = useState(initialLikesCount || 0);
@@ -57,7 +61,7 @@ export const EngagementBar = ({
         });
         setIsFavorited(isBookmarked);
       } catch (error) {
-        console.error("Error fetching collections or bookmark status:", error);
+        // console.error("Error fetching collections or bookmark status:", error);
       }
     };
     fetchAndCheck();
@@ -185,7 +189,7 @@ export const EngagementBar = ({
   const handleShare = async () => {
     try {
       const universalUrl = `https://wordofmouth.vercel.app/post/${post_id}`;
-      const shareMessage = `Check out this post: ${ 
+      const shareMessage = `Check out this post: ${
         title || "Shared post"
       }\n${universalUrl}`;
 

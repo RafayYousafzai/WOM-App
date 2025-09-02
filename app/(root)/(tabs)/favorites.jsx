@@ -28,8 +28,15 @@ export default function Favorites() {
 
   const { isSignedIn } = useAuth();
   const { user } = useUser();
-  const { getUserCollections, getBookmarkedPosts, createCollection } =
-    useBookmarks();
+  const {
+    getUserCollections,
+    getBookmarkedPosts,
+    createCollection,
+    deleteCollection,
+  } = useBookmarks();
+
+  // Protected collections that cannot be deleted
+  const PROTECTED_COLLECTIONS = ["Wishlist", "Recipe"];
 
   // --- Fetch Data Functions ---
   const fetchCollections = useCallback(async () => {
@@ -103,6 +110,59 @@ export default function Favorites() {
     }
   };
 
+  const handleDeleteCollection = (collectionName) => {
+    // Check if it's a protected collection
+    if (PROTECTED_COLLECTIONS.includes(collectionName)) {
+      Alert.alert(
+        "Cannot Delete",
+        `The "${collectionName}" collection cannot be deleted as it's a default collection.`
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete Collection",
+      `Are you sure you want to delete the "${collectionName}" collection? This will remove all bookmarks in this collection.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await deleteCollection(user.id, collectionName);
+
+              // If we're currently viewing the deleted collection, switch to "All"
+              if (activeCategory === collectionName) {
+                setActiveCategory("All");
+              }
+
+              await fetchCollections();
+              await fetchBookmarks();
+
+              Alert.alert(
+                "Success",
+                `Collection "${collectionName}" has been deleted.`
+              );
+            } catch (error) {
+              console.error("Failed to delete collection:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete collection. Please try again."
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -131,7 +191,12 @@ export default function Favorites() {
     { id: "All", name: "All" },
     { id: "Wishlist", name: "Wishlist" },
     { id: "Recipe", name: "Recipe" },
-    ...collections.map((col) => ({ id: col.name, name: col.name })),
+    ...collections.map((col) => ({
+      id: col.name,
+      name: col.name,
+      // Mark user-created collections as deletable
+      isDeletable: !PROTECTED_COLLECTIONS.includes(col.name),
+    })),
     { id: "Add", name: "Add Collection", icon: "plus" },
   ];
 
@@ -168,6 +233,7 @@ export default function Favorites() {
             categories={uniqueCategories}
             selectedCategory={activeCategory}
             onSelect={handleCategorySelect}
+            onLongPress={handleDeleteCollection} // Pass the delete handler
           />
 
           <GridFavoritesCards
@@ -208,10 +274,12 @@ export default function Favorites() {
               style={{
                 backgroundColor: "#f8fafc",
                 fontSize: 14,
+                color: "#000",
               }}
               contentStyle={{
                 fontSize: 14,
                 paddingVertical: 6,
+                color: "#000",
               }}
               outlineStyle={{
                 borderRadius: 16,
