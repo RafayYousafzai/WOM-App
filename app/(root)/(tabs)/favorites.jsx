@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ScrollableCategories from "@/components/layout/ScrollableCategories";
+import ScrollableCategories from "@/components/layout/FavScrollableCategories";
 import GridFavoritesCards from "@/components/dynamic-cards/GridFavoritesCards";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useBookmarks } from "@/lib/supabase/bookmarkActions";
