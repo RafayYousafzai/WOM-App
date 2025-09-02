@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useGlobal } from "@/context/globalContext";
 
 const shortenString = (str, maxLength = 20) => {
   if (typeof str !== "string" || str.length <= maxLength) return str;
@@ -25,6 +27,8 @@ const ReviewsList = ({ limit = 20 }) => {
       day: "numeric",
     });
   };
+
+  const { setRenderPosts } = useGlobal();
 
   if (loading) {
     return (
@@ -83,6 +87,44 @@ const ReviewsList = ({ limit = 20 }) => {
                 shadowOpacity: 0.1,
                 shadowRadius: 12,
                 elevation: 8,
+              }}
+              onPress={() => {
+                // normalize shape so Posts screen can use it
+                const normalizedPosts = posts.map((p) => {
+                  const images =
+                    p.post_dishes
+                      ?.flatMap((dish) => dish.image_urls || [])
+                      .filter((url) => url) || [];
+
+                  return {
+                    ...p,
+                    images,
+                    dishes: p.post_dishes || [],
+                    isLiked: false, // or add your like logic
+                    user: p.users
+                      ? {
+                          id: p.users.id,
+                          // Fix: Include both name formats for compatibility
+                          name: p.users.full_name || "Unknown",
+                          first_name:
+                            p.users.full_name?.split(" ")[0] || "Unknown",
+                          last_name:
+                            p.users.full_name?.split(" ").slice(1).join(" ") ||
+                            "",
+                          image_url: p.users.image_url ?? null,
+                        }
+                      : null,
+                    restaurant: p.restaurants, // rename for consistency
+                  };
+                });
+
+                setRenderPosts({
+                  posts: normalizedPosts,
+                  loading: false,
+                  initialScrollIndex: index,
+                });
+
+                router.push("/posts");
               }}
             >
               <View className="overflow-hidden rounded-2xl">
