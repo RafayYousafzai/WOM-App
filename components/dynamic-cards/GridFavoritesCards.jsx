@@ -101,27 +101,31 @@ export default function GridFavoritesCards({
 
   return (
     <View className="flex-1">
-      <FlatList
-        data={posts}
-        numColumns={GRID_COLUMNS}
-        keyExtractor={(item) => item.id.toString()}
-        scrollEnabled={scroll}
-        renderItem={renderGridItem}
-        onRefresh={onRefresh}
-        refreshing={isLoading}
-        contentContainerStyle={{
-          flex: 1,
-          height: "100%",
-        }}
-        ListEmptyComponent={
-          <View className="flex-1 justify-center items-center mt-28">
-            <Image
-              source={require("@/assets/images/favorites.png")}
-              style={{ width: 310, height: 310, marginBottom: 20 }}
-            />
-          </View>
-        }
-      />
+      {isLoading ? (
+        <GridFavoritesSkeleton count={6} />
+      ) : (
+        <FlatList
+          data={posts}
+          numColumns={GRID_COLUMNS}
+          keyExtractor={(item) => item.id.toString()}
+          scrollEnabled={scroll}
+          renderItem={renderGridItem}
+          onRefresh={onRefresh}
+          refreshing={isLoading}
+          contentContainerStyle={{
+            flex: 1,
+            height: "100%",
+          }}
+          ListEmptyComponent={
+            <View className="flex-1 justify-center items-center mt-28">
+              <Image
+                source={require("@/assets/images/favorites.png")}
+                style={{ width: 310, height: 310, marginBottom: 20 }}
+              />
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
