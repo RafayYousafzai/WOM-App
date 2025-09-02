@@ -74,7 +74,7 @@ export default function DraftManager() {
           <View className="flex-row justify-between items-center">
             <View className="flex-1 mr-4">
               <Text className="text-xl font-bold text-gray-900 mb-2">
-                {item?.location.address ||
+                {item?.location ||
                   item?.dishTypes[0]?.dishName ||
                   "Untitled Draft"}
               </Text>
@@ -135,7 +135,7 @@ export default function DraftManager() {
         <FlatList
           data={allDrafts}
           keyExtractor={(item) => item.id}
-          // renderItem={renderDraftItem}
+          renderItem={renderDraftItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={() => (
