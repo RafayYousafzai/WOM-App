@@ -5,159 +5,230 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import MapView, {
-  Marker,
-  PROVIDER_GOOGLE,
-  Heatmap,
-  PROVIDER_DEFAULT,
-} from "react-native-maps";
 import {
   View,
   ActivityIndicator,
   StyleSheet,
   Text,
-  Button,
+  TouchableOpacity,
   Dimensions,
-} from "react-native";
-import { router } from "expo-router";
-import { useFoodMapData } from "./FoodMapDataProvider";
+  Platform,
+} from "react-native"; // Changed back to react-native for universal compatibility
+import MapView, { Marker, PROVIDER_GOOGLE, Heatmap } from "react-native-maps";
 import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons";
+import { useDishesHandler } from "@/hooks/useSearch";
+import { useRouter } from "expo-router"; // Use the actual hook in a real app
+import { useGlobal } from "@/context/globalContext";
 
+// --- Constants ---
 const { width, height } = Dimensions.get("window");
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
-const safeHeatmapRadius = Math.min(Math.max(30, 10), 50);
+const safeHeatmapRadius = Platform.OS === "android" ? 50 : 30;
 
+// --- Main Component ---
 const FoodMapView = () => {
-  const mapRef = useRef(null);
-  const { loading, posts, region, setRegion } = useFoodMapData();
-  const [userLocation, setUserLocation] = useState(null);
-  const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap
+  const { setRenderPosts } = useGlobal();
 
+  const mapRef = useRef(null);
+  const router = useRouter(); // Use the real router hook
+  const { posts, loading, error } = useDishesHandler();
+
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Default region set to Lahore, a good fallback
+  const [region, setRegion] = useState({
+    latitude: 31.5204,
+    longitude: 74.3587,
+    latitudeDelta: LATITUDE_DELTA,
+    longitudeDelta: LONGITUDE_DELTA,
+  });
+
+  // Effect to get user's current location
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        console.log("Permission to access location was denied");
+        console.warn("Permission to access location was denied");
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: region.latitudeDelta, // Keep current zoom level
-        longitudeDelta: region.longitudeDelta,
-      });
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        const newUserLocation = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        // Set user location state
+        setUserLocation(newUserLocation);
+        // Animate map to the new location
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(
+            {
+              ...newUserLocation,
+              latitudeDelta: LATITUDE_DELTA,
+              longitudeDelta: LONGITUDE_DELTA,
+            },
+            1000
+          );
+        }
+      } catch (e) {
+        console.error("Could not fetch location:", e);
+      }
     })();
   }, []);
 
-  useEffect(() => {
-    // Simulate fetching restaurant data (replace with your actual data source)
-    // This example uses the posts data for heatmap.  Adjust as needed.
-    const dummyRestaurants = posts.map((post) => ({
-      latitude: post.location?.latitude || 0, // Use 0 as default if no location
-      longitude: post.location?.longitude || 0,
-      intensity: 1, // You might want to adjust intensity based on review count or other factors
-    }));
-    setRestaurantLocations(dummyRestaurants);
+  // Memoized and FILTERED data to prevent crashes from bad data. This is great.
+  const mapPoints = useMemo(() => {
+    if (!posts || posts.length === 0) return [];
+    return posts
+      .filter(
+        (post) =>
+          post &&
+          post.restaurants &&
+          typeof post.restaurants.latitude === "number" &&
+          typeof post.restaurants.longitude === "number"
+      )
+      .map((post) => ({
+        id: post.id,
+        location: {
+          latitude: post.restaurants.latitude,
+          longitude: post.restaurants.longitude,
+        },
+        rating: post.restaurants.rating,
+        review: post.review,
+        user: post.users?.full_name || "Unknown User",
+      }));
   }, [posts]);
 
-  const goToCurrentLocation = useCallback(() => {
-    if (userLocation && mapRef.current) {
-      mapRef.current.animateToRegion(userLocation, 1000);
-    }
-  }, [userLocation]);
-
-  // Cluster grouping logic
+  // Your clustering logic is efficient and correctly uses the sanitized `mapPoints`.
   const clusterGroups = useMemo(() => {
+    if (!mapPoints || mapPoints.length === 0) return [];
+
     const clusters = new Map();
+    const precision = 4; // Adjust precision to control cluster sensitivity
 
-    posts.forEach((post) => {
-      if (!post.location) return;
+    mapPoints.forEach((point) => {
+      if (!point.location) return;
 
-      const lat = post.location.latitude.toFixed(4);
-      const lng = post.location.longitude.toFixed(4);
+      const lat = point.location.latitude.toFixed(precision);
+      const lng = point.location.longitude.toFixed(precision);
       const key = `${lat}_${lng}`;
 
       if (!clusters.has(key)) {
         clusters.set(key, {
-          location: post.location,
-          posts: [post],
+          location: point.location,
+          posts: [point],
           count: 1,
         });
       } else {
         const cluster = clusters.get(key);
-        cluster.posts.push(post);
+        cluster.posts.push(point);
         cluster.count += 1;
       }
     });
 
     return Array.from(clusters.values());
-  }, [posts]);
+  }, [mapPoints]);
+
+  // Heatmap data correctly derived from filtered points.
+  const heatmapData = useMemo(() => {
+    return mapPoints.map((point) => ({
+      latitude: point.location.latitude,
+      longitude: point.location.longitude,
+      weight: point.rating || 1, // Default weight to 1 if rating is null
+    }));
+  }, [mapPoints]);
+
+  const goToCurrentLocation = useCallback(() => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          ...userLocation,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA,
+        },
+        1000
+      );
+    } else {
+      alert(
+        "User location not available yet. Please wait or check permissions."
+      );
+    }
+  }, [userLocation]);
 
   const handleClusterPress = useCallback(
     (cluster) => {
-      const { count, posts } = cluster;
-      const [firstPost] = posts;
+      // Step 1: Get the IDs of all posts within the clicked cluster.
+      const postIdsInCluster = new Set(cluster.posts.map((p) => p.id));
 
-      const isSinglePost = count === 1;
-      const postType =
-        firstPost.source_table === "own_reviews" ? "own_review" : "review";
-
-      if (isSinglePost) {
-        router.push({
-          pathname: `/review/${firstPost.id}`,
-          params: {
-            id: firstPost.id,
-            postType,
-          },
-        });
-      } else {
-        const clusterParams = posts.map(({ id, source_table }) => ({
-          id,
-          source_table,
-        }));
-
-        router.push({
-          pathname: `/cluster/show-all`,
-          params: {
-            cluster: JSON.stringify(clusterParams),
-          },
-        });
-      }
-    },
-    [router]
-  );
-
-  // Marker rendering
-  const renderClusterMarker = useCallback(
-    (cluster) => {
-      const baseSize = 40;
-      const clusterSize = Math.min(baseSize + cluster.count * 4, 80);
-
-      return (
-        <Marker
-          key={`cluster_${cluster.location.latitude}_${cluster.location.longitude}`}
-          coordinate={cluster.location}
-          onPress={() => handleClusterPress(cluster)}
-        />
+      // Step 2: Filter the original, full 'posts' array to get the complete data for this cluster.
+      // This is crucial because cluster.posts only has partial data (id, location, etc.).
+      const fullPostsInCluster = posts.filter((p) =>
+        postIdsInCluster.has(p.id)
       );
+
+      // Step 3: Normalize the shape of these posts so the '/posts' screen can use them.
+      const normalizedPosts = fullPostsInCluster.map((p) => {
+        // Extract all image URLs from the post's dishes
+        const images =
+          p.post_dishes
+            ?.flatMap((dish) => dish.image_urls || [])
+            .filter((url) => url) || [];
+
+        return {
+          ...p,
+          images, // An array of all image URLs
+          dishes: p.post_dishes || [],
+          isLiked: false, // Default 'isLiked' state, you can add your logic here
+          // Standardize the user object
+          user: p.users
+            ? {
+                id: p.users.id,
+                name: p.users.full_name || "Unknown User",
+                first_name: p.users.full_name?.split(" ")[0] || "Unknown",
+                last_name:
+                  p.users.full_name?.split(" ").slice(1).join(" ") || "",
+                image_url: p.users.image_url ?? null,
+              }
+            : null,
+          // Rename for consistency on the next screen
+          restaurant: p.restaurants,
+        };
+      });
+
+      // Step 4: Set the state that the '/posts' screen will use to render.
+      // We assume 'setRenderPosts' is a state setter passed into this component.
+      setRenderPosts({
+        posts: normalizedPosts,
+        loading: false,
+        initialScrollIndex: 0, // Always start at the first post in the list
+      });
+
+      // Step 5: Navigate to the posts screen.
+      router.push("/posts");
     },
-    [handleClusterPress]
+    [router, posts, setRenderPosts] // Add all external dependencies here
   );
 
-  const heatmapData = restaurantLocations.map((rest) => ({
-    latitude: rest.latitude,
-    longitude: rest.longitude,
-    weight: rest.intensity, // Use intensity as weight
-  }));
-
+  // Your loading and error states are perfect.
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#f39f1e" />
+        <ActivityIndicator size="large" color="#fb923c" />
+        <Text style={styles.loadingText}>Finding delicious food spots...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+        <Text style={styles.errorText}>Could not load map data.</Text>
+        <Text style={styles.errorSubText}>{error.message}</Text>
       </View>
     );
   }
@@ -167,66 +238,128 @@ const FoodMapView = () => {
       <MapView
         ref={mapRef}
         style={styles.map}
-        initialRegion={region}
-        region={region}
         provider={PROVIDER_GOOGLE}
-        onRegionChangeComplete={setRegion}
+        initialRegion={region}
         showsUserLocation={true}
+        showsMyLocationButton={false}
       >
+        {/*
+          // DEBUGGING TIP: If the map still doesn't work,
+          // try commenting out the <Heatmap> component first.
+          // Sometimes, it has compatibility issues on web.
+        */}
         {heatmapData.length > 0 && (
           <Heatmap
             points={heatmapData}
             radius={safeHeatmapRadius}
-            opacity={0.7}
+            opacity={0.8}
             gradient={{
-              colors: ["lime", "yellow", "orange", "red"],
-              startPoints: [0.2, 0.4, 0.6, 0.8],
+              colors: ["#79E0EE", "#3498db", "#f39c12", "#e74c3c"],
+              startPoints: [0.1, 0.4, 0.7, 0.9],
               colorMapSize: 256,
             }}
           />
         )}
-        {clusterGroups.map(renderClusterMarker)}
+
+        {clusterGroups.map((cluster) => (
+          <Marker
+            key={`${cluster.location.latitude}_${cluster.location.longitude}`}
+            coordinate={cluster.location}
+            onPress={() => handleClusterPress(cluster)}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View
+              style={[
+                styles.markerContainer,
+                {
+                  width: 36 + cluster.count * 4,
+                  height: 36 + cluster.count * 4,
+                  borderRadius: (36 + cluster.count * 4) / 2,
+                },
+              ]}
+            >
+              <Text style={styles.markerText}>{cluster.count}</Text>
+            </View>
+          </Marker>
+        ))}
       </MapView>
-      <View style={styles.buttonContainer}>
-        <Button title="Go to My Location" onPress={goToCurrentLocation} />
-      </View>
+
+      <TouchableOpacity
+        style={styles.locationButton}
+        onPress={goToCurrentLocation}
+      >
+        <Ionicons name="navigate" size={24} color="white" />
+      </TouchableOpacity>
     </View>
   );
 };
 
+// --- Styles --- (Your styles are great, no changes needed)
 const styles = StyleSheet.create({
   centeredContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#6c757d",
+  },
+  errorText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#dc3545",
+    textAlign: "center",
+    marginTop: 10,
+  },
+  errorSubText: {
+    fontSize: 14,
+    color: "#6c757d",
+    textAlign: "center",
+    marginTop: 5,
   },
   mapContainer: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   map: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   markerContainer: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 165, 0, 0.8)", // Orange with some transparency
+    backgroundColor: "rgba(251, 146, 60, 0.9)",
+    borderColor: "rgba(255, 255, 255, 0.7)",
+    borderWidth: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5, // For Android shadow
+    elevation: 5,
   },
   markerText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },
-  buttonContainer: {
+  locationButton: {
     position: "absolute",
-    bottom: 20,
-    left: 0,
-    right: 0,
+    bottom: 60,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#fb923c",
+    justifyContent: "center",
     alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
 
