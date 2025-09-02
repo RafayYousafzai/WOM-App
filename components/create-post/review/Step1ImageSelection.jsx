@@ -29,6 +29,7 @@ export const Step1ImageSelection = () => {
     getCurrentDish,
     showModal,
     setShowModal,
+    setReviewData,
   } = useReview();
   const { postType } = useGlobal();
 
@@ -107,7 +108,9 @@ export const Step1ImageSelection = () => {
                     containerStyle={{
                       flex: 1,
                     }}
-                    handlePress={(val) => handleChange("location", val)}
+                    handlePress={(val) =>
+                      setReviewData((prev) => ({ ...prev, location: val }))
+                    }
                     initialLocation={reviewData.location}
                     textInputBackgroundColor="#f9fafb"
                   />

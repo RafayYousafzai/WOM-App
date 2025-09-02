@@ -83,18 +83,69 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
     }
   };
 
+  const fetchPlaceDetails = async (placeId) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${API}`
+      );
+      const data = await response.json();
+      if (data.status === "OK") {
+        const { lat, lng } = data.result.geometry.location;
+        return {
+          latitude: lat,
+          longitude: lng,
+          address: data.result.formatted_address,
+        };
+      } else {
+        console.error("Place Details API error:", data);
+        // Fallback to description
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching place details:", error);
+      return null;
+    }
+  };
+
   // Handle suggestion selection
   const handleLocationSelect = async (item) => {
-    const address = item.description;
+    // Show loading indicator while fetching details
+    setIsLoading(true);
+    const details = await fetchPlaceDetails(item.place_id);
+    setIsLoading(false);
 
-    setSelectedLocation(address);
+    if (details) {
+      setSelectedLocation(details.address);
+      if (handlePress) {
+        handlePress(details);
+      }
+    } else {
+      // Fallback to just address if details fetch fails
+      setSelectedLocation(item.description);
+      if (handlePress) {
+        handlePress({
+          latitude: null,
+          longitude: null,
+          address: item.description,
+        });
+      }
+    }
+
     setSearchQuery("");
     setSuggestions([]);
     setIsModalVisible(false);
+  };
 
-    if (handlePress && address) {
-      handlePress(address);
+  const handleClear = () => {
+    setSelectedLocation("");
+    if (handlePress) {
+      handlePress({
+        latitude: null,
+        longitude: null,
+        address: null,
+      });
     }
+    setIsModalVisible(false);
   };
 
   // Debounce search input
@@ -210,7 +261,9 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
                   >
                     Select Location
                   </Text>
-                  <View style={{ width: 40 }} />
+                  <TouchableOpacity onPress={handleClear} style={{ justifyContent: 'center', alignItems: 'center', width: 40 }}>
+                    <Text style={{ color: "#6366F1", fontWeight: "600" }}>Clear</Text>
+                  </TouchableOpacity>
                 </View>
               </Surface>
 
