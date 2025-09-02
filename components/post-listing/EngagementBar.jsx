@@ -32,8 +32,8 @@ export const EngagementBar = ({
 }) => {
   const { user } = useUser();
   const { isSignedIn } = useAuth();
-  const { supabase } = useSupabase();
-  const { addPostToCollection, getUserCollections, isPostBookmarked } =
+  const { supabase} = useSupabase();
+  const { addPostToCollection, getUserCollections, isPostBookmarked, removeAllBookmarksForPost } = 
     useBookmarks();
 
   const [isLiked, setIsLiked] = useState(initialIsLiked || false);
@@ -159,17 +159,24 @@ export const EngagementBar = ({
 
   const handleBookmark = async (collectionName) => {
     try {
-      const added = await addPostToCollection({
-        userId: user?.id,
-        postId: post_id,
-        collectionName: collectionName,
-      });
+      if (collectionName) {
+        await addPostToCollection({
+          userId: user?.id,
+          postId: post_id,
+          collectionName: collectionName,
+        });
+        setIsFavorited(true);
+      } else {
+        await removeAllBookmarksForPost({
+          userId: user?.id,
+          postId: post_id,
+        });
+        setIsFavorited(false);
+      }
 
-      setIsFavorited(added);
       if (onFavorite) onFavorite();
     } catch (error) {
       console.error("Error toggling bookmark:", error.message);
-      setIsFavorited((prev) => !prev);
     } finally {
       setIsBookmarkModalVisible(false);
     }
@@ -178,7 +185,7 @@ export const EngagementBar = ({
   const handleShare = async () => {
     try {
       const universalUrl = `https://wordofmouth.vercel.app/post/${post_id}`;
-      const shareMessage = `Check out this post: ${
+      const shareMessage = `Check out this post: ${ 
         title || "Shared post"
       }\n${universalUrl}`;
 

@@ -32,7 +32,7 @@ export default function Favorites() {
     useBookmarks();
 
   // --- Fetch Data Functions ---
-  const fetchCollections = async () => {
+  const fetchCollections = useCallback(async () => {
     if (!user?.id) return;
     try {
       const fetchedCollections = await getUserCollections(user.id);
@@ -40,7 +40,8 @@ export default function Favorites() {
     } catch (err) {
       console.error("Failed to fetch collections:", err);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const fetchBookmarks = useCallback(async () => {
     if (!user?.id) {
@@ -65,16 +66,21 @@ export default function Favorites() {
     } finally {
       setLoading(false);
     }
-  }, [user, activeCategory, getBookmarkedPosts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, activeCategory]);
 
   // --- useEffect Hooks ---
   useEffect(() => {
-    fetchCollections();
-  }, [user]);
+    if (isSignedIn) {
+      fetchCollections();
+    }
+  }, [isSignedIn, fetchCollections]);
 
   useEffect(() => {
-    fetchBookmarks();
-  }, [user, activeCategory, fetchBookmarks]);
+    if (isSignedIn) {
+      fetchBookmarks();
+    }
+  }, [isSignedIn, fetchBookmarks]);
 
   // --- Handlers ---
   const handleAddCollection = async () => {
