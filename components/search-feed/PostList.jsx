@@ -96,6 +96,7 @@ const DishList = ({ limit = 20 }) => {
                         width: "100%",
                         flex: 1,
                         borderRadius: 16,
+                        minHeight: 140,
                       }}
                       resizeMode="cover"
                     />
@@ -113,7 +114,7 @@ const DishList = ({ limit = 20 }) => {
                     {dishEntry.dish.review && (
                       <Text
                         className="text-gray-800 text-base leading-relaxed font-normal"
-                        numberOfLines={2}
+                        numberOfLines={1}
                       >
                         {dishEntry.dish.review}
                       </Text>
@@ -154,6 +155,21 @@ const DishList = ({ limit = 20 }) => {
                           </Text>
                         </View>
                       )}
+                    {dishEntry.dish.gatekeeping && (
+                      <View className="flex-row items-center mb-2 mt-auto">
+                        <Ionicons
+                          name="lock-closed"
+                          size={14}
+                          color="#ffd100"
+                        />
+                        <Text
+                          className="text-gray-600 ml-1 text-xs font-medium flex-1"
+                          numberOfLines={1}
+                        >
+                          Private
+                        </Text>
+                      </View>
+                    )}
                     {/* Footer */}
                     <View className="flex-row items-center justify-between  ">
                       <View className="flex-row items-center">
@@ -180,19 +196,6 @@ const DishList = ({ limit = 20 }) => {
                             {formatDate(dishEntry.dish.created_at)}
                           </Text>
                         </View>
-
-                        {dishEntry.dish.gatekeeping && (
-                          <View className="flex-row items-center bg-amber-100 px-3 py-1 rounded-full">
-                            <Ionicons
-                              name="lock-closed"
-                              size={14}
-                              color="#ffd100"
-                            />
-                            <Text className="text-amber-700 ml-1 text-xs font-bold uppercase tracking-wide">
-                              Private
-                            </Text>
-                          </View>
-                        )}
                       </View>
                     </View>
                     <View className="flex-row items-center mt-2">

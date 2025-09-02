@@ -16,6 +16,7 @@ const shortenString = (str, maxLength = 20) => {
 
 const ReviewsList = ({ limit = 20 }) => {
   const { posts, loading, error } = useDishesHandler();
+  console.log(posts[0]?.post_tags);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -97,6 +98,7 @@ const ReviewsList = ({ limit = 20 }) => {
                         width: "100%",
                         flex: 1,
                         borderRadius: 16,
+                        minHeight: 140,
                       }}
                       resizeMode="cover"
                     />
@@ -105,31 +107,48 @@ const ReviewsList = ({ limit = 20 }) => {
                   <View className="flex-1 px-3 py-1">
                     <Text
                       className="text-gray-800 text-lg font-semibold capitalize"
-                      numberOfLines={1}
+                      numberOfLines={2}
                     >
-                      {post.gatekeeping
-                        ? post.restaurants?.location || "Unnamed Restaurant"
-                        : "Private."}
+                      {post.review}
                     </Text>
 
-                    {post.review && (
-                      <Text
-                        className="text-gray-800 text-base leading-relaxed font-normal"
-                        numberOfLines={2}
-                      >
-                        {post.review}
-                      </Text>
-                    )}
-
-                    <View className="flex-row flex-wrap">
+                    {/* <View className="flex-row flex-wrap">
                       {post?.post_dishes?.map((dish, index) => (
                         <View key={index} className="mr-2 mb-2">
-                          <Text className="text-xs capitalize font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full tracking-wide">
+                          <Text className="text-xs capitalize font-semibold text-gray-700 bg-slate-50 px-3 py-1 rounded-full tracking-wide">
                             {dish.dish_name || "?"}
                           </Text>
                         </View>
                       ))}
-                    </View>
+                    </View> */}
+
+                    {post?.post_tags?.length > 0 ? (
+                      <View className="flex-row flex-wrap">
+                        {post.post_tags.slice(0, 2).map((tagObj, index) => (
+                          <View key={index} className="py-1 mr-2 mb-2">
+                            <Text className="text-gray-700 text-xs bg-slate-50 px-2 py-1 rounded-full">
+                              {tagObj?.tags?.name || "?"}
+                            </Text>
+                          </View>
+                        ))}
+
+                        {post.post_tags.length > 2 && (
+                          <View className="py-1 mr-2 mb-2">
+                            <Text className="text-gray-700 text-xs bg-slate-200 px-2 py-1 rounded-full">
+                              +{post.post_tags.length - 2}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    ) : (
+                      <View className="flex-row flex-wrap">
+                        <View key={index} className="mb-2">
+                          <Text className="text-gray-700 text-xs bg-slate-50 px-2 py-1 rounded-full">
+                            No Tags
+                          </Text>
+                        </View>
+                      </View>
+                    )}
 
                     {!post.gatekeeping && post.restaurants.location && (
                       <View className="flex-row items-center mb-2 mt-auto">
@@ -139,6 +158,22 @@ const ReviewsList = ({ limit = 20 }) => {
                           numberOfLines={1}
                         >
                           {shortenString(post.restaurants.location, 20)}
+                        </Text>
+                      </View>
+                    )}
+
+                    {post.gatekeeping && (
+                      <View className="flex-row items-center mb-2 mt-auto">
+                        <Ionicons
+                          name="lock-closed"
+                          size={14}
+                          color="#ffd100"
+                        />
+                        <Text
+                          className="text-gray-600 ml-1 text-xs font-medium flex-1"
+                          numberOfLines={1}
+                        >
+                          Private
                         </Text>
                       </View>
                     )}
@@ -168,19 +203,6 @@ const ReviewsList = ({ limit = 20 }) => {
                             {formatDate(post.created_at)}
                           </Text>
                         </View>
-
-                        {post.gatekeeping && (
-                          <View className="flex-row items-center bg-amber-100 px-3 py-1 rounded-full">
-                            <Ionicons
-                              name="lock-closed"
-                              size={14}
-                              color="#ffd100"
-                            />
-                            <Text className="text-amber-700 ml-1 text-xs font-bold uppercase tracking-wide">
-                              Private
-                            </Text>
-                          </View>
-                        )}
                       </View>
                     </View>
                     <View className="flex-row items-center mt-2">
