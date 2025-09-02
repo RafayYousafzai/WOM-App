@@ -135,7 +135,7 @@ export default function DraftManager() {
         <FlatList
           data={allDrafts}
           keyExtractor={(item) => item.id}
-          renderItem={renderDraftItem}
+          // renderItem={renderDraftItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
           ListEmptyComponent={() => (
