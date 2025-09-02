@@ -293,6 +293,7 @@ export const ReviewProvider = ({ children }) => {
       completeUpload();
       return;
     }
+    router.push("home");
 
     // --- 2. Upload Dish Images ---
     let updatedDishTypes = [];
@@ -328,7 +329,6 @@ export const ReviewProvider = ({ children }) => {
           completeUpload();
           setReviewData(postStateInit);
           setStep(1);
-          router.push("/(root)/posts");
         },
         onError: (error) => {
           setError("Failed to submit review");

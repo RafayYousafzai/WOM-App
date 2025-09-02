@@ -129,8 +129,15 @@ export function RatingStars({ rating, setRating }: RatingStarsProps) {
 
   const onInputChange = useCallback(
     (text: string) => {
-      setInputValue(text);
       const value = Number.parseFloat(text);
+
+      // If the parsed value is greater than 10, don't update anything
+      if (!isNaN(value) && value > MAX_RATING) {
+        return; // Stop here, don't update input or rating
+      }
+
+      setInputValue(text);
+
       if (!isNaN(value) && value >= 0 && value <= MAX_RATING) {
         const newX = (value / MAX_RATING) * sliderWidth;
         translateX.value = withSpring(newX, {
@@ -168,6 +175,7 @@ export function RatingStars({ rating, setRating }: RatingStarsProps) {
           selectTextOnFocus
           placeholder="0.0"
           placeholderTextColor="#9ca3af"
+          maxLength={4}
         />
       </View>
 
