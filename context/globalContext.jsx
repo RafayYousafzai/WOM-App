@@ -7,6 +7,11 @@ export const useGlobal = () => useContext(GlobalContext);
 export const GlobalProvider = ({ children }) => {
   const [postType, setPostType] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
+  const [renderPosts, setRenderPosts] = useState({
+    posts: [],
+    loading: false,
+    initialScrollIndex: 0,
+  });
 
   return (
     <GlobalContext.Provider
@@ -15,6 +20,8 @@ export const GlobalProvider = ({ children }) => {
         setPostType,
         selectedImages,
         setSelectedImages,
+        renderPosts,
+        setRenderPosts,
       }}
     >
       {children}
