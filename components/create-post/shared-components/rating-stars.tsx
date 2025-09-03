@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     height: HANDLE_SIZE + 16,
     justifyContent: "center",
     paddingBottom: 25,
-    marginLeft: 12,
+    marginLeft: 24,
   },
 
   sliderWrapper: {

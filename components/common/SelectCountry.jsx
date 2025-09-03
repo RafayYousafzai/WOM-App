@@ -45,16 +45,6 @@ export default function SelectCountry({
 
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.label,
-          isInvalid && styles.labelError,
-          isFocused && !isInvalid && styles.labelFocused,
-        ]}
-      >
-        Country
-        {isRequired && <Text style={styles.required}> *</Text>}
-      </Text>
       <TouchableOpacity
         style={[
           styles.inputContainer,
@@ -140,7 +130,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#E5E7EB",
     borderRadius: 10,
-    height: 40,
+    height: 50,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",

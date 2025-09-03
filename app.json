@@ -5,7 +5,7 @@
     },
     "name": "Word of Mouth",
     "slug": "word_of_mouth",
-    "version": "1.0.22",
+    "version": "1.0.25",
     "orientation": "portrait",
     "icon": "./assets/images/Icon.png",
     "scheme": "wordofmouth",
