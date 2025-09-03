@@ -23,7 +23,7 @@ import {
 } from "@/lib/supabase/followActions";
 import { useSupabase } from "@/context/supabaseContext";
 import { ProfileContentSkeleton } from "./ProfileSkeleton";
-import Share from "react-native-share";
+import { Share } from "react-native";
 
 const ProfileStats = ({ counts, userId }) => (
   <View className="flex-row justify-between mt-3 bg-white rounded-2xl p-2 border-gray-100">
@@ -66,12 +66,11 @@ const ProfileActions = ({ setIsEditing, userId, username }) => {
         username || "this user's"
       } profile on Word of Mouth!\n${universalUrl}`;
 
-      const shareOptions = {
+      const shareOptions = await Share.share({
         title: "Share this profile",
-        message: shareMessage,
-        url: universalUrl,
-        failOnCancel: false,
-      };
+        message: shareMessage, // Android
+        url: universalUrl, // iOS
+      });
       await Share.open(shareOptions);
     } catch (error) {
       console.error("Error sharing profile:", error.message);

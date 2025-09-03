@@ -191,9 +191,11 @@ export const EngagementBar = ({
         title || "Shared post"
       }\n${universalUrl}`;
 
+      // iOS primarily uses `url`, Android uses `message`; providing both maximizes targets (e.g., Instagram if supported)
       const result = await Share.share({
-        message: shareMessage,
         title: "Share this post",
+        message: shareMessage, // Android
+        url: universalUrl, // iOS
       });
 
       if (result.action === Share.sharedAction) {
@@ -244,7 +246,10 @@ export const EngagementBar = ({
             user_id={user_id}
             commentCount={commentCount}
           />
-          <TouchableOpacity onPress={handleShare} className="mr-4">
+          <TouchableOpacity
+            onPress={() => handleShare(post_id, title)}
+            className="mr-4"
+          >
             <Image
               source={require("@/assets/icons/upload.png")}
               className="w-8 h-8"

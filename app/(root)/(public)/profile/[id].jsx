@@ -27,7 +27,7 @@ import { getTotalFollowingCount } from "@/lib/supabase/followActions";
 import { ProfileContentSkeleton } from "@/components/profile-view/ProfileSkeleton";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { blockUser } from "@/lib/supabase/user_blocks";
-import Share from "react-native-share";
+import { Share } from "react-native";
 
 export default function VisitProfileScreen() {
   const { supabase } = useSupabase();
@@ -54,12 +54,12 @@ export default function VisitProfileScreen() {
         username || "this user's"
       } profile on Word of Mouth!\n${universalUrl}`;
 
-      const shareOptions = {
+      const shareOptions = await Share.share({
         title: "Share this profile",
-        message: shareMessage,
-        url: universalUrl,
-        failOnCancel: false,
-      };
+        message: shareMessage, // Android
+        url: universalUrl, // iOS
+      });
+
       await Share.open(shareOptions);
     } catch (error) {
       console.error("Error sharing profile:", error.message);
