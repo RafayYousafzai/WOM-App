@@ -17,8 +17,7 @@ import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { useSupabase } from "@/context/supabaseContext";
 import { fetchCommentCountByPost } from "@/lib/supabase/commentsActions";
 import { togglePostLike } from "@/lib/supabase/postsAction";
-
-import Share from "react-native-share";
+import { Share } from "react-native";
 
 export const EngagementBar = ({
   likesCount: initialLikesCount,
@@ -185,32 +184,23 @@ export const EngagementBar = ({
       setIsBookmarkModalVisible(false);
     }
   };
-
-  const handleShare = async () => {
+  const handleShare = async (post_id, title) => {
     try {
       const universalUrl = `https://wordofmouth.vercel.app/post/${post_id}`;
       const shareMessage = `Check out this post: ${
         title || "Shared post"
       }\n${universalUrl}`;
 
-      const shareOptions = {
-        title: "Share this post",
-        message: shareMessage,
-        url: universalUrl,
-        failOnCancel: false,
-      };
-      await Share.open(shareOptions);
-
       const result = await Share.share({
         message: shareMessage,
-        title: title || "Share this post",
+        title: "Share this post",
       });
 
       if (result.action === Share.sharedAction) {
-        if (onShareProp) onShareProp();
+        console.log("✅ Post shared");
       }
     } catch (error) {
-      console.error("Error sharing:", error.message);
+      console.error("🔥 Error sharing:", error);
     }
   };
 

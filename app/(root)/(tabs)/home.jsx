@@ -11,7 +11,7 @@ import { TogglePosts } from "@/components/post-listing/ShowPosts/TogglePosts";
 import { UploadBanner } from "@/components/create-post/upload-banner";
 import { usePosts } from "@/hooks/use-posts";
 
-export default function ProfileScreen() {
+export default function Home() {
   const { user } = useUser();
   const {
     activeTab,
