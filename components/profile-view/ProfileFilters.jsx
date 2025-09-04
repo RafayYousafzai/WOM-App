@@ -1,29 +1,6 @@
+import { Feather } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
 import RenderFilteredPosts from "./RenderFilteredPosts";
-
-const FILTERS = [
-  {
-    key: "reviews",
-    label: "Restaurant",
-    activeIcon: require("../../assets/home-icons/resturant.png"),
-    inactiveIcon: require("../../assets/home-icons/resturant-thick.png"),
-    size: { width: 32, height: 32 },
-  },
-  {
-    key: "own_reviews",
-    label: "Homemade",
-    activeIcon: require("../../assets/home-icons/home-solid.png"),
-    inactiveIcon: require("../../assets/home-icons/home-thick.png"),
-    size: { width: 28, height: 28 },
-  },
-  {
-    key: "about",
-    label: "About",
-    activeIcon: require("../../assets/home-icons/about-fill.png"),
-    inactiveIcon: require("../../assets/home-icons/about-outline.png"),
-    size: { width: 28, height: 28 },
-  },
-];
 
 const FILTER_TITLES = {
   reviews: "Reviews",
@@ -50,74 +27,93 @@ const ProfileFilters = ({
   const birthday = unsafeMetadata?.birthday;
   const favoriteEmoji = unsafeMetadata?.favoriteEmoji;
   const dietaryRestrictions = unsafeMetadata?.dietaryRestrictions;
-
   const closeFilterDropdown = () => setShowFilterDropdown(false);
 
-  const handleTagPress = (item) => {
-    // Add your tag press logic here
-    console.log("Tag pressed:", item);
+  // This is a placeholder function since the original code was missing it
+  const handleTagPress = (tag) => {
+    console.log("Tag pressed:", tag.name);
   };
 
   return (
-    <View className="bg-white">
-      {/* Enhanced Tab Header */}
-      <View className="flex-row bg-white shadow-sm border-b border-gray-100">
-        {FILTERS.map(({ key, label, activeIcon, inactiveIcon, size }) => {
-          const isActive = activeFilter === key;
-          return (
-            <TouchableOpacity
-              key={key}
-              onPress={() => setActiveFilter(key)}
-              className={`flex-1 py-4 items-center relative transition-all duration-200 ${
-                isActive ? "bg-orange-50" : "bg-white hover:bg-gray-50"
-              }`}
-              activeOpacity={0.7}
-            >
-              {/* Active indicator */}
-              {isActive && (
-                <View className="absolute top-0 left-0 right-0 h-1 bg-orange-400 rounded-b-full" />
-              )}
+    <View className="border-gray-200">
+      {/* Tab Header */}
+      <View className="flex-row">
+        <TouchableOpacity
+          onPress={() => setActiveFilter("reviews")}
+          className={`flex-1 py-3 items-center ${
+            activeFilter === "reviews" ? "border-b-2 border-[#f39f1e]" : ""
+          }`}
+        >
+          {activeFilter === "reviews" ? (
+            <Image
+              source={require("../../assets/home-icons/resturant.png")}
+              className="w-8 h-8"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/resturant-thick.png")}
+              className="w-8 h-8"
+            />
+          )}
+          <Text className="text-xs mt-1">
+            {activeFilter === "reviews" ? "Restaurant" : ""}
+          </Text>
+        </TouchableOpacity>
 
-              {/* Icon container with subtle animation effect */}
-              <View
-                className={`p-2 rounded-full mb-1 ${
-                  isActive ? "bg-orange-100 shadow-sm" : "bg-transparent"
-                }`}
-              >
-                <Image
-                  source={isActive ? activeIcon : inactiveIcon}
-                  style={{
-                    width: size.width,
-                    height: size.height,
-                    tintColor: isActive ? "#f39f1e" : "#6b7280",
-                  }}
-                />
-              </View>
-
-              {/* Label with better typography */}
-              <Text
-                className={`text-xs font-medium ${
-                  isActive ? "text-orange-600" : "text-gray-500"
-                }`}
-              >
-                {label}
-              </Text>
-
-              {/* Subtle bottom border for active state */}
-              {isActive && (
-                <View className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-orange-400 rounded-full" />
-              )}
-            </TouchableOpacity>
-          );
-        })}
+        <TouchableOpacity
+          onPress={() => setActiveFilter("own_reviews")}
+          className={`flex-1 py-3 items-center ${
+            activeFilter === "own_reviews" ? "border-b-2 border-[#f39f1e]" : ""
+          }`}
+        >
+          {activeFilter === "own_reviews" ? (
+            <Image
+              source={require("../../assets/home-icons/home-solid.png")}
+              className="w-7 h-7"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/home-thick.png")}
+              className="w-7 h-7"
+            />
+          )}
+          <Text className="text-xs mt-1">
+            {activeFilter === "own_reviews" ? "Homemade" : ""}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setActiveFilter("about")}
+          className={`flex-1 py-3 items-center ${
+            activeFilter === "about" ? "border-b-2 border-[#f39f1e]" : ""
+          }`}
+        >
+          {activeFilter === "about" ? (
+            <Image
+              source={require("../../assets/home-icons/about-fill.png")}
+              className="w-7 h-7"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/about-outline.png")}
+              className="w-7 h-7"
+            />
+          )}
+          <Text className="text-xs mt-1">
+            {activeFilter === "about" ? "About" : ""}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Backdrop for dropdown */}
+      {/* Filter Section */}
+      <View className="flex-row justify-between items-center px-4 relative"></View>
+
+      {/* Backdrop to close dropdown when clicking outside */}
       {showFilterDropdown && (
         <TouchableOpacity
-          activeOpacity={1}
+          activeOpacity={0}
           onPress={closeFilterDropdown}
-          className="absolute inset-0 bg-black/10 z-10"
+          className="absolute top-0 left-0 right-0 bottom-0 z-5"
+          style={{ backgroundColor: "transparent" }}
         />
       )}
 
@@ -216,14 +212,12 @@ const ProfileFilters = ({
             )}
           </View>
         ) : (
-          <View className="mt-4">
-            <RenderFilteredPosts
-              activeFilter={activeFilter}
-              title={FILTER_TITLES[activeFilter] || "All Posts"}
-              refreshCount={refreshCount}
-              setRefreshCount={setRefreshCount}
-            />
-          </View>
+          <RenderFilteredPosts
+            activeFilter={activeFilter}
+            title={FILTER_TITLES[activeFilter] || "All Posts"}
+            refreshCount={refreshCount}
+            setRefreshCount={setRefreshCount}
+          />
         )}
       </View>
     </View>
