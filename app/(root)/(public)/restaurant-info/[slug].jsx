@@ -15,6 +15,8 @@ import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { getPostsByRestaurantLocation } from "@/lib/supabase/postsAction";
 import { useSupabase } from "@/context/supabaseContext"; // Adjust path as needed
+import { router } from "expo-router";
+import { useGlobal } from "@/context/globalContext";
 
 // --- SECURITY WARNING ---
 // It is NOT recommended to store your API key directly in your app's code.
@@ -26,6 +28,7 @@ const Maps_API_KEY = "AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs"; // <-- PASTE YOU
 export default function VisitProfileScreen() {
   const { slug } = useLocalSearchParams();
   const location = decodeURIComponent(slug);
+  const { setRenderPosts } = useGlobal();
 
   const [restaurantData, setRestaurantData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -135,75 +138,57 @@ export default function VisitProfileScreen() {
     return stars;
   };
 
-  const renderWordOfMouthPost = (post) => (
-    <View key={post.id} className="bg-gray-50 rounded-xl p-4 mb-4">
-      <View className="flex-row items-start justify-between mb-2">
-        <View className="flex-1">
-          <Text className="text-gray-900 font-semibold text-base">
-            {post.anonymous
-              ? "Anonymous"
-              : `${post.user?.first_name} ${post.user?.last_name}`}
-          </Text>
-          <Text className="text-gray-500 text-sm">
-            {new Date(post.created_at).toLocaleDateString()}
-          </Text>
-        </View>
-        {post.rating && (
-          <View className="flex-row">{renderStars(post.rating)}</View>
-        )}
-      </View>
-      <Text className="text-gray-700 leading-relaxed mb-3">{post.review}</Text>
+  const renderWordOfMouthPost = (post, index) => (
+    <TouchableOpacity
+      key={post.id}
+      onPress={() => {
+        // normalize posts like in DishList
+        const normalizedPosts = wordOfMouthPosts.map((p) => ({
+          ...p,
+          images: p.images || [],
+          dishes: p.dishes || [],
+          isLiked: false,
+          user: p.user
+            ? {
+                ...p.user,
+                name: `${p.user.first_name || ""} ${
+                  p.user.last_name || ""
+                }`.trim(),
+              }
+            : null,
+          restaurant: p.restaurant || null,
+        }));
 
-      {/* Render dishes if available */}
-      {post.dishes && post.dishes.length > 0 && (
-        <View className="space-y-2">
-          <Text className="text-gray-600 font-medium text-sm">Dishes:</Text>
-          {post.dishes.map((dish, index) => (
-            <View key={index} className="bg-white rounded-lg p-3">
-              <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                  <Text className="font-medium text-gray-900">
-                    {dish.dish_name}
-                  </Text>
-                  {dish.dish_price && (
-                    <Text className="text-gray-600 text-sm">
-                      ${dish.dish_price}
-                    </Text>
-                  )}
-                </View>
-                {dish.rating && (
-                  <View className="flex-row">{renderStars(dish.rating)}</View>
-                )}
-              </View>
-              {dish.is_recommended && (
-                <View className="mt-2">
-                  <Text className="text-green-600 text-xs font-medium">
-                    ✓ Recommended
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
+        setRenderPosts({
+          posts: normalizedPosts,
+          loading: false,
+          initialScrollIndex: index, // start from clicked post
+        });
 
-      <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-200">
-        <View className="flex-row items-center space-x-4">
-          <View className="flex-row items-center">
-            <Ionicons name="heart-outline" size={16} color="#9ca3af" />
-            <Text className="text-gray-500 text-sm ml-1">
-              {post.likesCount}
+        router.push("/posts");
+      }}
+    >
+      <View className="bg-gray-50 rounded-xl p-4 mb-4">
+        <View className="flex-row items-start justify-between mb-2">
+          <View className="flex-1">
+            <Text className="text-gray-900 font-semibold text-base">
+              {post.anonymous
+                ? "Anonymous"
+                : `${post.user?.first_name} ${post.user?.last_name}`}
+            </Text>
+            <Text className="text-gray-500 text-sm">
+              {new Date(post.created_at).toLocaleDateString()}
             </Text>
           </View>
-          <View className="flex-row items-center">
-            <Ionicons name="chatbubble-outline" size={16} color="#9ca3af" />
-            <Text className="text-gray-500 text-sm ml-1">
-              {post.commentsCount}
-            </Text>
-          </View>
+          {post.rating && (
+            <View className="flex-row">{renderStars(post.rating)}</View>
+          )}
         </View>
+        <Text className="text-gray-700 leading-relaxed mb-3">
+          {post.review}
+        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -312,11 +297,13 @@ export default function VisitProfileScreen() {
           </View>
 
           {/* Contact Info */}
+          {/* Contact Info */}
           <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <Text className="text-xl font-bold text-gray-900 mb-4">
               Contact Information
             </Text>
 
+            {/* Phone */}
             {restaurantData.formatted_phone_number && (
               <TouchableOpacity
                 className="flex-row items-center py-3 border-b border-gray-100"
@@ -339,6 +326,27 @@ export default function VisitProfileScreen() {
               </TouchableOpacity>
             )}
 
+            {/* Business Hours */}
+            {restaurantData.opening_hours?.weekday_text && (
+              <View className="flex-row items-start py-3 border-b border-gray-100">
+                <View className="bg-yellow-100 rounded-full p-2 mr-4">
+                  <Ionicons name="time" size={20} color="#f59e0b" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-600 text-sm">Business Hours</Text>
+                  {restaurantData.opening_hours.weekday_text.map((day, idx) => (
+                    <Text
+                      key={idx}
+                      className="text-gray-900 font-medium text-sm"
+                    >
+                      {day}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Website */}
             {restaurantData.website && (
               <TouchableOpacity
                 className="flex-row items-center py-3"
@@ -378,7 +386,7 @@ export default function VisitProfileScreen() {
             <View className="flex-row">
               <TouchableOpacity
                 className={`flex-1 py-4 px-6 ${
-                  activeTab === "google" ? "bg-indigo-500" : "bg-gray-50"
+                  activeTab === "google" ? "bg-yellow-500" : "bg-gray-50"
                 }`}
                 onPress={() => setActiveTab("google")}
               >
@@ -392,7 +400,7 @@ export default function VisitProfileScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 className={`flex-1 py-4 px-6 ${
-                  activeTab === "wordOfMouth" ? "bg-indigo-500" : "bg-gray-50"
+                  activeTab === "wordOfMouth" ? "bg-yellow-500" : "bg-gray-50"
                 }`}
                 onPress={() => setActiveTab("wordOfMouth")}
               >
