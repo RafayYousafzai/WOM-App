@@ -113,11 +113,11 @@ export default function DraftManager() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <Animated.View style={{ opacity: fadeAnim }} className="flex-1 px-6 py-4">
-        <View className="mb-8">
-          <Text className="text-5xl font-bold text-gray-900 mb-3">Drafts</Text>
-          <Text className="text-xl text-gray-500">
+        <View className="px-5 pt-8">
+          <Text className="text-6xl font-extrabold text-slate-900">Drafts</Text>
+          <Text className="text-sm text-slate-500 mt-2 font-medium">
             {allDrafts.length} {allDrafts.length === 1 ? "draft" : "drafts"}{" "}
-            saved
+            saved{" "}
           </Text>
         </View>
 

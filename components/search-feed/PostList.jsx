@@ -59,6 +59,14 @@ const DishList = ({ limit = 20 }) => {
     );
   }
 
+  if (posts.length === 0) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <Text className="text-gray-600">No dishes found.</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       className="flex-1 bg-slate-50"
@@ -184,14 +192,14 @@ const DishList = ({ limit = 20 }) => {
 
                     {/* Restaurant and Rating */}
                     {!dishEntry.dish.gatekeeping &&
-                      dishEntry.restaurant.location && (
+                      dishEntry.restaurant?.location && (
                         <View className="flex-row items-center mb-2 mt-auto">
                           <Ionicons name="location" size={14} color="#ffd100" />
                           <Text
                             className="text-gray-600 ml-1 text-xs font-medium flex-1"
                             numberOfLines={1}
                           >
-                            {shortenString(dishEntry.restaurant.location, 20)}
+                            {shortenString(dishEntry.restaurant?.location, 20)}
                           </Text>
                         </View>
                       )}
@@ -243,9 +251,9 @@ const DishList = ({ limit = 20 }) => {
                         <Image
                           source={{
                             uri:
-                              dishEntry.user.image_url ||
+                              dishEntry.user?.image_url ||
                               `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                dishEntry.user.full_name || "User"
+                                dishEntry.user?.full_name || "User"
                               )}&background=ffd100&color=fff&size=80`,
                           }}
                           style={{
@@ -265,7 +273,7 @@ const DishList = ({ limit = 20 }) => {
                         >
                           {dishEntry.dish.anonymous
                             ? "Anonymous Foodie"
-                            : dishEntry.user.full_name || "User"}
+                            : dishEntry.user?.full_name || "User"}
                         </Text>
                       </View>
                     </View>
@@ -303,6 +311,16 @@ function transformPostsToDishes(posts) {
   const dishArray = [];
 
   posts.forEach((post) => {
+    // Check if post exists and has required properties
+    if (!post || !post.id) {
+      return;
+    }
+
+    // Check if post_dishes exists and is an array
+    if (!post.post_dishes || !Array.isArray(post.post_dishes)) {
+      return;
+    }
+
     post.post_dishes.forEach((dish) => {
       const dishEntry = {
         dish: {
@@ -318,21 +336,25 @@ function transformPostsToDishes(posts) {
           people: post.people || [],
           post_tags: post.post_tags || [],
         },
-        restaurant: {
-          id: post.restaurants.id,
-          location: post.restaurants.location,
-          rating: post.restaurants.rating,
-          created_at: post.restaurants.created_at,
-          updated_at: post.restaurants.updated_at,
-          latitude: post.restaurants.latitude,
-          longitude: post.restaurants.longitude,
-        },
-        user: {
-          id: post.users.id,
-          full_name: post.users.full_name,
-          username: post.users.username,
-          image_url: post.users.image_url,
-        },
+        restaurant: post.restaurants
+          ? {
+              id: post.restaurants.id,
+              location: post.restaurants.location,
+              rating: post.restaurants.rating,
+              created_at: post.restaurants.created_at,
+              updated_at: post.restaurants.updated_at,
+              latitude: post.restaurants.latitude,
+              longitude: post.restaurants.longitude,
+            }
+          : null,
+        user: post.users
+          ? {
+              id: post.users.id,
+              full_name: post.users.full_name,
+              username: post.users.username,
+              image_url: post.users.image_url,
+            }
+          : null,
       };
       dishArray.push(dishEntry);
     });
