@@ -9,6 +9,7 @@ import { useUser } from "@clerk/clerk-expo";
 import PostListing from "@/components/post-listing/PostListing";
 import { TogglePosts } from "@/components/post-listing/ShowPosts/TogglePosts";
 import { UploadBanner } from "@/components/create-post/upload-banner";
+import { NetworkError } from "@/components/common/NetworkError";
 import { usePosts } from "@/hooks/use-posts";
 
 export default function Home() {
@@ -20,9 +21,11 @@ export default function Home() {
     hasMore,
     isLoadingMore,
     countryFilterActive,
+    networkError,
     handleTabChange,
     handleEndReached,
     handleRefresh,
+    handleNetworkRetry,
     loadPosts,
   } = usePosts();
 
@@ -43,7 +46,26 @@ export default function Home() {
     activeTab === "forYou" ? posts : posts.filter((post) => !post.anonymous);
 
   const showEmptyFollowingState =
-    activeTab === "following" && filteredPosts.length === 0 && !loading;
+    activeTab === "following" &&
+    filteredPosts.length === 0 &&
+    !loading &&
+    !networkError;
+
+  // Show network error if there's a network issue
+  if (networkError && !loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-1">
+          <TogglePosts
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            isLoggedIn={!!user}
+          />
+          <NetworkError onRetry={handleNetworkRetry} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -74,6 +96,7 @@ export default function Home() {
             handleEndReached={handleEndReached}
             loading={loading}
             isLoadingMore={isLoadingMore}
+            networkError={networkError}
             countryFilterActive={countryFilterActive}
             handleRefresh={handleRefresh}
           />

@@ -26,6 +26,7 @@ export default function PostListing({
   handleEndReached,
   loading,
   isLoadingMore,
+  networkError = false,
   handleRefresh = () => console.warn("Refresh fn not found"),
 }) {
   const { supabase } = useSupabase();
@@ -250,7 +251,7 @@ export default function PostListing({
         refreshing={loading}
         ListEmptyComponent={
           <View className="mt-36 items-center justify-center">
-            {!loading && (
+            {!loading && !networkError && (
               <Text className="text-gray-500">No posts available</Text>
             )}
           </View>

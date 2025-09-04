@@ -7,6 +7,7 @@ import { useToast } from "react-native-toast-notifications";
 import { getBlockedUserIds } from "@/lib/supabase/user_blocks";
 import { Alert } from "react-native";
 import * as Location from "expo-location";
+import { useNetwork } from "./useNetwork";
 
 const PAGE_SIZE = 10;
 
@@ -66,6 +67,7 @@ export const usePosts = () => {
   const { supabase } = useSupabase();
   const { user } = useUser();
   const toast = useToast();
+  const { hasInternet, checkConnectivity } = useNetwork();
 
   const [activeTab, setActiveTab] = useState<TabType>("forYou");
   const [posts, setPosts] = useState<Post[]>([]);
@@ -73,8 +75,12 @@ export const usePosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [countryFilterActive, setCountryFilterActive] = useState(false); // Can repurpose for location active
+  const [networkError, setNetworkError] = useState(false);
 
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap (if needed)
 
   useEffect(() => {
@@ -82,7 +88,10 @@ export const usePosts = () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         console.log("Permission to access location was denied");
-        toast.show("Location permission denied. Feed won't prioritize nearby posts.", { type: "warning" });
+        toast.show(
+          "Location permission denied. Feed won't prioritize nearby posts.",
+          { type: "warning" }
+        );
         return;
       }
 
@@ -101,7 +110,7 @@ export const usePosts = () => {
   const fetchIdRef = useRef(0);
 
   const buildPostsQuery = useCallback(() => {
-   // This function remains the same, it builds the main select query
+    // This function remains the same, it builds the main select query
     return supabase.from("posts").select(`
       id, review, user_id, is_review, anonymous, gatekeeping, people, created_at, updated_at,
       restaurants (id, location, rating),
@@ -113,7 +122,7 @@ export const usePosts = () => {
     `);
   }, [supabase]);
 
- const transformPostData = useCallback((rawPosts: any[]): Post[] => {
+  const transformPostData = useCallback((rawPosts: any[]): Post[] => {
     // This utility function remains the same
     return rawPosts.map((post) => ({
       ...post,
@@ -128,9 +137,20 @@ export const usePosts = () => {
     }));
   }, []);
 
-const fetchPosts = useCallback(
+  const fetchPosts = useCallback(
     async (tab: TabType, loadMore = false) => {
       const currentFetchId = ++fetchIdRef.current;
+
+      // Check network connectivity first
+      if (!hasInternet) {
+        setNetworkError(true);
+        if (loadMore) {
+          setIsLoadingMore(false);
+        }
+        return { data: [], fetchId: currentFetchId };
+      }
+
+      setNetworkError(false);
 
       if (loadMore) {
         setIsLoadingMore(true);
@@ -162,7 +182,7 @@ const fetchPosts = useCallback(
             return { data: [], fetchId: currentFetchId };
           }
 
-          const postIds = rankedPosts.map((p) => p.id);
+          const postIds = rankedPosts.map((p: any) => p.id);
 
           const { data: postsData, error: postsError } =
             await buildPostsQuery().in("id", postIds);
@@ -170,9 +190,9 @@ const fetchPosts = useCallback(
           if (postsError) throw postsError;
 
           // Re-order the fetched posts to match the ranked order from the RPC
-          const postsById = new Map(postsData.map((p) => [p.id, p]));
+          const postsById = new Map(postsData.map((p: any) => [p.id, p]));
           const orderedPosts = postIds
-            .map((id) => postsById.get(id))
+            .map((id: any) => postsById.get(id))
             .filter(Boolean);
 
           finalPosts = transformPostData(orderedPosts as any[]);
@@ -193,7 +213,7 @@ const fetchPosts = useCallback(
 
           if (followError) throw followError;
 
-          const followedUserIds = follows?.map((f) => f.followed_id) || [];
+          const followedUserIds = follows?.map((f: any) => f.followed_id) || [];
           if (followedUserIds.length === 0) {
             // No need to show toast here, an empty state is better UX
             return { data: [], fetchId: currentFetchId };
@@ -222,11 +242,24 @@ const fetchPosts = useCallback(
         }
 
         return { data: finalPosts, fetchId: currentFetchId };
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching posts:", error);
-        toast.show("Failed to load posts. Please try again later.", {
-          type: "danger",
-        });
+
+        // Check if it's a network-related error
+        if (
+          error?.message?.includes("fetch") ||
+          error?.code === "NetworkError" ||
+          !hasInternet
+        ) {
+          setNetworkError(true);
+          toast.show("Network error. Please check your connection.", {
+            type: "danger",
+          });
+        } else {
+          toast.show("Failed to load posts. Please try again later.", {
+            type: "danger",
+          });
+        }
         return { data: [], fetchId: currentFetchId };
       } finally {
         if (loadMore) {
@@ -234,7 +267,15 @@ const fetchPosts = useCallback(
         }
       }
     },
-    [buildPostsQuery, user, supabase, toast, transformPostData, userLocation]
+    [
+      buildPostsQuery,
+      user,
+      supabase,
+      toast,
+      transformPostData,
+      userLocation,
+      hasInternet,
+    ]
   );
 
   const loadPosts = useCallback(
@@ -294,6 +335,24 @@ const fetchPosts = useCallback(
     loadPosts(false);
   }, [loadPosts]);
 
+  const handleNetworkRetry = useCallback(async () => {
+    const networkState = await checkConnectivity();
+    if (
+      networkState.isConnected &&
+      networkState.isInternetReachable !== false
+    ) {
+      setNetworkError(false);
+      loadPosts(false);
+    } else {
+      toast.show(
+        "Still no internet connection. Please check your network settings.",
+        {
+          type: "warning",
+        }
+      );
+    }
+  }, [checkConnectivity, loadPosts, toast]);
+
   return {
     activeTab,
     posts,
@@ -301,9 +360,11 @@ const fetchPosts = useCallback(
     hasMore,
     isLoadingMore,
     countryFilterActive,
+    networkError,
     handleTabChange,
     handleEndReached,
     handleRefresh,
+    handleNetworkRetry,
     loadPosts,
   };
 };

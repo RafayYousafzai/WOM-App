@@ -477,7 +477,6 @@ const AccountModal = ({
   onClose: () => void;
 }) => {
   const { user: clerkUser, isLoaded } = useUser();
-  const { signOut } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteAccount = () => {
