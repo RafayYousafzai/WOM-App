@@ -83,14 +83,6 @@ export default function RenderFilteredPosts({
     fetchPosts();
   }, [activeFilter, refreshCount]);
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center mt-10 justify-center">
-        <ActivityIndicator size="small" color="#f39f1e" />
-      </View>
-    );
-  }
-
   if (error) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -104,7 +96,7 @@ export default function RenderFilteredPosts({
   return (
     <View className="flex-1">
       {posts.length > 0 ? (
-        <GridDynamicCards posts={posts} scroll={false} />
+        <GridDynamicCards posts={posts} scroll={false} loading={loading} />
       ) : (
         <View className="items-center justify-center py-10">
           <Feather name="image" size={50} color="#ccc" />

@@ -2,7 +2,13 @@
 "use client";
 
 import { useCallback } from "react";
-import { View, TouchableOpacity, FlatList, Dimensions } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useGlobal } from "@/context/globalContext";
@@ -11,7 +17,7 @@ import { Feather } from "@expo/vector-icons";
 const GRID_COLUMNS = 3;
 const ITEM_WIDTH = Dimensions.get("window").width * 0.33;
 
-export default function DynamicCards({ posts, scroll = true }) {
+export default function DynamicCards({ posts, scroll = true, loading }) {
   const { setRenderPosts } = useGlobal();
 
   const renderGridItem = useCallback(
@@ -42,7 +48,6 @@ export default function DynamicCards({ posts, scroll = true }) {
               style={{
                 width: "100%",
                 height: "100%",
-                borderRadius: 14,
               }}
             />
           ) : (
@@ -55,6 +60,14 @@ export default function DynamicCards({ posts, scroll = true }) {
     },
     [posts]
   );
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center mt-10 justify-center">
+        <ActivityIndicator size="small" color="#f39f1e" />
+      </View>
+    );
+  }
 
   return (
     <View>

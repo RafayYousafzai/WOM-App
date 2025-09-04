@@ -192,14 +192,14 @@ const ReviewsList = ({ limit = 20 }) => {
                       </View>
                     )}
 
-                    {!post.gatekeeping && post.restaurants.location && (
+                    {!post.gatekeeping && post.restaurants?.location && (
                       <View className="flex-row items-center mb-2 mt-auto">
                         <Ionicons name="location" size={14} color="#ffd100" />
                         <Text
                           className="text-gray-600 ml-1 text-xs font-medium flex-1"
                           numberOfLines={1}
                         >
-                          {shortenString(post.restaurants.location, 20)}
+                          {shortenString(post.restaurants?.location, 20)}
                         </Text>
                       </View>
                     )}

@@ -26,34 +26,36 @@ import { ProfileContentSkeleton } from "./ProfileSkeleton";
 import { Share } from "react-native";
 
 const ProfileStats = ({ counts, userId }) => (
-  <View className="flex-row justify-between mt-3 bg-white rounded-2xl p-2 border-gray-100">
+  <View className="flex-row justify-between mt-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm">
     <TouchableOpacity className="items-center flex-1">
-      <Text className="text-xl font-bold text-gray-800">{counts.posts}</Text>
-      <Text className="text-gray-600 text-sm">Posts</Text>
+      <Text className="text-3xl font-bold text-slate-800 mb-1">
+        {counts.posts}
+      </Text>
+      <Text className="text-slate-500 text-base font-medium">Posts</Text>
     </TouchableOpacity>
 
-    <View className="h-full w-px bg-gray-200" />
+    <View className="h-12 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-4" />
 
     <TouchableOpacity
       onPress={() => router.push(`/followers/${userId}`)}
       className="items-center flex-1"
     >
-      <Text className="text-xl font-bold text-gray-800">
+      <Text className="text-3xl font-bold text-slate-800 mb-1">
         {counts.followers}
       </Text>
-      <Text className="text-gray-600 text-sm">Followers</Text>
+      <Text className="text-slate-500 text-base font-medium">Followers</Text>
     </TouchableOpacity>
 
-    <View className="h-full w-px bg-gray-200" />
+    <View className="h-12 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-4" />
 
     <TouchableOpacity
       onPress={() => router.push(`/following/${userId}`)}
       className="items-center flex-1"
     >
-      <Text className="text-xl font-bold text-gray-800">
+      <Text className="text-3xl font-bold text-slate-800 mb-1">
         {counts.following}
       </Text>
-      <Text className="text-gray-600 text-sm">Following</Text>
+      <Text className="text-slate-500 text-base font-medium">Following</Text>
     </TouchableOpacity>
   </View>
 );
@@ -81,24 +83,25 @@ const ProfileActions = ({ setIsEditing, userId, username }) => {
     <View className="flex-row mt-4 gap-2">
       <TouchableOpacity
         onPress={() => setIsEditing(true)}
-        className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
+        className="flex-1 py-2.5 rounded-full border bg-gray-200 border-gray-200 items-center justify-center"
       >
         <Text className="font-semibold">Edit Profile</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => handleShare(userId, username)}
-        className="flex-1 py-2.5 rounded-xl border bg-gray-200 border-gray-200 items-center justify-center"
+        className="flex-1 py-2.5 rounded-full border bg-gray-200 border-gray-200 items-center justify-center"
       >
         <Text className="font-semibold">Share Profile</Text>
       </TouchableOpacity>
     </View>
   );
 };
+
 const ProfileHeader = ({ user, pickImage }) => (
   <View className="flex-row justify-between items-start">
     <TouchableOpacity onPress={pickImage} className="relative">
-      <View className="w-24 h-24 rounded-full border-4 border-white overflow-hidden">
+      <View className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden">
         {user?.imageUrl ? (
           <Image source={{ uri: user.imageUrl }} className="w-full h-full" />
         ) : (

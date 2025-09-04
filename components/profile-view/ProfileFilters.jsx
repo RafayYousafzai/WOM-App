@@ -30,16 +30,16 @@ const ProfileFilters = ({
           {activeFilter === "reviews" ? (
             <Image
               source={require("../../assets/home-icons/resturant.png")}
-              className="w-6 h-6"
+              className="w-8 h-8"
             />
           ) : (
             <Image
               source={require("../../assets/home-icons/resturant-thick.png")}
-              className="w-5 h-5"
+              className="w-8 h-8"
             />
           )}
           <Text className="text-xs mt-1">
-            {activeFilter === "reviews" ? "Restaurant Review" : ""}
+            {activeFilter === "reviews" ? "Restaurant" : ""}
           </Text>
         </TouchableOpacity>
 
@@ -52,12 +52,12 @@ const ProfileFilters = ({
           {activeFilter === "own_reviews" ? (
             <Image
               source={require("../../assets/home-icons/home-solid.png")}
-              className="w-6 h-6"
+              className="w-7 h-7"
             />
           ) : (
             <Image
               source={require("../../assets/home-icons/home-thick.png")}
-              className="w-5 h-5"
+              className="w-7 h-7"
             />
           )}
           <Text className="text-xs mt-1">
@@ -67,7 +67,7 @@ const ProfileFilters = ({
       </View>
 
       {/* Filter Section */}
-      <View className="flex-row justify-between items-center px-4 py-3 relative"></View>
+      <View className="flex-row justify-between items-center px-4 relative"></View>
 
       {/* Backdrop to close dropdown when clicking outside */}
       {showFilterDropdown && (
