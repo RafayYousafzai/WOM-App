@@ -14,8 +14,7 @@ import {
   Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useUser } from "@clerk/clerk-expo";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import {
@@ -67,8 +66,8 @@ const DIETARY_OPTIONS = [
 ];
 
 export const EditProfileScreen = ({ setIsEditing }) => {
-  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
   const { signOut } = useAuth();
+  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
   const [incomplete, setIncomplete] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDietaryOptions, setSelectedDietaryOptions] = useState([]);

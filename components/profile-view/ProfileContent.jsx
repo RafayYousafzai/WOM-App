@@ -26,9 +26,9 @@ import { ProfileContentSkeleton } from "./ProfileSkeleton";
 import { Share } from "react-native";
 
 const ProfileStats = ({ counts, userId }) => (
-  <View className="flex-row justify-between mt-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-3xl p-6 border border-gray-100 shadow-sm">
+  <View className="flex-row justify-around mt-4 p-6">
     <TouchableOpacity className="items-center flex-1">
-      <Text className="text-3xl font-bold text-slate-800 mb-1">
+      <Text className="text-2xl font-bold text-slate-800 mb-1">
         {counts.posts}
       </Text>
       <Text className="text-slate-500 text-base font-medium">Posts</Text>
@@ -38,9 +38,9 @@ const ProfileStats = ({ counts, userId }) => (
 
     <TouchableOpacity
       onPress={() => router.push(`/followers/${userId}`)}
-      className="items-center flex-1"
+      className="items-center flex-1  "
     >
-      <Text className="text-3xl font-bold text-slate-800 mb-1">
+      <Text className="text-2xl font-bold text-slate-800 mb-1">
         {counts.followers}
       </Text>
       <Text className="text-slate-500 text-base font-medium">Followers</Text>
@@ -52,7 +52,7 @@ const ProfileStats = ({ counts, userId }) => (
       onPress={() => router.push(`/following/${userId}`)}
       className="items-center flex-1"
     >
-      <Text className="text-3xl font-bold text-slate-800 mb-1">
+      <Text className="text-2xl font-bold text-slate-800 mb-1">
         {counts.following}
       </Text>
       <Text className="text-slate-500 text-base font-medium">Following</Text>
@@ -83,68 +83,92 @@ const ProfileActions = ({ setIsEditing, userId, username }) => {
     <View className="flex-row mt-4 gap-2">
       <TouchableOpacity
         onPress={() => setIsEditing(true)}
-        className="flex-1 py-2.5 rounded-full border bg-gray-200 border-gray-200 items-center justify-center"
+        className="flex-1 py-2.5 rounded-full border bg-gray-100 border-gray-100 items-center justify-center"
       >
-        <Text className="font-semibold">Edit Profile</Text>
+        <Text className="">Edit Profile</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => handleShare(userId, username)}
-        className="flex-1 py-2.5 rounded-full border bg-gray-200 border-gray-200 items-center justify-center"
+        className="flex-1 py-2.5 rounded-full border bg-gray-100 border-gray-100 items-center justify-center"
       >
-        <Text className="font-semibold">Share Profile</Text>
+        <Text className="">Share Profile</Text>
       </TouchableOpacity>
     </View>
   );
 };
+const ProfileHeader = ({ user, pickImage }) => {
+  const unsafeMetadata = user?.unsafeMetadata;
+  const username = user?.username;
+  const firstName = user?.firstName;
+  const lastName = user?.lastName;
+  const bio = unsafeMetadata?.bio;
+  const country = unsafeMetadata?.country?.name;
+  const birthday = unsafeMetadata?.birthday;
+  const favoriteEmoji = unsafeMetadata?.favoriteEmoji;
+  const dietaryRestrictions = unsafeMetadata?.dietaryRestrictions;
 
-const ProfileHeader = ({ user, pickImage }) => (
-  <View className="flex-row justify-between items-start">
-    <TouchableOpacity onPress={pickImage} className="relative">
-      <View className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden">
-        {user?.imageUrl ? (
-          <Image source={{ uri: user.imageUrl }} className="w-full h-full" />
-        ) : (
-          <View className="w-full h-full bg-gray-100 items-center justify-center">
-            <Feather name="user" size={40} color="#f39f1e" />
+  // Function to format the birthday string
+  const getFormattedBirthday = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formattedBirthday = getFormattedBirthday(birthday);
+
+  return (
+    <View className="flex-row items-start">
+      <TouchableOpacity onPress={pickImage} className="relative">
+        <View className="w-24 h-24 rounded-full border-4 border-white overflow-hidden">
+          {user?.imageUrl ? (
+            <Image source={{ uri: user.imageUrl }} className="w-full h-full" />
+          ) : (
+            <View className="w-full h-full bg-gray-100 items-center justify-center">
+              <Feather name="user" size={40} color="#f39f1e" />
+            </View>
+          )}
+        </View>
+        <View className="absolute bottom-0 right-0 bg-[#f39f1e] p-1.5 rounded-full">
+          <Feather name="camera" size={14} color="white" />
+        </View>
+      </TouchableOpacity>
+
+      <View className="flex-1 ml-4">
+        <View className="flex-row justify-between items-start">
+          <View>
+            <Text className="text-2xl font-bold text-gray-800">
+              {firstName} {lastName}
+            </Text>
+            <Text className="text-sm text-gray-500 ">@{username}</Text>
           </View>
-        )}
-      </View>
-      <View className="absolute bottom-0 right-0 bg-[#f39f1e] p-1.5 rounded-full">
-        <Feather name="camera" size={14} color="white" />
-      </View>
-    </TouchableOpacity>
 
-    <View className="flex-1 ml-4">
-      <View className="flex-row justify-between items-start">
-        <View>
-          <Text className="text-2xl font-bold text-gray-800">
-            {user?.firstName} {user?.lastName}
-          </Text>
-          <Text className="text-sm text-gray-500 mb-1">@{user?.username}</Text>
+          <View className="flex-row mr-4">{/* Settings button */}</View>
         </View>
 
-        <View className="flex-row mr-4">
-          <TouchableOpacity
-            onPress={() => router.push("/account-settings")}
-            className="rounded-full"
-          >
-            <Image
-              source={require("../../assets/home-icons/settings.png")}
-              className="w-7 h-7"
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+        {bio && <Text className="text-gray-700 text-sm">{bio}</Text>}
 
-      {user?.unsafeMetadata?.bio && (
-        <Text className="text-gray-700 mt-1 mb-2 text-sm">
-          {user.unsafeMetadata.bio}
+        {/* Displaying additional details from unsafeMetadata */}
+        <Text className="text-sm text-gray-600">
+          {[
+            country,
+            formattedBirthday,
+            favoriteEmoji,
+            dietaryRestrictions?.length > 0
+              ? dietaryRestrictions.join(", ")
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" • ")}
         </Text>
-      )}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 export const ProfileContentScreen = ({ setIsEditing }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
@@ -156,10 +180,12 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
     followers: 0,
     following: 0,
   });
+  const [tags, setTags] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
+  console.log(tags);
 
   const fetchData = async () => {
     try {
@@ -170,12 +196,48 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
           getTotalFollowingCount(supabase, user.id),
         ]);
 
+      const { data, error } = await supabase
+        .from("users")
+        .select(
+          `
+          id,
+          username,
+          full_name,
+          posts (
+            post_tags (
+              tags (
+                id,
+                name,
+                type
+              )
+            )
+          )
+          `
+        )
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+
+      // Flatten nested structure: user -> posts -> post_tags -> tags
+      const tags =
+        data?.posts?.flatMap((post) =>
+          post.post_tags?.map((pt) => pt.tags).filter(Boolean)
+        ) || [];
+
+      // Remove duplicates by `id`
+      const uniqueTags = Array.from(
+        new Map(tags.map((tag) => [tag.id, tag])).values()
+      );
+
       setCounts({
         posts: postsData.reviewCount, // Changed from allPosts.all to postsData.reviewCount
         followers: totalFollowersCount,
 
         following: totalFollowingCount,
       });
+
+      setTags(uniqueTags);
     } catch (error) {
       console.error("Error fetching profile data:", error);
     }
@@ -260,10 +322,12 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
   const profileSections = [
     {
       id: "header",
+      // ✅ properly closed
       component: (
         <View className="pt-6 pb-4 px-5 bg-white">
           <ProfileHeader user={user} pickImage={pickImage} />
           <ProfileStats counts={counts} userId={user.id} />
+
           <ProfileActions
             userId={user.id} // <-- Pass the user ID here
             username={user.username}
@@ -284,6 +348,8 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
             setActiveFilter={setActiveFilter}
             refreshCount={refreshCount}
             setRefreshCount={setRefreshCount}
+            tags={tags}
+            user={user}
           />
         </View>
       ),
