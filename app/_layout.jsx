@@ -88,7 +88,11 @@ export default function RootLayoutNav() {
   };
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      tokenCache={tokenCache}
+      telemetry={false}
+    >
       <ClerkLoaded>
         <SupabaseProvider>
           <ThemeContext.Provider value={{ colorMode, toggleColorMode }}>
