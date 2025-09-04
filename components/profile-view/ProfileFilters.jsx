@@ -1,5 +1,12 @@
 import { Feather } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  ScrollView,
+} from "react-native";
 import RenderFilteredPosts from "./RenderFilteredPosts";
 
 const FILTER_TITLES = {
@@ -29,15 +36,34 @@ const ProfileFilters = ({
   const dietaryRestrictions = unsafeMetadata?.dietaryRestrictions;
   const closeFilterDropdown = () => setShowFilterDropdown(false);
 
-  // This is a placeholder function since the original code was missing it
   const handleTagPress = (tag) => {
     console.log("Tag pressed:", tag.name);
   };
 
+  const InfoRow = ({ icon, label, value, isEmoji = false }) => (
+    <View className="flex-row items-center py-3 px-1">
+      <View className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center mr-4">
+        {isEmoji ? (
+          <Text className="text-lg">{icon}</Text>
+        ) : (
+          <Feather name={icon} size={18} color="#6B7280" />
+        )}
+      </View>
+      <View className="flex-1">
+        <Text className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          {label}
+        </Text>
+        <Text className="text-gray-900 font-medium text-base">
+          {isEmoji ? <Text className="text-2xl">{value}</Text> : value}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View className="border-gray-200">
       {/* Tab Header */}
-      <View className="flex-row">
+      <View className="flex-row bg-white shadow-sm">
         <TouchableOpacity
           onPress={() => setActiveFilter("reviews")}
           className={`flex-1 py-3 items-center ${
@@ -120,97 +146,113 @@ const ProfileFilters = ({
       {/* Content Section */}
       <View className="bg-gray-50 min-h-screen">
         {activeFilter === "about" ? (
-          <View className="bg-white mx-4 mt-4 rounded-2xl shadow-sm border border-gray-100">
-            {/* About Header */}
-            <View className="p-6 border-b border-gray-100">
-              <Text className="text-2xl font-bold text-gray-900 mb-2">
-                About {user?.firstName || "Me"}
-              </Text>
-              {bio && (
-                <Text className="text-gray-600 leading-relaxed">{bio}</Text>
-              )}
-            </View>
-
-            {/* User Details Section */}
-            <View className="p-6 space-y-4">
-              {username && (
-                <View className="flex-row items-center">
-                  <Text className="text-sm font-medium text-gray-500 w-20">
-                    Username
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <View className="p-4">
+              <View className="bg-white rounded-3xl shadow-lg border border-gray-100 mb-4">
+                <View className="px-6 py-5 border-b border-gray-100">
+                  <Text className="text-xl font-bold text-gray-900">
+                    Personal Information
                   </Text>
-                  <Text className="text-gray-900 font-medium">@{username}</Text>
                 </View>
-              )}
 
-              {country && (
-                <View className="flex-row items-center">
-                  <Text className="text-sm font-medium text-gray-500 w-20">
-                    Location
-                  </Text>
-                  <Text className="text-gray-900">{country}</Text>
+                <View className="px-5 py-2">
+                  {username && (
+                    <InfoRow
+                      icon="at-sign"
+                      label="Username"
+                      value={`@${username}`}
+                    />
+                  )}
+
+                  {country && (
+                    <InfoRow icon="map-pin" label="Country" value={country} />
+                  )}
+
+                  {favoriteEmoji && (
+                    <InfoRow
+                      icon={favoriteEmoji}
+                      label="Favorite Emoji"
+                      value={favoriteEmoji}
+                      isEmoji={true}
+                    />
+                  )}
+
+                  {birthday && (
+                    <InfoRow
+                      icon="calendar"
+                      label="Birthday"
+                      value={new Date(birthday).toLocaleDateString()}
+                    />
+                  )}
                 </View>
-              )}
+              </View>
 
-              {favoriteEmoji && (
-                <View className="flex-row items-center">
-                  <Text className="text-sm font-medium text-gray-500 w-20">
-                    Emoji
-                  </Text>
-                  <Text className="text-2xl">{favoriteEmoji}</Text>
-                </View>
-              )}
-
+              {/* Dietary Restrictions Card */}
               {dietaryRestrictions && dietaryRestrictions.length > 0 && (
-                <View>
-                  <Text className="text-sm font-medium text-gray-500 mb-2">
-                    Dietary Restrictions
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {dietaryRestrictions.map((restriction, index) => (
-                      <View
-                        key={index}
-                        className="bg-red-100 px-3 py-1 rounded-full mr-2 mb-2"
-                      >
-                        <Text className="text-red-700 text-sm font-medium">
-                          {restriction}
-                        </Text>
-                      </View>
-                    ))}
+                <View className="bg-white rounded-3xl shadow-lg border border-gray-100 mb-4">
+                  <View className="px-6 py-5 border-b border-gray-100">
+                    <Text className="text-xl font-bold text-gray-900">
+                      Dietary Preferences
+                    </Text>
+                    <Text className="text-gray-500 text-sm mt-1">
+                      Foods and ingredients to avoid
+                    </Text>
+                  </View>
+
+                  <View className="px-6 py-5">
+                    <View className="flex-row flex-wrap -m-1">
+                      {dietaryRestrictions.map((restriction, index) => (
+                        <View
+                          key={index}
+                          className="m-1  px-4 py-2 rounded-2xl border border-red-200 shadow-sm"
+                        >
+                          <Text className="text-yellow-600 text-sm font-semibold">
+                            {restriction}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Favorite Tags Card */}
+              {tags && tags.length > 0 && (
+                <View className="bg-white rounded-3xl shadow-lg border border-gray-100 mb-6">
+                  <View className="px-6 py-5 border-b border-gray-100">
+                    <Text className="text-xl font-bold text-gray-900">
+                      Favorite Cuisines
+                    </Text>
+                    <Text className="text-gray-500 text-sm mt-1">
+                      Most used tags by {firstName || "this user"}
+                    </Text>
+                  </View>
+
+                  <View className="px-6 py-5">
+                    <FlatList
+                      data={tags}
+                      keyExtractor={(item) => item.id}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingRight: 20 }}
+                      ItemSeparatorComponent={() => <View className="w-3" />}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          onPress={() => handleTagPress(item)}
+                          className="bg-gradient-to-r from-orange-50 to-orange-100 px-5 py-3 rounded-2xl border border-orange-200 shadow-sm min-w-20 items-center"
+                          activeOpacity={0.7}
+                        >
+                          <Text className="text-orange-700 font-bold text-base">
+                            #{item.name}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    />
                   </View>
                 </View>
               )}
             </View>
-
-            {/* Tags Section */}
-            {tags && tags.length > 0 && (
-              <View className="p-6 border-t border-gray-100">
-                <Text className="text-lg font-semibold text-gray-900 mb-3">
-                  Favorite Tags
-                </Text>
-                <Text className="text-sm text-gray-500 mb-4">
-                  Tags {user?.fullName || user?.firstName} has used
-                </Text>
-                <FlatList
-                  data={tags}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 20 }}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => handleTagPress(item)}
-                      className="mr-3 bg-gradient-to-r from-orange-100 to-orange-50 px-4 py-2 rounded-full border border-orange-200 shadow-sm"
-                      activeOpacity={0.8}
-                    >
-                      <Text className="text-orange-700 font-medium text-sm">
-                        #{item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            )}
-          </View>
+          </ScrollView>
         ) : (
           <RenderFilteredPosts
             activeFilter={activeFilter}

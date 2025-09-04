@@ -103,23 +103,6 @@ const ProfileHeader = ({ user, pickImage }) => {
   const firstName = user?.firstName;
   const lastName = user?.lastName;
   const bio = unsafeMetadata?.bio;
-  const country = unsafeMetadata?.country?.name;
-  const birthday = unsafeMetadata?.birthday;
-  const favoriteEmoji = unsafeMetadata?.favoriteEmoji;
-  const dietaryRestrictions = unsafeMetadata?.dietaryRestrictions;
-
-  // Function to format the birthday string
-  const getFormattedBirthday = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formattedBirthday = getFormattedBirthday(birthday);
 
   return (
     <View className="flex-row items-start">
@@ -147,24 +130,22 @@ const ProfileHeader = ({ user, pickImage }) => {
             <Text className="text-sm text-gray-500 ">@{username}</Text>
           </View>
 
-          <View className="flex-row mr-4">{/* Settings button */}</View>
+          <View className="flex-row mr-4">
+            <TouchableOpacity
+              onPress={() => router.push("/account-settings")}
+              className="w-12 h-12 bg-gray-100 rounded-2xl items-center justify-center shadow-sm border border-gray-200 hover:bg-gray-200 transition-colors"
+              activeOpacity={0.7}
+            >
+              <Image
+                source={require("../../assets/home-icons/settings.png")}
+                className="w-6 h-6 opacity-70"
+                style={{ tintColor: "#6B7280" }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {bio && <Text className="text-gray-700 text-sm">{bio}</Text>}
-
-        {/* Displaying additional details from unsafeMetadata */}
-        <Text className="text-sm text-gray-600">
-          {[
-            country,
-            formattedBirthday,
-            favoriteEmoji,
-            dietaryRestrictions?.length > 0
-              ? dietaryRestrictions.join(", ")
-              : null,
-          ]
-            .filter(Boolean)
-            .join(" • ")}
-        </Text>
       </View>
     </View>
   );
