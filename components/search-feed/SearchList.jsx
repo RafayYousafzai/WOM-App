@@ -9,6 +9,7 @@ import {
   Image,
   TextInput,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import FoodMap from "./FoodMap";
 import PostList from "./PostList";
@@ -173,7 +174,7 @@ export default function SearchList() {
             onSelect={handleFilterChange}
           />
         </View>
-        {renderContent()}
+        <ScrollView className="flex-1">{renderContent()}</ScrollView>
       </View>
     </View>
   );

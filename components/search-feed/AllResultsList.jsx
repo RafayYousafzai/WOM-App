@@ -43,23 +43,10 @@ export default function AllResultsList({ searchQuery }) {
   };
 
   return (
-    <FlatList
-      data={sectionsData}
-      keyExtractor={(item) => item.id}
-      renderItem={renderSection}
-      className="flex-1 bg-slate-50"
-      // Important: Setting these props to prevent outer FlatList from taking over
-      // the scroll, and hoping the inner ScrollViews handle it.
-      // However, this often leads to a poor UX and janky scrolling.
-      // If the content of the inner ScrollViews is large, this will still be slow.
-      // This FlatList will still render all sections at once if they are short,
-      // and if they are long, it won't virtualize well because the 'item' is a complex component.
-      // Setting these *might* help with scroll locking, but it's not a silver bullet for performance
-      // when nested scrollables are present.
-      scrollEnabled={true} // The outer FlatList can scroll
-      // nestedScrollEnabled={true} // Generally should be true for nested scroll views, but still problematic
-      // This is the core issue: FlatList is not designed to contain *other scrollable components* as its items.
-      // It's for a list of *non-scrollable* items.
-    />
+    <>
+      <UsersList limit={5} searchQuery={searchQuery} />
+      <PostList limit={5} searchQuery={searchQuery} />
+      <ReviewsList limit={5} searchQuery={searchQuery} />
+    </>
   );
 }

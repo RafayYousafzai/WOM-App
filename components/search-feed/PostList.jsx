@@ -68,7 +68,7 @@ const DishList = ({ limit = 20 }) => {
   }
 
   return (
-    <ScrollView
+    <View
       className="flex-1 bg-slate-50"
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 20 }}
@@ -301,7 +301,7 @@ const DishList = ({ limit = 20 }) => {
           </View>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
