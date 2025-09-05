@@ -86,20 +86,20 @@ export default function DraftManager() {
                 })}
               </Text>
             </View>
-            <View className="flex-row space-x-4">
+            <View className="flex-row space-x-4 gap-2">
               <TouchableOpacity
                 onPress={() => handleSelect(item.id)}
-                className="bg-blue-500 rounded-full p-3"
+                className="rounded-full p-3"
                 activeOpacity={0.7}
               >
-                <Ionicons name="create-outline" size={24} color="white" />
+                <Ionicons name="create-outline" size={24} color="#3b82f6" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
-                className="bg-red-500 rounded-full p-3"
+                className="rounded-full p-3"
                 activeOpacity={0.7}
               >
-                <Ionicons name="trash-outline" size={24} color="white" />
+                <Ionicons name="trash-outline" size={24} color="#ef4444" />
               </TouchableOpacity>
             </View>
           </View>

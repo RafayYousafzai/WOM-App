@@ -57,7 +57,7 @@ export default function RestaurantCreation() {
       case 2:
         return "Add Details";
       default:
-        return "Review & Share";
+        return "Share";
     }
   };
 
@@ -109,7 +109,10 @@ export default function RestaurantCreation() {
             <Ionicons name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
 
-          <Text className="text-gray-800 text-xl font-bold">
+          <Text
+            className="text-gray-800 text-xl font-bold "
+            style={{ marginLeft: 40 }}
+          >
             {getStepTitle()}
           </Text>
 

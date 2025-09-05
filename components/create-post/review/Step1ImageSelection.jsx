@@ -7,10 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  TextInput,
 } from "react-native";
 import { useEffect, useRef } from "react";
 import GoogleTextInput from "@/components/common/GooglePlacesInput";
-import { Textarea, TextareaInput } from "@/components/ui";
 import { Title } from "react-native-paper";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { DishTypeModal } from "../shared-components/DishTypeModal";
@@ -60,7 +60,6 @@ export const Step1ImageSelection = () => {
               style={{
                 paddingHorizontal: 20,
                 paddingTop: 20,
-                paddingBottom: 16,
               }}
             >
               <Title
@@ -83,7 +82,7 @@ export const Step1ImageSelection = () => {
               onDishChange={handleDishChange}
             />
 
-            <View style={{ paddingHorizontal: 0, marginBottom: 24 }}>
+            <View style={{ paddingHorizontal: 0, marginBottom: 0 }}>
               <View
                 style={{
                   borderRadius: 16,
@@ -106,51 +105,52 @@ export const Step1ImageSelection = () => {
 
               <View
                 style={{
-                  elevation: 4,
                   borderRadius: 16,
                   backgroundColor: "#ffffff",
                   minHeight: 200,
                 }}
               >
                 <View style={{ padding: 20 }}>
-                  <Text
+                  <View
                     style={{
-                      fontSize: 18,
-                      color: "#374151",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Your Review
-                  </Text>
-                  <Textarea
-                    size="lg"
-                    style={{
-                      backgroundColor: "#f9fafb",
+                      elevation: 4,
                       borderRadius: 16,
-                      borderWidth: 0,
-                      minHeight: 140,
+                      backgroundColor: "#ffffff",
+                      minHeight: 200,
                     }}
                   >
-                    <TextareaInput
-                      value={reviewData.review}
-                      onChangeText={(text) => handleChange("review", text)}
-                      placeholder="Share your experience at this restaurant..."
-                      placeholderTextColor="#343a40" // This will definitely work with TextInput
-                      multiline
-                      style={{
-                        fontSize: 17, // Larger font size
-                        lineHeight: 24,
-                        color: "#374151",
-                        padding: 16,
-                      }}
-                    />
-                  </Textarea>
+                    <View style={{}}>
+                      <TextInput
+                        value={reviewData.review}
+                        onChangeText={(text) => handleChange("review", text)}
+                        placeholder={`Share your experience...`}
+                        placeholderTextColor="#343a40" // pure black
+                        multiline
+                        style={{
+                          backgroundColor: "#f9fafb",
+                          borderRadius: 16,
+                          borderWidth: 0,
+                          minHeight: 140,
+                          fontSize: 18, // bigger font size
+                          lineHeight: 26,
+                          color: "#374151", // typed text color
+                          padding: 16,
+                          textAlignVertical: "top", // keeps text at the top for multiline
+                        }}
+                      />
+                    </View>
+                  </View>
                 </View>
               </View>
             </View>
-
             {reviewData.is_review === "restaurant" && (
-              <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  marginBottom: 24,
+                  marginTop: -60,
+                }}
+              >
                 <RatingStars
                   title="Rate the restaurant"
                   rating={reviewData.rating}

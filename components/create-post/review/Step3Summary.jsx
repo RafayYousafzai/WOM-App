@@ -37,8 +37,8 @@ export const Step3Summary = () => {
     dishName: submission?.dishTypes[0]?.dishName || "Dish",
     restaurantName: submission?.location?.name || "Restaurant",
     price: submission?.dishTypes[0]?.price || "0",
-    rating: submission?.dishTypes[0]?.rating || 0,
-    images: submission?.images || [],
+    images: submission?.dishTypes[0]?.images || [],
+    rating: submission.rating || 0,
     location: submission?.location || {
       address: "Location not provided",
       latitude: 40.7128,
@@ -233,25 +233,23 @@ export const Step3Summary = () => {
                   Price
                 </Text>
               </View>
-              <Text
-                className={classNames("text-3xl font-black text-green-600")}
-              >
+              <Text className={classNames("text-3xl font-black text-green600")}>
                 {safeSubmission.price
                   ? `$${safeSubmission.price}`
                   : "Not specified"}
               </Text>
               <Text className="text-gray-500 text-xs mt-1">Average cost</Text>
             </View>
-            <View className="flex-1 bg-purple-50 rounded-xl p-4 ml-2">
+            <View className="flex-1 bg-yellow-50 rounded-xl p-4 ml-2">
               <View className="flex-row mb-4 items-center">
-                <StarIcon size={25} color="#8b5cf6" />
+                <StarIcon size={25} color="#f39f1e" />
                 <Text className="text-gray-800 font-bold text-lg ml-1">
                   Rating
                 </Text>
               </View>
               <Text className="text-gray-700 text-xl font-bold mt-1">
                 <Text
-                  className={classNames("text-3xl font-black text-purple-600")}
+                  className={classNames("text-3xl font-black text-yellow-00")}
                 >
                   {safeSubmission.rating}/10
                 </Text>
@@ -260,45 +258,6 @@ export const Step3Summary = () => {
                 Based on reviews
               </Text>
             </View>
-          </View>
-
-          <View className="mb-6">
-            <Text className="text-gray-800 font-bold text-xl mb-3">
-              Recommended Dishes
-            </Text>
-            {safeSubmission.recommendDish ? (
-              <View className="bg-yellow-100 border-l-4 border-yellow-400 rounded-xl p-4 shadow-sm">
-                <View className="flex-row items-center">
-                  <FontAwesome5
-                    name="utensils"
-                    size={18}
-                    className="ml-1 mr-2"
-                    color="#d97706"
-                  />
-                  <Text className="text-yellow-800 font-semibold ml-2 text-base">
-                    {`${
-                      safeSubmission.dishName || "This dish"
-                    } is recommended and will appear as a recommendation.`}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View className="bg-gray-50 border-l-4 border-gray-300 rounded-xl p-4 shadow-sm">
-                <View className="flex-row items-center">
-                  <Feather
-                    name="info"
-                    size={18}
-                    className="ml-1 mr-2"
-                    color="#9ca3af"
-                  />
-                  <Text className="text-gray-500 font-medium ml-2 text-base">
-                    {`${
-                      safeSubmission.dishName || "This dish"
-                    } is not recommended and will appear as an unrecommendation.`}
-                  </Text>
-                </View>
-              </View>
-            )}
           </View>
 
           <View className="mb-6">

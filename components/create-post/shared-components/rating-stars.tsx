@@ -161,11 +161,14 @@ export function RatingStars({
   }, []);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView
+      style={styles.container}
+      className="bg-slate-50 rounded-2xl py-2 px-3"
+    >
       <View style={styles.topRow}>
         <Text
           style={{
-            fontSize: 18,
+            fontSize: 18.5,
             color: "#374151",
             marginLeft: 8,
           }}
@@ -174,6 +177,7 @@ export function RatingStars({
         </Text>
         <TextInput
           style={styles.input}
+          className="border border-gray-200"
           keyboardType="numeric"
           value={inputValue}
           onChangeText={onInputChange}
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
     height: HANDLE_SIZE + 16,
     justifyContent: "center",
     paddingBottom: 25,
-    marginLeft: 24,
+    marginLeft: 16,
   },
 
   sliderWrapper: {

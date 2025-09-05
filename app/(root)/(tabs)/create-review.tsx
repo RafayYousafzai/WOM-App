@@ -123,7 +123,7 @@ export default function CreateReview() {
                     activeOpacity={0.8}
                   >
                     <HStack className="items-center mb-5">
-                      <Box className="p-4 rounded-2xl bg-gray-200">
+                      <Box className="p-4 rounded-2xl bg-gray-100">
                         <Ionicons
                           name="restaurant-outline"
                           size={28}
@@ -132,33 +132,19 @@ export default function CreateReview() {
                       </Box>
                       <View className="ml-4 flex-1">
                         <RNText className="font-bold text-2xl text-slate-900">
-                          Review a Restaurant
+                          Restaurant Dish
                         </RNText>
                         <RNText className="text-base text-slate-600 mt-1">
                           Share your dining discovery
                         </RNText>
                       </View>
-                      <Box className="bg-gray-200 rounded-full p-3">
+                      <Box className="bg-gray-100 rounded-full p-3">
                         <Ionicons
                           name="chevron-forward"
                           size={22}
                           color="#F59E0B"
                         />
                       </Box>
-                    </HStack>
-                    <HStack className="flex-wrap">
-                      {[
-                        "Rate dishes",
-                        "Share location",
-                        "Food recommendations",
-                      ].map((tag, index) => (
-                        <RNText
-                          key={index}
-                          className="bg-gray-200 rounded-full px-4 py-2 text-sm mr-3 mb-2 font-medium"
-                        >
-                          {tag}
-                        </RNText>
-                      ))}
                     </HStack>
                   </TouchableOpacity>
                 </Animated.View>
@@ -175,7 +161,7 @@ export default function CreateReview() {
                     activeOpacity={0.8}
                   >
                     <HStack className="items-center mb-5">
-                      <Box className="p-4 rounded-2xl bg-gray-200">
+                      <Box className="p-4 rounded-2xl bg-gray-100">
                         <MaterialCommunityIcons
                           name="chef-hat"
                           size={28}
@@ -184,13 +170,13 @@ export default function CreateReview() {
                       </Box>
                       <View className="ml-4 flex-1">
                         <RNText className="font-bold text-2xl text-slate-900">
-                          Review Your Homemade Dish
+                          Homemade Dish
                         </RNText>
                         <RNText className="text-base text-slate-600 mt-1">
-                          Showcase your homemade creation
+                          Share your homemade creation
                         </RNText>
                       </View>
-                      <Box className="bg-gray-200 rounded-full p-3">
+                      <Box className="bg-gray-100 rounded-full p-3">
                         <Ionicons
                           name="chevron-forward"
                           size={22}
@@ -198,23 +184,11 @@ export default function CreateReview() {
                         />
                       </Box>
                     </HStack>
-                    <HStack className="flex-wrap">
-                      {["Share recipe", "Cooking tips", "Get feedback"].map(
-                        (tag, index) => (
-                          <RNText
-                            key={index}
-                            className="bg-gray-200 rounded-full px-4 py-2 text-sm mr-3 mb-2 font-medium"
-                          >
-                            {tag}
-                          </RNText>
-                        )
-                      )}
-                    </HStack>
                   </TouchableOpacity>
                 </Animated.View>
 
                 <Animated.View entering={FadeInDown.duration(600).delay(600)}>
-                  <Box className="bg-amber-100 p-6 rounded-3xl mt-8">
+                  <Box className="bg-yellow-50 p-6 rounded-3xl mt-8">
                     <HStack className="items-center mb-3">
                       <Ionicons
                         name="information-circle"
@@ -226,8 +200,7 @@ export default function CreateReview() {
                       </RNText>
                     </HStack>
                     <RNText className="text-slate-800 text-base leading-relaxed">
-                      Your posts inspire our community of food lovers. Share
-                      your culinary adventures and connect with others!
+                      Share your culinary adventures and connect with others!
                     </RNText>
                   </Box>
                 </Animated.View>

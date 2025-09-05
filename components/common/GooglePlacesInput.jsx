@@ -166,6 +166,7 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
         style={{
           borderRadius: 16,
           backgroundColor: "#f9fafb", // Light gray background
+          marginTop: -28,
         }}
       >
         <TouchableOpacity
@@ -187,10 +188,10 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
               }}
               className="text-xl"
             >
-              {selectedLocation || "Enter the location"}
+              {selectedLocation || "Add the location"}
             </Text>
           </View>
-          <Ionicons name="location-outline" size={24} color="#6366F1" />
+          <Ionicons name="location-outline" size={24} color="#fcbf49" />
         </TouchableOpacity>
       </View>
 
@@ -261,8 +262,17 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
                   >
                     Select Location
                   </Text>
-                  <TouchableOpacity onPress={handleClear} style={{ justifyContent: 'center', alignItems: 'center', width: 40 }}>
-                    <Text style={{ color: "#6366F1", fontWeight: "600" }}>Clear</Text>
+                  <TouchableOpacity
+                    onPress={handleClear}
+                    style={{
+                      justifyContent: "center",
+                      alignItems: "center",
+                      width: 40,
+                    }}
+                  >
+                    <Text style={{ color: "#6366F1", fontWeight: "600" }}>
+                      Clear
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </Surface>
