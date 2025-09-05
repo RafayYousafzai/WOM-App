@@ -227,7 +227,7 @@ const ProfileFilters = ({
                 <View className="bg-white rounded-3xl shadow-lg border border-gray-100 mb-6">
                   <View className="px-6 py-5 border-b border-gray-100">
                     <Text className="text-xl font-bold text-gray-900">
-                      Favorite Cuisines
+                      Tags used in posts
                     </Text>
                     <Text className="text-gray-500 text-sm mt-1">
                       Most used tags by {firstName || "this user"}

@@ -54,17 +54,17 @@ export default function RenderFilteredPosts({
 
       // Process posts to extract images from dishes
       const postsWithImages = postsData.map((post) => {
-        // Extract all images from all dishes in this post
         const images = post.post_dishes
           .flatMap((dish) => dish.image_urls || [])
-          .filter((url) => url); // Remove any empty/null URLs
+          .filter((url) => url);
 
         return {
           ...post,
-          images, // Add images array to the post object
+          images,
           dishes: post.post_dishes || [],
           isLiked:
             post.post_likes?.some((like) => like.user_id === user.id) || false,
+          likesCount: post.post_likes?.length || 0, // 👈 add this
         };
       });
 
