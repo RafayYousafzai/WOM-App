@@ -74,9 +74,7 @@ export default function DraftManager() {
           <View className="flex-row justify-between items-center">
             <View className="flex-1 mr-4">
               <Text className="text-xl font-bold text-gray-900 mb-2">
-                {item?.location ||
-                  item?.dishTypes[0]?.dishName ||
-                  "Untitled Draft"}
+                {item?.dishTypes[0]?.dishName || `Draft ${index + 1}`}
               </Text>
               <Text className="text-base text-gray-500">
                 {new Date(item.saved_at).toLocaleDateString("en-US", {
@@ -112,15 +110,13 @@ export default function DraftManager() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
+      <View className="px-5 pt-8">
+        <Text className="text-6xl font-extrabold text-slate-900">Drafts</Text>
+        <Text className="text-sm text-slate-500 mt-2 font-medium">
+          {allDrafts.length} {allDrafts.length === 1 ? "draft" : "drafts"} saved{" "}
+        </Text>
+      </View>
       <Animated.View style={{ opacity: fadeAnim }} className="flex-1 px-6 py-4">
-        <View className="px-5 pt-8">
-          <Text className="text-6xl font-extrabold text-slate-900">Drafts</Text>
-          <Text className="text-sm text-slate-500 mt-2 font-medium">
-            {allDrafts.length} {allDrafts.length === 1 ? "draft" : "drafts"}{" "}
-            saved{" "}
-          </Text>
-        </View>
-
         <TouchableOpacity
           onPress={handleNewPost}
           activeOpacity={0.8}

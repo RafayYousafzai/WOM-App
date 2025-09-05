@@ -82,8 +82,7 @@ export const ReviewProvider = ({ children }) => {
   const [currentDraftId, setCurrentDraftId] = useState(null);
   const [allDrafts, setAllDrafts] = useState([]);
 
-  console.log(tags);
-  console.log(tags);
+  console.log(reviewData.location);
 
   // -------------------- Draft Management -------------------- //
   const saveDraft = async () => {
@@ -286,14 +285,28 @@ export const ReviewProvider = ({ children }) => {
 
     try {
       await postSchema.validate(postData, { abortEarly: false });
+      // upload the images in here
       console.log("Validation passed ✅");
     } catch (err) {
-      Alert.alert("Validation Error", (err.errors || []).join("\n"));
+      console.error("Validation error object:", err);
+
+      let messages = [];
+
+      if (err.inner && err.inner.length > 0) {
+        messages = err.inner.map((e) => e.message);
+      } else if (err.errors && err.errors.length > 0) {
+        messages = err.errors;
+      } else if (err.message) {
+        messages = [err.message];
+      } else {
+        messages = ["Unknown validation error"];
+      }
+
+      Alert.alert("Validation Error", messages.join("\n"));
       setError("Validation failed");
       completeUpload();
       return;
     }
-    router.push("home");
 
     // --- 2. Upload Dish Images ---
     let updatedDishTypes = [];
@@ -349,6 +362,8 @@ export const ReviewProvider = ({ children }) => {
     } catch (error) {
       console.error("Notification error:", error);
     }
+
+    router.push("home");
   };
 
   // -------------------- Context Value -------------------- //
