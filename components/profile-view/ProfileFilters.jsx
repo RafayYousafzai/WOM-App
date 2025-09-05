@@ -257,6 +257,7 @@ const ProfileFilters = ({
             title={FILTER_TITLES[activeFilter] || "All Posts"}
             refreshCount={refreshCount}
             setRefreshCount={setRefreshCount}
+            profileUserId={user?.id}
           />
         )}
       </View>

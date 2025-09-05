@@ -61,16 +61,17 @@ export default function VisitProfileScreen() {
         username || "this user's"
       } profile on Word of Mouth!\n${universalUrl}`;
 
-      await Share.share({
+      const shareOptions = await Share.share({
         title: "Share this profile",
         message: shareMessage, // Android
         url: universalUrl, // iOS
       });
+
+      await Share.open(shareOptions);
     } catch (error) {
       console.error("Error sharing profile:", error.message);
     }
   };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -406,6 +407,7 @@ export default function VisitProfileScreen() {
           setActiveFilter={setActiveTab}
           posts={posts}
           user={user}
+          profileUserId={user_id}
         />
       </ScrollView>
     </View>
