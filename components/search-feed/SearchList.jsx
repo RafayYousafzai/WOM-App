@@ -98,15 +98,6 @@ export default function SearchList() {
     }
   };
 
-  const SearchHeader = () => (
-    <View className="px-4 pt-4 mt-10 pb-2">
-      <Text className="text-6xl font-extrabold text-slate-900">Search</Text>
-      <Text className="text-sm text-slate-500 mt-2 font-medium">
-        Discover trending restaurants and find what you're looking for
-      </Text>
-    </View>
-  );
-
   const renderContent = useCallback(() => {
     if (debouncedSearchQuery.trim() === "") {
       return (
@@ -138,9 +129,6 @@ export default function SearchList() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* <SearchHeader /> */}
-
-      {/* Search Input with Back Button */}
       <View className="px-3 pt-3 flex-row items-center">
         <View
           className="flex-1 flex-row items-center bg-gray-100 rounded-full px-3"

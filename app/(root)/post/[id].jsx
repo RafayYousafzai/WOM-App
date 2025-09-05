@@ -177,9 +177,12 @@ export default function ViewPost() {
   return (
     <ScrollView className="flex-1 bg-white pt-12">
       {/* Header */}
-      <View className="flex-row items-center justify-between mb-4">
-        <TouchableOpacity className="p-2" onPress={() => router.push("/home")}>
-          <ChevronLeft size={28} color="#000" />
+      <View className="flex-row  ml-2  items-center justify-between mb-4">
+        <TouchableOpacity
+          className="p-2 bg-gray-200 rounded-full"
+          onPress={() => router.push("/home")}
+        >
+          <ChevronLeft size={20} color="#000" />
         </TouchableOpacity>
         <Text className="text-xl font-semibold text-center flex-1 pr-10">
           Word of Mouth

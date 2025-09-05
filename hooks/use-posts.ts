@@ -443,8 +443,8 @@ post_comments (id)
             type: "danger",
           });
         } else {
-          toast.show("Failed to load posts. Please try again later.", {
-            type: "danger",
+          toast.show("Please refresh and try again...", {
+            type: "warning",
           });
         }
 
