@@ -162,7 +162,11 @@ export default function SearchList() {
             onSelect={handleFilterChange}
           />
         </View>
-        <ScrollView className="flex-1">{renderContent()}</ScrollView>
+        {activeFilter === "Map" ? (
+          renderContent()
+        ) : (
+          <ScrollView className="flex-1 pb-96">{renderContent()}</ScrollView>
+        )}
       </View>
     </View>
   );

@@ -252,7 +252,7 @@ const FoodMapView = () => {
           <Heatmap
             points={heatmapData}
             radius={safeHeatmapRadius}
-            opacity={0.8}
+            opacity={10}
             gradient={{
               colors: ["#79E0EE", "#3498db", "#f39c12", "#e74c3c"],
               startPoints: [0.1, 0.4, 0.7, 0.9],
