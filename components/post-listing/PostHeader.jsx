@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { Avatar } from "react-native-paper";
-import { useToast } from "@/components/ui/toast";
 import { router } from "expo-router";
 import {
   isFollowing as checkIfFollowing,

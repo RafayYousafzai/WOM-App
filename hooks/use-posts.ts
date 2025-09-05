@@ -135,8 +135,33 @@ export const usePosts = () => {
     longitude: number;
   } | null>(null);
 
-  const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap (if needed)
+  
 
+  const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> => {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (
+        !error?.message?.includes("connect error") && 
+        !error?.message?.includes("timeout")
+      ) {
+        throw error; // Rethrow non-retryable errors
+      }
+      attempt++;
+      const delay = baseDelay * Math.pow(2, attempt); // Exponential: 1s, 2s, 4s
+      console.warn(`Retry ${attempt}/${maxRetries} after ${delay}ms: ${error.message}`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error("Max retries exceeded");
+  };
+  
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -286,21 +311,15 @@ post_comments (id)
             user_longitude: safeLongitude,
           });
 
-          const { data: rankedPosts, error: rpcError } = await supabase.rpc(
-            "get_for_you_feed",
-
-            {
-              page_limit: PAGE_SIZE,
-
-              page_offset: (pageRef.current - 1) * PAGE_SIZE,
-
-              requesting_user_id: safeUserId,
-
-              user_latitude: safeLatitude,
-
-              user_longitude: safeLongitude,
-            }
-          );
+        const { data: rankedPosts, error: rpcError } = await retryWithBackoff(() =>
+  supabase.rpc("get_for_you_feed", {
+    page_limit: PAGE_SIZE,
+    page_offset: (pageRef.current - 1) * PAGE_SIZE,
+    requesting_user_id: safeUserId,
+    user_latitude: safeLatitude,
+    user_longitude: safeLongitude,
+  })
+) as { data: any[]; error: any };
 
           if (rpcError) {
             console.error("RPC Error:", rpcError);
@@ -322,8 +341,9 @@ post_comments (id)
 
           console.log("Post IDs to fetch:", postIds);
 
-          const { data: postsData, error: postsError } =
-            await buildPostsQuery().in("id", postIds);
+         const { data: postsData, error: postsError } = await retryWithBackoff(() =>
+  buildPostsQuery().in("id", postIds)
+) as { data: any[]; error: any };
 
           if (postsError) {
             console.error("Posts fetch error:", postsError);
@@ -523,26 +543,16 @@ post_comments (id)
     loadPosts(false);
   }, [loadPosts]);
 
-  const handleNetworkRetry = useCallback(async () => {
-    const networkState = await checkConnectivity();
-
-    if (
-      networkState.isConnected &&
-      networkState.isInternetReachable !== false
-    ) {
-      setNetworkError(false);
-
-      loadPosts(false);
-    } else {
-      toast.show(
-        "Still no internet connection. Please check your network settings.",
-
-        {
-          type: "warning",
-        }
-      );
-    }
-  }, [checkConnectivity, loadPosts, toast]);
+const handleNetworkRetry = useCallback(async () => {
+  const networkState = await checkConnectivity();
+  if (networkState.isConnected && networkState.isInternetReachable !== false) {
+    setNetworkError(false);
+    loadPosts(false); // Auto-retry once
+  } else {
+    toast.show("Still no internet. Trying again in 5s...", { type: "warning" });
+    setTimeout(() => handleNetworkRetry(), 5000); // Auto-retry loop
+  }
+}, [checkConnectivity, loadPosts, toast]);
 
   return {
     activeTab,

@@ -252,7 +252,7 @@ export default function PostListing({
         ListEmptyComponent={
           <View className="mt-36 items-center justify-center">
             {!loading && !networkError && (
-              <Text className="text-gray-500">No posts available</Text>
+              <Text className="text-gray-500">Loading...</Text>
             )}
           </View>
         }
