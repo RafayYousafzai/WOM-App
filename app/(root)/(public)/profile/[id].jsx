@@ -28,6 +28,7 @@ import { ProfileContentSkeleton } from "@/components/profile-view/ProfileSkeleto
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { blockUser } from "@/lib/supabase/user_blocks";
 import ProfileFilters from "@/components/profile-view/ProfileFilters"; // 👈 reuse this
+import { ChevronLeft } from "lucide-react-native";
 
 export default function VisitProfileScreen() {
   const { supabase } = useSupabase();
@@ -293,6 +294,18 @@ export default function VisitProfileScreen() {
           />
         }
       >
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-4">
+          <TouchableOpacity
+            className="p-2"
+            onPress={() => router.push("/home")}
+          >
+            <ChevronLeft size={28} color="#000" />
+          </TouchableOpacity>
+          <Text className="text-xl font-semibold text-center flex-1 pr-10">
+            Word of Mouth
+          </Text>
+        </View>
         {/* Header Section */}
         <View className="p-5">
           <View className="flex-row justify-between items-center">

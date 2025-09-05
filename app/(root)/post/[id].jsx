@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { PostCard } from "@/components/post-listing/PostCard";
 import { useSupabase } from "@/context/supabaseContext";
 import { useUser } from "@clerk/clerk-expo";
@@ -40,7 +40,6 @@ export default function ViewPost() {
 
   const { supabase } = useSupabase();
   const { user } = useUser();
-  const router = useRouter();
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
