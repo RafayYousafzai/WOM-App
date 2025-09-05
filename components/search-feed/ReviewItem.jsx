@@ -158,7 +158,7 @@ const ReviewsList = ({ limit = 20 }) => {
                       <View className="flex-row flex-wrap">
                         {post.post_tags.slice(0, 2).map((tagObj, index) => (
                           <View key={index} className="py-1 mr-2 mb-2">
-                            <Text className="text-gray-700 text-xs bg-slate-50 px-2 py-1 rounded-full">
+                            <Text className="text-gray-700 text-xs bg-slate-50 px-1 py-1 rounded-full">
                               {tagObj?.tags?.name || "?"}
                             </Text>
                           </View>
@@ -166,7 +166,7 @@ const ReviewsList = ({ limit = 20 }) => {
 
                         {post.post_tags.length > 2 && (
                           <View className="py-1 mr-2 mb-2">
-                            <Text className="text-gray-700 text-xs bg-slate-200 px-2 py-1 rounded-full">
+                            <Text className="text-gray-700 text-xs bg-slate-50 px-2 py-1 rounded-full">
                               +{post.post_tags.length - 2}
                             </Text>
                           </View>
