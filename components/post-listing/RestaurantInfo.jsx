@@ -6,6 +6,7 @@ import {
   Modal,
   ScrollView,
   Animated,
+  Dimensions,
 } from "react-native";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -26,7 +27,9 @@ export const RestaurantInfo = ({
   onDishSelect, // New callback for dish selection
 }) => {
   const [showDishSidebar, setShowDishSidebar] = useState(false);
-  const [slideAnim] = useState(new Animated.Value(300));
+  const [slideAnim] = useState(
+    new Animated.Value(Dimensions.get("window").width)
+  );
 
   const currentDish = restaurantDishes.find(
     (dish) => dish.id === currentDishId
@@ -87,7 +90,7 @@ export const RestaurantInfo = ({
 
   const closeDishSidebar = () => {
     Animated.timing(slideAnim, {
-      toValue: 300,
+      toValue: Dimensions.get("window").width,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
@@ -169,7 +172,7 @@ export const RestaurantInfo = ({
         animationType="none"
         onRequestClose={closeDishSidebar}
       >
-        <View className="flex-1 bg-black/50">
+        <View className="flex-1 bg-black/40">
           <TouchableOpacity
             className="flex-1"
             activeOpacity={1}
@@ -179,65 +182,96 @@ export const RestaurantInfo = ({
           <Animated.View
             style={{
               transform: [{ translateX: slideAnim }],
+              width: Dimensions.get("window").width * 0.85,
             }}
-            className="absolute right-0 top-0 bottom-0 w-96 bg-white shadow-lg"
+            className="absolute right-0 top-0 bottom-0 bg-white rounded-l-2xl shadow-2xl max-w-[400px]"
           >
             <View className="flex-1 mt-10">
               {/* Header */}
-              <View className="flex-row items-center justify-between p-4 border-b border-gray-200">
-                <View>
-                  <Text className="text-lg font-bold text-gray-900">
+              <View className="flex-row items-center justify-between p-6 border-b border-gray-100">
+                <View className="w-[70%]">
+                  <Text className="text-xl font-bold text-gray-900">
                     {restaurantName || "Restaurant Dishes"}
                   </Text>
-                  <Text className="text-sm text-gray-500">
+                  <Text className="text-base text-gray-500 mt-1">
                     {restaurantDishes.length} dishes available
                   </Text>
                 </View>
-                <TouchableOpacity onPress={closeDishSidebar} className="p-2">
-                  <Ionicons name="close" size={24} color="#6B7280" />
-                </TouchableOpacity>
+                <View className="w-[30%]">
+                  <TouchableOpacity
+                    onPress={closeDishSidebar}
+                    className="p-3 bg-gray-100 rounded-full"
+                  >
+                    <Ionicons name="close" size={24} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Dishes List */}
-              <ScrollView className="flex-1 px-4 py-2">
+              <ScrollView
+                className="flex-1 px-6 py-4"
+                showsVerticalScrollIndicator={false}
+              >
                 {restaurantDishes.map((dish, index) => (
                   <TouchableOpacity
                     key={dish.id}
-                    className={`p-4 mb-3 rounded-lg border ${
+                    className={`p-5 mb-4 rounded-2xl shadow-sm border ${
                       dish.id === currentDishId
-                        ? "border-yellow-500 bg-yellow-50"
+                        ? "border-amber-300 bg-amber-50"
                         : "border-gray-200 bg-white"
                     }`}
-                    activeOpacity={0.7}
+                    activeOpacity={0.8}
                     onPress={() => handleDishPress(dish)}
                   >
-                    <View className="flex-row items-start justify-between">
-                      <View className="flex-1 mr-3">
-                        <Text className="font-bold text-gray-900 text-base mb-1">
-                          {dish.name}
-                        </Text>
-                        <View
-                          className={`self-start px-2 py-1 rounded-full ${getDishTypeColor(
-                            dish.dishType
-                          )} mb-2`}
-                        >
-                          <Text className="text-xs font-medium">
-                            {dish.category}
+                    <View className="relative">
+                      {" "}
+                      {/* Added relative for absolute positioning */}
+                      <View className="flex-row items-start justify-between">
+                        <View className="flex-1 mr-4">
+                          <Text className="font-semibold text-xl text-gray-900 mb-2">
+                            {" "}
+                            {/* Bolder, larger name */}
+                            {dish.name}
                           </Text>
+                          <View className="flex-row items-center mb-3">
+                            <View
+                              className={`px-3 py-1.5 rounded-full ${getDishTypeColor(
+                                dish.dishType
+                              )}`}
+                            >
+                              <Text className="text-sm font-medium">
+                                {dish.category}
+                              </Text>
+                            </View>
+                            {dish.is_recommended && (
+                              <View className="ml-3 bg-amber-500 rounded-full px-3 py-1.5 flex-row items-center">
+                                <FontAwesome
+                                  name="star"
+                                  size={12}
+                                  color="white"
+                                  className="mr-1"
+                                />
+                                <Text className="text-white text-sm font-semibold">
+                                  Recommended
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <View className="flex-row items-center justify-between">
+                            {renderRating(dish.rating)}
+                            <Text className="font-bold text-amber-600 text-xl">
+                              {" "}
+                              {/* Larger price */}${dish.price}
+                            </Text>
+                          </View>
                         </View>
-                        <View className="flex-row items-center justify-between">
-                          {renderRating(dish.rating)}
-                          <Text className="font-bold text-yellow-600">
-                            ${dish.price}
-                          </Text>
-                        </View>
-                      </View>
 
-                      {dish.id === currentDishId && (
-                        <View className="bg-yellow-500 rounded-full absolute right-1 w-6 h-6 items-center justify-center">
-                          <FontAwesome name="check" size={12} color="white" />
-                        </View>
-                      )}
+                        {dish.id === currentDishId && (
+                          <View className="bg-amber-500 rounded-full absolute right-0 top-0 w-8 h-8 items-center justify-center">
+                            <FontAwesome name="check" size={16} color="white" />
+                          </View>
+                        )}
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
