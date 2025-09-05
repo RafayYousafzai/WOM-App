@@ -38,6 +38,7 @@ import {
   Mail,
   Calendar,
   Edit3,
+  UserX,
 } from "lucide-react-native";
 
 import {
@@ -61,12 +62,14 @@ import {
   toggleGlobalGatekeeping,
   getUserGatekeepingStatus,
 } from "@/lib/supabase/postsAction";
+import { getBlockedUserIds, unblockUser } from "@/lib/supabase/user_blocks";
 
 const { height: screenHeight } = Dimensions.get("window");
 
 const MobileProfilePage = ({ isActive }: any) => {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
 
   return (
     <>
@@ -108,6 +111,7 @@ const MobileProfilePage = ({ isActive }: any) => {
             />
             <AccountPrivacySection
               onShowAccountModal={() => setShowAccountModal(true)}
+              onShowBlockedModal={() => setShowBlockedModal(true)}
             />
           </VStack>
 
@@ -126,6 +130,8 @@ const MobileProfilePage = ({ isActive }: any) => {
           </Box>
         </VStack>
       </ScrollView>
+
+      {/* Modals */}
       {showEditProfile && (
         <Modal
           visible={showEditProfile}
@@ -136,10 +142,15 @@ const MobileProfilePage = ({ isActive }: any) => {
           <EditProfileScreen setIsEditing={setShowEditProfile} />
         </Modal>
       )}
-      {/* Account Modal */}
+
       <AccountModal
         visible={showAccountModal}
         onClose={() => setShowAccountModal(false)}
+      />
+
+      <BlockedUsersModal
+        visible={showBlockedModal}
+        onClose={() => setShowBlockedModal(false)}
       />
     </>
   );
@@ -211,24 +222,28 @@ const ProfileCard = ({ onEdit }: { onEdit: () => void }) => {
 
 const AccountPrivacySection = ({
   onShowAccountModal,
+  onShowBlockedModal,
 }: {
   onShowAccountModal: () => void;
+  onShowBlockedModal: () => void;
 }) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
   const [globalGatekeeping, setGlobalGatekeeping] = useState(false);
   const [gatekeepingLoading, setGatekeepingLoading] = useState(false);
+  const [blockedUsersCount, setBlockedUsersCount] = useState(0);
   const [userStats, setUserStats] = useState({
     totalPosts: 0,
     gatekeepingPosts: 0,
   });
 
-  // Load initial gatekeeping status
+  // Load initial gatekeeping status and blocked users count
   useEffect(() => {
-    const loadGatekeepingStatus = async () => {
+    const loadData = async () => {
       if (!user?.id) return;
 
       try {
+        // Load gatekeeping status
         const status = await getUserGatekeepingStatus(supabase, user.id);
         if (status.success) {
           setGlobalGatekeeping(status.hasGlobalGatekeeping);
@@ -237,12 +252,16 @@ const AccountPrivacySection = ({
             gatekeepingPosts: status.gatekeepingPosts,
           });
         }
+
+        // Load blocked users count
+        const blockedUserIds = await getBlockedUserIds(supabase, user.id);
+        setBlockedUsersCount(blockedUserIds.length);
       } catch (error) {
-        console.error("Error loading gatekeeping status:", error);
+        console.error("Error loading data:", error);
       }
     };
 
-    loadGatekeepingStatus();
+    loadData();
   }, [user?.id, supabase]);
 
   const handleGlobalGatekeepingToggle = async (value: boolean) => {
@@ -307,7 +326,7 @@ const AccountPrivacySection = ({
     {
       icon: User,
       title: "Account Details",
-      subtitle: "Update your personal information",
+      subtitle: "See your personal information",
       onPress: onShowAccountModal,
       rightComponent: <ChevronRight size={20} color="#6b7280" />,
     },
@@ -326,6 +345,15 @@ const AccountPrivacySection = ({
         />
       ),
     },
+    {
+      icon: UserX,
+      title: "Blocked Users",
+      subtitle: `${blockedUsersCount} blocked ${
+        blockedUsersCount === 1 ? "user" : "users"
+      }`,
+      onPress: onShowBlockedModal,
+      rightComponent: <ChevronRight size={20} color="#6b7280" />,
+    },
   ];
 
   return (
@@ -342,6 +370,234 @@ const AccountPrivacySection = ({
         />
       ))}
     </VStack>
+  );
+};
+
+const BlockedUsersModal = ({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) => {
+  const { supabase } = useSupabase();
+  const { user } = useUser();
+  const [blockedUsers, setBlockedUsers] = useState<
+    { id: string; first_name: string; last_name: string; image_url?: string }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [unblockingUserId, setUnblockingUserId] = useState(null);
+
+  useEffect(() => {
+    if (visible && user?.id) {
+      loadBlockedUsers();
+    }
+  }, [visible, user?.id]);
+
+  const loadBlockedUsers = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      // Get blocked user IDs
+      const blockedUserIds = await getBlockedUserIds(supabase, user.id);
+
+      if (blockedUserIds.length === 0) {
+        setBlockedUsers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user details for blocked users
+      const { data: usersData, error } = await supabase
+        .from("users")
+        .select("id, first_name, last_name, image_url")
+        .in("id", blockedUserIds);
+
+      if (error) {
+        console.error("Error fetching blocked users:", error);
+        Alert.alert("Error", "Failed to load blocked users");
+        setBlockedUsers([]);
+      } else {
+        setBlockedUsers(usersData || []);
+      }
+    } catch (error) {
+      console.error("Error loading blocked users:", error);
+      Alert.alert("Error", "Something went wrong while loading blocked users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnblockUser = (blockedUser: any) => {
+    Alert.alert(
+      "Unblock User",
+      `Are you sure you want to unblock ${blockedUser.first_name} ${blockedUser.last_name}? They will be able to see your posts and interact with you again.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unblock",
+          style: "default",
+          onPress: () => performUnblock(blockedUser),
+        },
+      ]
+    );
+  };
+
+  const performUnblock = async (blockedUser: any) => {
+    if (!user?.id) return;
+
+    setUnblockingUserId(blockedUser.id);
+    try {
+      const result = await unblockUser(supabase, user.id, blockedUser.id);
+
+      if (result.error) {
+        console.error("Unblock error:", result.error);
+        Alert.alert("Error", "Failed to unblock user. Please try again.");
+      } else {
+        // Remove the user from the blocked users list
+        setBlockedUsers((prev) => prev.filter((u) => u.id !== blockedUser.id));
+        Alert.alert(
+          "Success",
+          `${blockedUser.first_name} ${blockedUser.last_name} has been unblocked.`
+        );
+      }
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      Alert.alert("Error", "Something went wrong while unblocking the user.");
+    } finally {
+      setUnblockingUserId(null);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+        {/* Header */}
+        <Box className="px-6 pt-12 pb-6 bg-white border-b border-gray-100">
+          <HStack className="items-center justify-between">
+            <TouchableOpacity onPress={onClose} activeOpacity={0.6}>
+              <Box className="bg-gray-100 rounded-full p-2">
+                <Icon as={X} size="lg" className="text-gray-600" />
+              </Box>
+            </TouchableOpacity>
+            <Heading size="xl" className="font-semibold text-gray-900">
+              Blocked Users
+            </Heading>
+            <View style={{ width: 40 }} />
+          </HStack>
+        </Box>
+
+        {/* Content */}
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          <VStack className="flex-1 px-6 py-6" space="lg">
+            {loading ? (
+              <Box className="bg-white rounded-2xl p-8 border border-gray-200">
+                <View className="items-center justify-center">
+                  <ActivityIndicator size="large" color="#3b82f6" />
+                  <Text size="md" className="text-gray-500 mt-4">
+                    Loading blocked users...
+                  </Text>
+                </View>
+              </Box>
+            ) : blockedUsers.length === 0 ? (
+              <Box className="bg-white rounded-2xl p-8 border border-gray-200">
+                <VStack className="items-center" space="md">
+                  <Icon as={UserX} size="xl" className="text-gray-400" />
+                  <Text
+                    size="lg"
+                    className="font-semibold text-gray-900 text-center"
+                  >
+                    No Blocked Users
+                  </Text>
+                  <Text size="md" className="text-gray-500 text-center">
+                    You haven't blocked any users yet. When you block someone,
+                    they'll appear here.
+                  </Text>
+                </VStack>
+              </Box>
+            ) : (
+              <Box className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <Box className="p-4 bg-gray-50 border-b border-gray-100">
+                  <Text size="lg" className="font-semibold text-gray-900">
+                    {blockedUsers.length} Blocked{" "}
+                    {blockedUsers.length === 1 ? "User" : "Users"}
+                  </Text>
+                </Box>
+
+                <VStack space="xs">
+                  {blockedUsers.map((blockedUser, index) => (
+                    <Box
+                      key={blockedUser.id}
+                      className={`px-4 py-4 ${
+                        index !== blockedUsers.length - 1
+                          ? "border-b border-gray-100"
+                          : ""
+                      }`}
+                    >
+                      <HStack className="items-center" space="md">
+                        <Avatar size="lg" className="bg-gray-500">
+                          <AvatarFallbackText className="text-lg font-semibold text-white">
+                            {blockedUser.first_name} {blockedUser.last_name}
+                          </AvatarFallbackText>
+                          {blockedUser.image_url ? (
+                            <AvatarImage
+                              source={{ uri: blockedUser.image_url }}
+                            />
+                          ) : null}
+                        </Avatar>
+
+                        <VStack className="flex-1" space="xs">
+                          <Text
+                            size="md"
+                            className="font-semibold text-gray-900"
+                          >
+                            {blockedUser.first_name} {blockedUser.last_name}
+                          </Text>
+                          <Text size="sm" className="text-gray-500">
+                            Blocked user
+                          </Text>
+                        </VStack>
+
+                        <TouchableOpacity
+                          onPress={() => handleUnblockUser(blockedUser)}
+                          activeOpacity={0.7}
+                          disabled={unblockingUserId === blockedUser.id}
+                        >
+                          <Box className="bg-blue-50 rounded-xl px-4 py-2 border border-blue-200">
+                            <HStack className="items-center" space="sm">
+                              {unblockingUserId === blockedUser.id ? (
+                                <ActivityIndicator
+                                  size="small"
+                                  color="#3b82f6"
+                                />
+                              ) : null}
+                              <Text
+                                size="sm"
+                                className="font-medium text-blue-600"
+                              >
+                                {unblockingUserId === blockedUser.id
+                                  ? "Unblocking..."
+                                  : "Unblock"}
+                              </Text>
+                            </HStack>
+                          </Box>
+                        </TouchableOpacity>
+                      </HStack>
+                    </Box>
+                  ))}
+                </VStack>
+              </Box>
+            )}
+          </VStack>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 };
 
@@ -582,6 +838,7 @@ const AccountModal = ({
       <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
+
           <Box className="px-6 pt-12 pb-6 bg-white border-b border-gray-100">
             <HStack className="items-center justify-between">
               <TouchableOpacity onPress={onClose} activeOpacity={0.6}>
@@ -595,7 +852,6 @@ const AccountModal = ({
               <View style={{ width: 40 }} />
             </HStack>
           </Box>
-
           <VStack className="flex-1 px-6 py-6" space="lg">
             {/* Profile Info */}
             <Box className="bg-white rounded-2xl p-6 border border-gray-200">
