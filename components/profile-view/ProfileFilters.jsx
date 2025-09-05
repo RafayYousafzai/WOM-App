@@ -30,8 +30,6 @@ const ProfileFilters = ({
   const unsafeMetadata = user?.unsafeMetadata;
   const username = user?.username;
   const firstName = user?.firstName;
-  const lastName = user?.lastName;
-  const bio = unsafeMetadata?.bio;
   const country = unsafeMetadata?.country?.name;
   const birthday = unsafeMetadata?.birthday;
   const favoriteEmoji = unsafeMetadata?.favoriteEmoji;
@@ -267,6 +265,7 @@ const ProfileFilters = ({
             title={FILTER_TITLES[activeFilter] || "All Posts"}
             refreshCount={refreshCount}
             setRefreshCount={setRefreshCount}
+            profileUserId={user?.id}
           />
         )}
       </View>

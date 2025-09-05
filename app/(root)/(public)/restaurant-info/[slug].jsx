@@ -108,6 +108,10 @@ export default function VisitProfileScreen() {
     }
   };
 
+  const convertGoogleRating = (googleRating) => {
+    return (googleRating / 5) * 10;
+  };
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -123,7 +127,7 @@ export default function VisitProfileScreen() {
       );
     }
 
-    const emptyStars = 5 - Math.ceil(rating);
+    const emptyStars = 10 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
       stars.push(
         <Ionicons
@@ -283,10 +287,10 @@ export default function VisitProfileScreen() {
                 </Text>
                 <View className="flex-row items-center">
                   <Text className="text-3xl font-bold text-gray-900 mr-2">
-                    {restaurantData.rating}
+                    {convertGoogleRating(restaurantData.rating).toFixed(1)}
                   </Text>
                   <View className="flex-row">
-                    {renderStars(restaurantData.rating)}
+                    {renderStars(convertGoogleRating(restaurantData.rating))}
                   </View>
                 </View>
               </View>
@@ -450,7 +454,9 @@ export default function VisitProfileScreen() {
                                 </Text>
                               </View>
                               <View className="flex-row">
-                                {renderStars(review.rating)}
+                                {renderStars(
+                                  convertGoogleRating(review.rating)
+                                )}
                               </View>
                             </View>
                             <Text className="text-gray-700 leading-relaxed">

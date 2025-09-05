@@ -10,9 +10,11 @@ export default function RenderFilteredPosts({
   title,
   refreshCount,
   setRefreshCount,
+  profileUserId,
 }) {
   const { supabase } = useSupabase();
   const { user } = useUser();
+  const { user: authUser } = useUser();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,23 +29,22 @@ export default function RenderFilteredPosts({
 
       const isReview = activeFilter === "reviews" ? true : false;
 
-      // Fetch posts with their related dishes
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
         .select(
           `*,
-          user:user_id (
-            username,
-            first_name,
-            last_name,
-            image_url
-          ),
-          restaurant:restaurant_id (*),
-          post_dishes (*),
-            post_likes(user_id)
-        `
+      user:user_id (
+        username,
+        first_name,
+        last_name,
+        image_url
+      ),
+      restaurant:restaurant_id (*),
+      post_dishes (*),
+      post_likes(user_id)
+    `
         )
-        .eq("user_id", user.id)
+        .eq("user_id", profileUserId) // 👈 yahan fix
         .eq("is_review", isReview)
         .order("created_at", { ascending: false });
 

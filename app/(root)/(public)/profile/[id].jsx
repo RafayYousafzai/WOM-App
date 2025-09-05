@@ -13,12 +13,12 @@ import {
   Alert,
   Modal,
   Pressable,
+  Share,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSupabase } from "@/context/supabaseContext";
 import { toggleFollowUser } from "@/lib/supabase/followActions";
 import { useAuth, useUser } from "@clerk/clerk-expo";
-import GridDynamicCards from "@/components/dynamic-cards/GridDynamicCards";
 import UnloggedState from "@/components/auth/unlogged-state";
 import { getUserById } from "@/lib/supabase/userActions";
 import { getTotalPostsCount } from "@/lib/supabase/userActions";
@@ -27,7 +27,7 @@ import { getTotalFollowingCount } from "@/lib/supabase/followActions";
 import { ProfileContentSkeleton } from "@/components/profile-view/ProfileSkeleton";
 import { sendPushNotification } from "@/lib/notifications/sendPushNotification";
 import { blockUser } from "@/lib/supabase/user_blocks";
-import { Share } from "react-native";
+import ProfileFilters from "@/components/profile-view/ProfileFilters"; // 👈 reuse this
 
 export default function VisitProfileScreen() {
   const { supabase } = useSupabase();
@@ -42,9 +42,16 @@ export default function VisitProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+
   const [posts, setPosts] = useState({
-    reviews: null,
-    ownReviews: null,
+    reviews: [],
+    ownReviews: [],
+  });
+
+  const [counts, setCounts] = useState({
+    posts: 0,
+    followers: 0,
+    following: 0,
   });
 
   const handleShare = async (id, username) => {
@@ -65,13 +72,6 @@ export default function VisitProfileScreen() {
       console.error("Error sharing profile:", error.message);
     }
   };
-
-  const [counts, setCounts] = useState({
-    posts: 0,
-    followers: 0,
-    following: 0,
-  });
-  console.log("total posts:", counts.posts);
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -82,9 +82,7 @@ export default function VisitProfileScreen() {
     setLoading(true);
     try {
       const fetchedUser = await getUserById(supabase, user_id);
-
       const allPosts = await getTotalPostsCount(supabase, user_id);
-
       const totalFollowersCount = await getTotalFollowersCount(
         supabase,
         user_id
@@ -99,8 +97,12 @@ export default function VisitProfileScreen() {
         followers: totalFollowersCount,
         following: totalFollowingCount,
       });
-      setUser(fetchedUser);
+      setUser({
+        ...fetchedUser,
+        unsafeMetadata: fetchedUser.unsafe_metadata, // normalize to camelCase
+      });
     } catch (error) {
+      console.error("fetchUser error:", error);
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ export default function VisitProfileScreen() {
       .select("id")
       .match({ follower_id: authUser?.id, followed_id: user_id });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data?.length > 0) {
       setIsFollowing(true);
     } else {
       setIsFollowing(false);
@@ -168,6 +170,7 @@ export default function VisitProfileScreen() {
       console.error("[fetchPosts] error:", err.message);
     }
   };
+
   const fetchData = async () => {
     if (!user_id) {
       router.replace("/");
@@ -221,11 +224,7 @@ export default function VisitProfileScreen() {
       "Block User",
       "Are you sure you want to block this user? They won't be able to interact with you.",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => setMenuOpen(false),
-        },
+        { text: "Cancel", style: "cancel", onPress: () => setMenuOpen(false) },
         {
           text: "Block",
           style: "destructive",
@@ -252,7 +251,6 @@ export default function VisitProfileScreen() {
                   "The user has been successfully blocked.",
                   [{ text: "OK" }]
                 );
-                // Optional: Navigate away from the blocked user's profile
                 router.replace("/home");
               }
             } catch (err) {
@@ -271,13 +269,8 @@ export default function VisitProfileScreen() {
     );
   };
 
-  if (!isSignedIn) {
-    return <UnloggedState />;
-  }
-
-  if (loading) {
-    return <ProfileContentSkeleton />;
-  }
+  if (!isSignedIn) return <UnloggedState />;
+  if (loading) return <ProfileContentSkeleton />;
 
   if (!user) {
     return (
@@ -300,15 +293,14 @@ export default function VisitProfileScreen() {
           />
         }
       >
+        {/* Header Section */}
         <View className="p-5">
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
-              <TouchableOpacity className="relative">
-                <Image
-                  source={{ uri: user.image_url }}
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
-                />
-              </TouchableOpacity>
+              <Image
+                source={{ uri: user.image_url }}
+                className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+              />
               <View className="mt-2 ml-2">
                 <Text className="text-2xl font-semibold text-gray-800">
                   {user.first_name} {user.last_name}
@@ -320,16 +312,14 @@ export default function VisitProfileScreen() {
               </View>
             </View>
 
-            {/* Menu Button with Modal */}
+            {/* Menu */}
             <View className="relative">
               <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)}>
                 <Feather name="more-vertical" size={20} color="#666" />
               </TouchableOpacity>
-
-              {/* Modal for Menu */}
               <Modal
                 visible={menuOpen}
-                transparent={true}
+                transparent
                 animationType="fade"
                 onRequestClose={() => setMenuOpen(false)}
               >
@@ -340,18 +330,15 @@ export default function VisitProfileScreen() {
                   <View className="flex-1 justify-start items-end pt-20 pr-5">
                     <View className="bg-white rounded-xl shadow-lg min-w-[150px] overflow-hidden">
                       {user_id !== authUser?.id && (
-                        <>
-                          <TouchableOpacity
-                            onPress={handleBlockUser}
-                            className="flex-row items-center px-4 py-3 bg-red-500"
-                            activeOpacity={0.7}
-                          >
-                            <Feather name="user-x" size={16} color="#fff" />
-                            <Text className="ml-2 text-base text-white font-medium">
-                              Block User
-                            </Text>
-                          </TouchableOpacity>
-                        </>
+                        <TouchableOpacity
+                          onPress={handleBlockUser}
+                          className="flex-row items-center px-4 py-3 bg-red-500"
+                        >
+                          <Feather name="user-x" size={16} color="#fff" />
+                          <Text className="ml-2 text-base text-white font-medium">
+                            Block User
+                          </Text>
+                        </TouchableOpacity>
                       )}
                     </View>
                   </View>
@@ -360,6 +347,7 @@ export default function VisitProfileScreen() {
             </View>
           </View>
 
+          {/* Counts */}
           <View className="flex-row justify-between mt-4 px-4">
             <View className="items-center">
               <Text className="text-xl font-bold text-gray-800">
@@ -386,76 +374,41 @@ export default function VisitProfileScreen() {
               <Text className="text-gray-600">Following</Text>
             </TouchableOpacity>
           </View>
-          <View className="flex-row mt-4 gap-2">
-            {user_id !== authUser?.id && (
-              <>
-                <TouchableOpacity
-                  onPress={handleFollowToggle}
-                  disabled={followLoading}
-                  className="flex-1 flex-row py-2.5 rounded-xl border bg-gray-200 border-gray-200 mt-8 items-center justify-center"
-                >
-                  {followLoading && (
-                    <ActivityIndicator size="small" color="#000" />
-                  )}
+
+          {/* Actions */}
+          {user_id !== authUser?.id && (
+            <View className="flex-row mt-4 gap-2">
+              <TouchableOpacity
+                onPress={handleFollowToggle}
+                disabled={followLoading}
+                className="flex-1 py-2.5 rounded-full border bg-gray-100 border-gray-100 items-center justify-center"
+              >
+                {followLoading ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
                   <Text className="ml-3 text-center font-medium">
                     {isFollowing ? "Unfollow" : "Follow"}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleShare(user_id, user.username)}
-                  className="flex-1 flex-row py-2.5 rounded-xl border bg-gray-200 border-gray-200 mt-8 items-center justify-center"
-                >
-                  <Text className="font-semibold">Share Profile</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleShare(user_id, user.username)}
+                className="flex-1 py-2.5 rounded-full border bg-gray-100 border-gray-100 items-center justify-center"
+              >
+                <Text className="font-semibold">Share Profile</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
-        <View className="border-gray-200">
-          <View className="flex-row">
-            <TouchableOpacity
-              onPress={() => setActiveTab("reviews")}
-              className={`flex-1 py-3 items-center ${
-                activeTab === "reviews" ? "border-b-2 border-[#f39f1e]" : ""
-              }`}
-            >
-              <Feather
-                name="star"
-                size={22}
-                color={activeTab === "reviews" ? "#f39f1e" : "#888"}
-              />
-              <Text className="text-xs mt-1">
-                {activeTab === "reviews" ? "Reviews" : ""}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveTab("own_reviews")}
-              className={`flex-1 py-3 items-center ${
-                activeTab === "own_reviews" ? "border-b-2 border-[#f39f1e]" : ""
-              }`}
-            >
-              <Feather
-                name="home"
-                size={22}
-                color={activeTab === "own_reviews" ? "#f39f1e" : "#888"}
-              />
-              <Text className="text-xs mt-1">
-                {activeTab === "own_reviews" ? "Homemade" : ""}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <GridDynamicCards
-            posts={
-              activeTab === "reviews"
-                ? posts.reviews || [] // 👈 fallback to []
-                : posts.ownReviews || [] // 👈 fallback to []
-            }
-            scroll={false}
-          />
-        </View>
+        {/* Profile Filters (reused) */}
+        <ProfileFilters
+          activeFilter={activeTab}
+          setActiveFilter={setActiveTab}
+          posts={posts}
+          user={user}
+          profileUserId={user_id}
+        />
       </ScrollView>
     </View>
   );
