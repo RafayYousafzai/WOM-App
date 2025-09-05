@@ -210,7 +210,7 @@ export default function Favorites() {
         className="flex-1"
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={refreshing || loading}
             onRefresh={onRefresh}
             colors={["#f39f1e"]}
             tintColor="#f39f1e"

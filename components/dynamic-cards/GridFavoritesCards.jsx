@@ -104,7 +104,9 @@ export default function GridFavoritesCards({
   return (
     <View className="flex-1">
       {isLoading ? (
-        <GridFavoritesSkeleton count={6} />
+        <View className="flex-1 justify-center items-center ml-2">
+          <GridFavoritesSkeleton count={6} />
+        </View>
       ) : (
         <FlatList
           data={posts}
