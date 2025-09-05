@@ -1,7 +1,4 @@
-
 "use client";
-
-
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,213 +16,169 @@ import * as Location from "expo-location";
 
 import { useNetwork } from "./useNetwork";
 
-
-
 const PAGE_SIZE = 7;
-
-
 
 // Post interface remains the same
 
 interface Post {
+  id: string;
 
-id: string;
+  user_id: string;
 
-user_id: string;
+  updated_at: string;
 
-updated_at: string;
+  created_at: string;
 
-created_at: string;
+  review: string;
 
-review: string;
+  is_review: boolean;
 
-is_review: boolean;
+  anonymous?: boolean;
 
-anonymous?: boolean;
+  people?: string[];
 
-people?: string[];
+  restaurants: {
+    id: number;
 
-restaurants: {
+    location: string;
 
-id: number;
+    rating: number;
+  };
 
-location: string;
+  users: {
+    username: string;
 
-rating: number;
+    first_name: string;
 
-};
+    last_name: string;
 
-users: {
+    updated_at: string;
 
-username: string;
+    image_url: string;
+  };
 
-first_name: string;
+  post_dishes: Array<{
+    id: number;
 
-last_name: string;
+    dish_name: string;
 
-updated_at: string;
+    dish_price: number;
 
-image_url: string;
+    dish_type: string;
 
-};
+    rating: number;
 
-post_dishes: Array<{
+    is_recommended: boolean;
 
-id: number;
+    image_urls: string[];
+  }>;
 
-dish_name: string;
+  post_tags: Array<{
+    tags: {
+      id: number;
 
-dish_price: number;
+      name: string;
 
-dish_type: string;
+      type: string;
+    };
+  }>;
 
-rating: number;
+  post_likes: { user_id: string }[];
 
-is_recommended: boolean;
+  post_comments: { id: number }[];
 
-image_urls: string[];
+  // Computed fields
 
-}>;
+  restaurant_name?: string;
 
-post_tags: Array<{
+  location?: { address: string };
 
-tags: {
+  dishes?: any[];
 
-id: number;
+  all_tags?: any[];
 
-name: string;
+  likesCount?: number;
 
-type: string;
+  commentsCount?: number;
 
-};
-
-}>;
-
-post_likes: { user_id: string }[];
-
-post_comments: { id: number }[];
-
-// Computed fields
-
-restaurant_name?: string;
-
-location?: { address: string };
-
-dishes?: any[];
-
-all_tags?: any[];
-
-likesCount?: number;
-
-commentsCount?: number;
-
-user?: any;
-
+  user?: any;
 }
-
-
 
 type TabType = "forYou" | "following";
 
-
-
 export const usePosts = () => {
+  const { supabase } = useSupabase();
 
-const { supabase } = useSupabase();
+  const { user } = useUser();
 
-const { user } = useUser();
+  const toast = useToast();
 
-const toast = useToast();
+  const { hasInternet, checkConnectivity } = useNetwork();
 
-const { hasInternet, checkConnectivity } = useNetwork();
+  const [activeTab, setActiveTab] = useState<TabType>("forYou");
 
+  const [posts, setPosts] = useState<Post[]>([]);
 
+  const [loading, setLoading] = useState(true);
 
-const [activeTab, setActiveTab] = useState<TabType>("forYou");
+  const [hasMore, setHasMore] = useState(true);
 
-const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-const [loading, setLoading] = useState(true);
+  const [countryFilterActive, setCountryFilterActive] = useState(false); // Can repurpose for location active
 
-const [hasMore, setHasMore] = useState(true);
+  const [networkError, setNetworkError] = useState(false);
 
-const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
 
-const [countryFilterActive, setCountryFilterActive] = useState(false); // Can repurpose for location active
+    longitude: number;
+  } | null>(null);
 
-const [networkError, setNetworkError] = useState(false);
+  const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap (if needed)
 
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
 
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
 
-const [userLocation, setUserLocation] = useState<{
+        toast.show(
+          "Location permission denied. Feed won't prioritize nearby posts.",
 
-latitude: number;
+          { type: "warning" }
+        );
 
-longitude: number;
+        return;
+      }
 
-} | null>(null);
+      let location = await Location.getCurrentPositionAsync({});
 
-const [restaurantLocations, setRestaurantLocations] = useState([]); // Added for heatmap (if needed)
+      setUserLocation({
+        latitude: location.coords.latitude,
 
+        longitude: location.coords.longitude,
 
+        // Remove latitudeDelta/longitudeDelta unless using maps; assume region is defined elsewhere if needed
+      });
 
-useEffect(() => {
+      setCountryFilterActive(true); // Activate if location available
+    })();
+  }, []);
 
-(async () => {
+  // Use page for "For You" and timestamp for "Following"
 
-let { status } = await Location.requestForegroundPermissionsAsync();
+  const pageRef = useRef(1);
 
-if (status !== "granted") {
+  const lastTimestampRef = useRef(new Date().toISOString());
 
-console.log("Permission to access location was denied");
+  const fetchIdRef = useRef(0);
 
-toast.show(
+  const buildPostsQuery = useCallback(() => {
+    // This function remains the same, it builds the main select query
 
-"Location permission denied. Feed won't prioritize nearby posts.",
-
-{ type: "warning" }
-
-);
-
-return;
-
-}
-
-
-
-let location = await Location.getCurrentPositionAsync({});
-
-setUserLocation({
-
-latitude: location.coords.latitude,
-
-longitude: location.coords.longitude,
-
-// Remove latitudeDelta/longitudeDelta unless using maps; assume region is defined elsewhere if needed
-
-});
-
-setCountryFilterActive(true); // Activate if location available
-
-})();
-
-}, []);
-
-// Use page for "For You" and timestamp for "Following"
-
-const pageRef = useRef(1);
-
-const lastTimestampRef = useRef(new Date().toISOString());
-
-const fetchIdRef = useRef(0);
-
-
-
-const buildPostsQuery = useCallback(() => {
-
-// This function remains the same, it builds the main select query
-
-return supabase.from("posts").select(`
+    return supabase.from("posts").select(`
 
 id, review, user_id, is_review, anonymous, gatekeeping, people, created_at, updated_at,
 
@@ -242,527 +195,367 @@ post_likes (user_id),
 post_comments (id)
 
 `);
+  }, [supabase]);
 
-}, [supabase]);
+  const transformPostData = useCallback((rawPosts: any[]): Post[] => {
+    // This utility function remains the same
 
+    return rawPosts.map((post) => ({
+      ...post,
 
+      restaurant_name: post.restaurants?.location || "Unknown Restaurant",
 
-const transformPostData = useCallback((rawPosts: any[]): Post[] => {
+      location: { address: post.restaurants?.location },
 
-// This utility function remains the same
+      rating: post.restaurants?.rating,
 
-return rawPosts.map((post) => ({
+      dishes: post.post_dishes || [],
 
-...post,
+      all_tags: post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [],
 
-restaurant_name: post.restaurants?.location || "Unknown Restaurant",
+      likesCount: post.post_likes?.length || 0,
 
-location: { address: post.restaurants?.location },
+      commentsCount: post.post_comments?.length || 0,
 
-rating: post.restaurants?.rating,
+      user: post.users,
+    }));
+  }, []);
 
-dishes: post.post_dishes || [],
+  function shuffleArray(array: any[]) {
+    for (let i = array.length - 1; i > 0; i--) {
+      // Pick a random index from 0 to i
+      const j = Math.floor(Math.random() * (i + 1));
 
-all_tags: post.post_tags?.map((pt: any) => pt.tags).filter(Boolean) || [],
+      // Swap elements at i and j
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
 
-likesCount: post.post_likes?.length || 0,
+  // Example usage
 
-commentsCount: post.post_comments?.length || 0,
+  const fetchPosts = useCallback(
+    async (tab: TabType, loadMore = false) => {
+      const currentFetchId = ++fetchIdRef.current;
 
-user: post.users,
+      // Check network connectivity first
 
-}));
+      if (!hasInternet) {
+        setNetworkError(true);
 
-}, []);
+        if (loadMore) {
+          setIsLoadingMore(false);
+        }
 
-const fetchPosts = useCallback(
+        return { data: [], fetchId: currentFetchId };
+      }
 
-async (tab: TabType, loadMore = false) => {
+      setNetworkError(false);
 
-const currentFetchId = ++fetchIdRef.current;
+      if (loadMore) {
+        setIsLoadingMore(true);
+      } else {
+        // Reset pagination cursors on a fresh load/tab switch
 
+        pageRef.current = 1;
 
+        lastTimestampRef.current = new Date().toISOString();
+      }
 
-// Check network connectivity first
+      try {
+        let finalPosts: Post[] = [];
 
-if (!hasInternet) {
+        if (tab === "forYou") {
+          // Ensure we have valid coordinates, default to a safe location if not
 
-setNetworkError(true);
+          const safeLatitude = userLocation?.latitude ?? 3.139; // Kuala Lumpur default since you're in Malaysia
 
-if (loadMore) {
+          const safeLongitude = userLocation?.longitude ?? 101.6869;
 
-setIsLoadingMore(false);
+          const safeUserId = user?.id ?? "anonymous";
 
-}
+          console.log("Calling RPC with:", {
+            page_limit: PAGE_SIZE,
 
-return { data: [], fetchId: currentFetchId };
+            page_offset: (pageRef.current - 1) * PAGE_SIZE,
 
-}
+            requesting_user_id: safeUserId,
 
+            user_latitude: safeLatitude,
 
+            user_longitude: safeLongitude,
+          });
 
-setNetworkError(false);
+          const { data: rankedPosts, error: rpcError } = await supabase.rpc(
+            "get_for_you_feed",
 
+            {
+              page_limit: PAGE_SIZE,
 
+              page_offset: (pageRef.current - 1) * PAGE_SIZE,
 
-if (loadMore) {
+              requesting_user_id: safeUserId,
 
-setIsLoadingMore(true);
+              user_latitude: safeLatitude,
 
-} else {
+              user_longitude: safeLongitude,
+            }
+          );
 
-// Reset pagination cursors on a fresh load/tab switch
+          if (rpcError) {
+            console.error("RPC Error:", rpcError);
 
-pageRef.current = 1;
+            throw rpcError;
+          }
 
-lastTimestampRef.current = new Date().toISOString();
+          console.log("RPC Response:", rankedPosts);
 
-}
+          if (!rankedPosts || rankedPosts.length === 0) {
+            console.log("No posts returned from RPC");
 
+            return { data: [], fetchId: currentFetchId };
+          }
 
+          // Convert bigint IDs to strings for consistency
 
-try {
+          const postIds = rankedPosts.map((p: any) => p.id.toString());
 
-let finalPosts: Post[] = [];
+          console.log("Post IDs to fetch:", postIds);
 
+          const { data: postsData, error: postsError } =
+            await buildPostsQuery().in("id", postIds);
 
+          if (postsError) {
+            console.error("Posts fetch error:", postsError);
 
-if (tab === "forYou") {
+            throw postsError;
+          }
 
-// Ensure we have valid coordinates, default to a safe location if not
+          console.log("Fetched posts data:", postsData?.length);
 
-const safeLatitude = userLocation?.latitude ?? 3.1390; // Kuala Lumpur default since you're in Malaysia
+          // Re-order the fetched posts to match the ranked order from the RPC
 
-const safeLongitude = userLocation?.longitude ?? 101.6869;
+          const postsById = new Map(
+            postsData?.map((p: any) => [p.id.toString(), p]) || []
+          );
 
-const safeUserId = user?.id ?? "anonymous";
+          const orderedPosts = postIds
 
+            .map((id: string) => postsById.get(id))
 
+            .filter(Boolean);
 
-console.log("Calling RPC with:", {
+          console.log("Ordered posts count:", orderedPosts.length);
 
-page_limit: PAGE_SIZE,
+          finalPosts = shuffleArray(transformPostData(orderedPosts as any[]));
 
-page_offset: (pageRef.current - 1) * PAGE_SIZE,
+          pageRef.current += 1; // Increment page for next fetch
+        } else {
+          // Existing "Following" logic remains the same
 
-requesting_user_id: safeUserId,
+          if (!user) {
+            toast.show(
+              "You need to be logged in to view your following feed.",
 
-user_latitude: safeLatitude,
+              { type: "info" }
+            );
 
-user_longitude: safeLongitude,
+            return { data: [], fetchId: currentFetchId };
+          }
 
-});
+          const { data: follows, error: followError } = await supabase
 
+            .from("user_follows")
 
+            .select("followed_id")
 
-const { data: rankedPosts, error: rpcError } = await supabase.rpc(
+            .eq("follower_id", user.id);
 
-"get_for_you_feed",
+          if (followError) throw followError;
 
-{
+          const followedUserIds = follows?.map((f: any) => f.followed_id) || [];
 
-page_limit: PAGE_SIZE,
+          if (followedUserIds.length === 0) {
+            return { data: [], fetchId: currentFetchId };
+          }
 
-page_offset: (pageRef.current - 1) * PAGE_SIZE,
+          let postsQuery = buildPostsQuery().in("user_id", followedUserIds);
 
-requesting_user_id: safeUserId,
+          if (loadMore) {
+            postsQuery = postsQuery.lt("created_at", lastTimestampRef.current);
+          }
 
-user_latitude: safeLatitude,
+          const { data: postsData, error: postsError } = await postsQuery
 
-user_longitude: safeLongitude,
+            .order("created_at", { ascending: false })
 
-}
+            .limit(PAGE_SIZE);
 
-);
+          if (postsError) throw postsError;
 
+          const transformed = transformPostData(postsData || []);
 
+          if (transformed.length > 0) {
+            const lastPost = transformed[transformed.length - 1];
 
-if (rpcError) {
+            lastTimestampRef.current = lastPost.created_at;
+          }
 
-console.error("RPC Error:", rpcError);
+          finalPosts = transformed;
+        }
 
-throw rpcError;
+        console.log("Final posts count:", finalPosts.length);
 
-}
+        return { data: finalPosts, fetchId: currentFetchId };
+      } catch (error: any) {
+        console.error("Error fetching posts:", error);
 
+        // Check if it's a network-related error
 
-console.log("RPC Response:", rankedPosts);
+        if (
+          error?.message?.includes("fetch") ||
+          error?.code === "NetworkError" ||
+          !hasInternet
+        ) {
+          setNetworkError(true);
 
+          toast.show("Network error. Please check your connection.", {
+            type: "danger",
+          });
+        } else {
+          toast.show("Failed to load posts. Please try again later.", {
+            type: "danger",
+          });
+        }
 
-if (!rankedPosts || rankedPosts.length === 0) {
+        return { data: [], fetchId: currentFetchId };
+      } finally {
+        if (loadMore) {
+          setIsLoadingMore(false);
+        }
+      }
+    },
 
-console.log("No posts returned from RPC");
+    [
+      buildPostsQuery,
 
-return { data: [], fetchId: currentFetchId };
+      user,
 
-}
+      supabase,
 
+      toast,
 
+      transformPostData,
 
-// Convert bigint IDs to strings for consistency
+      userLocation,
 
-const postIds = rankedPosts.map((p: any) => p.id.toString());
+      hasInternet,
+    ]
+  );
 
-console.log("Post IDs to fetch:", postIds);
+  const loadPosts = useCallback(
+    async (isLoadMore = false) => {
+      if (!isLoadMore) {
+        setLoading(true);
+      }
 
+      const { data: newPosts, fetchId } = await fetchPosts(
+        activeTab,
 
+        isLoadMore
+      );
 
-const { data: postsData, error: postsError } =
+      // Prevent race conditions from old fetches
 
-await buildPostsQuery().in("id", postIds);
+      if (fetchId === fetchIdRef.current) {
+        setPosts((prev) => (isLoadMore ? [...prev, ...newPosts] : newPosts));
 
+        setHasMore(newPosts.length === PAGE_SIZE);
 
+        setCountryFilterActive(!!user);
+      }
 
-if (postsError) {
+      if (!isLoadMore) {
+        setLoading(false);
+      }
+    },
 
-console.error("Posts fetch error:", postsError);
+    [activeTab, fetchPosts, user]
+  );
 
-throw postsError;
+  const handleTabChange = useCallback(
+    async (tab: TabType) => {
+      if (tab === "following" && !user) {
+        Alert.alert(
+          "Not Logged In",
 
-}
+          "You need to be logged in to view posts from users you follow.",
 
+          [{ text: "OK" }]
+        );
 
+        return;
+      }
 
-console.log("Fetched posts data:", postsData?.length);
+      setActiveTab(tab);
 
+      setPosts([]);
 
+      setHasMore(true);
 
-// Re-order the fetched posts to match the ranked order from the RPC
+      setLoading(true);
 
-const postsById = new Map(postsData?.map((p: any) => [p.id.toString(), p]) || []);
+      fetchIdRef.current += 1;
 
-const orderedPosts = postIds
+      await loadPosts(false);
+    },
 
-.map((id: string) => postsById.get(id))
+    [user, loadPosts]
+  );
 
-.filter(Boolean);
+  const handleEndReached = useCallback(() => {
+    if (!isLoadingMore && hasMore && !loading) {
+      loadPosts(true);
+    }
+  }, [isLoadingMore, hasMore, loading, loadPosts]);
 
+  const handleRefresh = useCallback(() => {
+    loadPosts(false);
+  }, [loadPosts]);
 
+  const handleNetworkRetry = useCallback(async () => {
+    const networkState = await checkConnectivity();
 
-console.log("Ordered posts count:", orderedPosts.length);
+    if (
+      networkState.isConnected &&
+      networkState.isInternetReachable !== false
+    ) {
+      setNetworkError(false);
 
+      loadPosts(false);
+    } else {
+      toast.show(
+        "Still no internet connection. Please check your network settings.",
 
+        {
+          type: "warning",
+        }
+      );
+    }
+  }, [checkConnectivity, loadPosts, toast]);
 
-finalPosts = transformPostData(orderedPosts as any[]);
-
-pageRef.current += 1; // Increment page for next fetch
-
-} else {
-
-// Existing "Following" logic remains the same
-
-if (!user) {
-
-toast.show(
-
-"You need to be logged in to view your following feed.",
-
-{ type: "info" }
-
-);
-
-return { data: [], fetchId: currentFetchId };
-
-}
-
-
-const { data: follows, error: followError } = await supabase
-
-.from("user_follows")
-
-.select("followed_id")
-
-.eq("follower_id", user.id);
-
-
-
-if (followError) throw followError;
-
-
-
-const followedUserIds = follows?.map((f: any) => f.followed_id) || [];
-
-if (followedUserIds.length === 0) {
-
-return { data: [], fetchId: currentFetchId };
-
-}
-
-
-
-let postsQuery = buildPostsQuery().in("user_id", followedUserIds);
-
-
-
-if (loadMore) {
-
-postsQuery = postsQuery.lt("created_at", lastTimestampRef.current);
-
-}
-
-
-
-const { data: postsData, error: postsError } = await postsQuery
-
-.order("created_at", { ascending: false })
-
-.limit(PAGE_SIZE);
-
-
-
-if (postsError) throw postsError;
-
-
-
-const transformed = transformPostData(postsData || []);
-
-
-
-if (transformed.length > 0) {
-
-const lastPost = transformed[transformed.length - 1];
-
-lastTimestampRef.current = lastPost.created_at;
-
-}
-
-
-
-finalPosts = transformed;
-
-}
-
-
-
-console.log("Final posts count:", finalPosts.length);
-
-return { data: finalPosts, fetchId: currentFetchId };
-
-} catch (error: any) {
-
-console.error("Error fetching posts:", error);
-
-
-
-// Check if it's a network-related error
-
-if (
-
-error?.message?.includes("fetch") ||
-
-error?.code === "NetworkError" ||
-
-!hasInternet
-
-) {
-
-setNetworkError(true);
-
-toast.show("Network error. Please check your connection.", {
-
-type: "danger",
-
-});
-
-} else {
-
-toast.show("Failed to load posts. Please try again later.", {
-
-type: "danger",
-
-});
-
-}
-
-return { data: [], fetchId: currentFetchId };
-
-} finally {
-
-if (loadMore) {
-
-setIsLoadingMore(false);
-
-}
-
-}
-
-},
-
-[
-
-buildPostsQuery,
-
-user,
-
-supabase,
-
-toast,
-
-transformPostData,
-
-userLocation,
-
-hasInternet,
-
-]
-
-);
-
-const loadPosts = useCallback(
-
-async (isLoadMore = false) => {
-
-if (!isLoadMore) {
-
-setLoading(true);
-
-}
-
-
-
-const { data: newPosts, fetchId } = await fetchPosts(
-
-activeTab,
-
-isLoadMore
-
-);
-
-
-
-// Prevent race conditions from old fetches
-
-if (fetchId === fetchIdRef.current) {
-
-setPosts((prev) => (isLoadMore ? [...prev, ...newPosts] : newPosts));
-
-setHasMore(newPosts.length === PAGE_SIZE);
-
-setCountryFilterActive(!!user);
-
-}
-
-
-
-if (!isLoadMore) {
-
-setLoading(false);
-
-}
-
-},
-
-[activeTab, fetchPosts, user]
-
-);
-
-
-
-const handleTabChange = useCallback(
-
-async (tab: TabType) => {
-
-if (tab === "following" && !user) {
-
-Alert.alert(
-
-"Not Logged In",
-
-"You need to be logged in to view posts from users you follow.",
-
-[{ text: "OK" }]
-
-);
-
-return;
-
-}
-
-
-
-setActiveTab(tab);
-
-setPosts([]);
-
-setHasMore(true);
-
-setLoading(true);
-
-
-
-fetchIdRef.current += 1;
-
-await loadPosts(false);
-
-},
-
-[user, loadPosts]
-
-);
-
-
-
-const handleEndReached = useCallback(() => {
-
-if (!isLoadingMore && hasMore && !loading) {
-
-loadPosts(true);
-
-}
-
-}, [isLoadingMore, hasMore, loading, loadPosts]);
-
-
-
-const handleRefresh = useCallback(() => {
-
-loadPosts(false);
-
-}, [loadPosts]);
-
-
-
-const handleNetworkRetry = useCallback(async () => {
-
-const networkState = await checkConnectivity();
-
-if (
-
-networkState.isConnected &&
-
-networkState.isInternetReachable !== false
-
-) {
-
-setNetworkError(false);
-
-loadPosts(false);
-
-} else {
-
-toast.show(
-
-"Still no internet connection. Please check your network settings.",
-
-{
-type: "warning",
-}
-);
-}
-}, [checkConnectivity, loadPosts, toast]);
-
-return {
-activeTab,
-posts,
-loading,
-hasMore,
-isLoadingMore,
-countryFilterActive,
-networkError,
-handleTabChange,
-handleEndReached,
-handleRefresh,
-handleNetworkRetry,
-loadPosts,
-};
+  return {
+    activeTab,
+    posts,
+    loading,
+    hasMore,
+    isLoadingMore,
+    countryFilterActive,
+    networkError,
+    handleTabChange,
+    handleEndReached,
+    handleRefresh,
+    handleNetworkRetry,
+    loadPosts,
+  };
 };
