@@ -154,16 +154,6 @@ const ReviewsList = ({ limit = 20 }) => {
                       {post.review}
                     </Text>
 
-                    {/* <View className="flex-row flex-wrap">
-                      {post?.post_dishes?.map((dish, index) => (
-                        <View key={index} className="mr-2 mb-2">
-                          <Text className="text-xs capitalize font-semibold text-gray-700 bg-slate-50 px-3 py-1 rounded-full tracking-wide">
-                            {dish.dish_name || "?"}
-                          </Text>
-                        </View>
-                      ))}
-                    </View> */}
-
                     {post?.post_tags?.length > 0 ? (
                       <View className="flex-row flex-wrap">
                         {post.post_tags.slice(0, 2).map((tagObj, index) => (

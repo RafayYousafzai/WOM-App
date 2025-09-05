@@ -6,6 +6,7 @@ import {
   Image,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import RenderFilteredPosts from "./RenderFilteredPosts";
 
@@ -24,6 +25,7 @@ const ProfileFilters = ({
   setRefreshCount,
   tags,
   user,
+  loading,
 }) => {
   const unsafeMetadata = user?.unsafeMetadata;
   const username = user?.username;
@@ -35,6 +37,8 @@ const ProfileFilters = ({
   const favoriteEmoji = unsafeMetadata?.favoriteEmoji;
   const dietaryRestrictions = unsafeMetadata?.dietaryRestrictions;
   const closeFilterDropdown = () => setShowFilterDropdown(false);
+
+  console.log(loading);
 
   const handleTagPress = (tag) => {
     console.log("Tag pressed:", tag.name);
@@ -145,7 +149,11 @@ const ProfileFilters = ({
 
       {/* Content Section */}
       <View className="bg-gray-50 min-h-screen">
-        {activeFilter === "about" ? (
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#f39f1e" />
+          </View>
+        ) : activeFilter === "about" ? (
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <View className="p-4">
               <View className="bg-white rounded-3xl shadow-lg border border-gray-100 mb-4">

@@ -24,35 +24,31 @@ export default function ProfileScreen() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // Pull-to-refresh handler
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
+    const count = refreshCount + 1;
+
+    setRefreshCount(count);
 
     try {
-      // Reload user data from Clerk
       await clerkUser?.reload();
-
-      // Add any other data refresh logic here
-      // For example, if you have other API calls to refresh data:
-      // await refreshUserProfile();
-      // await refreshUserPreferences();
     } catch (error) {
       console.error("Error refreshing data:", error);
     } finally {
       setRefreshing(false);
     }
-  }, [clerkUser]);
+  };
 
-  useFocusEffect(
-    useCallback(() => {
-      if (isLoaded && isSignedIn) {
-        if (!clerkUser?.firstName) {
-          setIsEditing(true);
-        }
+  useFocusEffect(() => {
+    if (isLoaded && isSignedIn) {
+      if (!clerkUser?.firstName) {
+        setIsEditing(true);
       }
-    }, [isLoaded, isSignedIn, clerkUser])
-  );
+    }
+  });
 
   if (!isSignedIn) {
     return <UnloggedState />;
@@ -87,9 +83,20 @@ export default function ProfileScreen() {
           >
             <View style={{ height: 16 }} />
             {isEditing ? (
-              <EditProfileScreen setIsEditing={setIsEditing} />
+              <EditProfileScreen
+                setIsEditing={setIsEditing}
+                refreshing={refreshing}
+                setRefreshing={setRefreshing}
+                setRefreshCount={setRefreshCount}
+                refreshCount={refreshCount}
+              />
             ) : (
-              <ProfileContentScreen setIsEditing={setIsEditing} />
+              <ProfileContentScreen
+                setIsEditing={setIsEditing}
+                setRefreshing={setRefreshing}
+                setRefreshCount={setRefreshCount}
+                refreshCount={refreshCount}
+              />
             )}
             <View style={{ height: 100 }} />
           </Animated.ScrollView>

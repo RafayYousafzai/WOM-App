@@ -150,7 +150,13 @@ const ProfileHeader = ({ user, pickImage }) => {
     </View>
   );
 };
-export const ProfileContentScreen = ({ setIsEditing }) => {
+export const ProfileContentScreen = ({
+  setIsEditing,
+  refreshing,
+  setRefreshing,
+  setRefreshCount,
+  refreshCount,
+}) => {
   const { supabase } = useSupabase();
   const { user } = useUser();
   const [activeFilter, setActiveFilter] = useState("reviews");
@@ -164,9 +170,6 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
   const [tags, setTags] = useState([]);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshCount, setRefreshCount] = useState(0);
-  console.log(tags);
 
   const fetchData = async () => {
     try {
@@ -223,13 +226,6 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
       console.error("Error fetching profile data:", error);
     }
   };
-  const onRefresh = async () => {
-    console.log("Refreshing profile data...");
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-    setRefreshCount((prev) => prev + 1);
-  };
 
   const pickImage = async () => {
     if (!user) {
@@ -285,21 +281,20 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
   }, [showFilterDropdown]);
 
   useEffect(() => {
+    console.log("Refresh count changed:", refreshCount);
+
     const init = async () => {
-      setLoading(true);
       if (user && supabase) {
+        setRefreshing(true);
+        setLoading(true);
         await fetchData();
+        setLoading(false);
+        setRefreshing(false);
       }
-      setLoading(false);
     };
     init();
-  }, [user, supabase]);
+  }, [user, supabase, refreshCount]);
 
-  if (loading) {
-    return <ProfileContentSkeleton />;
-  }
-
-  // Create a single data array for FlatList to render
   const profileSections = [
     {
       id: "header",
@@ -331,6 +326,7 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
             setRefreshCount={setRefreshCount}
             tags={tags}
             user={user}
+            loading={loading}
           />
         </View>
       ),
@@ -345,15 +341,6 @@ export const ProfileContentScreen = ({ setIsEditing }) => {
         renderItem={({ item }) => item.component}
         showsVerticalScrollIndicator={false}
         className="bg-white"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            progressViewOffset={50}
-            colors={["#eab308"]}
-            tintColor="#eab308"
-          />
-        }
       />
     </View>
   );
