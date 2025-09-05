@@ -32,6 +32,7 @@ export const PostCard = ({
 }) => {
   const [currentDishIndex, setCurrentDishIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  console.log(post.post_tags);
 
   const dishes = post?.dishes || [];
 
@@ -155,10 +156,11 @@ export const PostCard = ({
         />
 
         <PeoplesSection people={post?.people} />
-
         {post?.all_tags?.length > 0 && (
           <AmenitiesSection
-            amenities={post.all_tags}
+            amenities={post.all_tags
+              .map((t) => t.tags ?? t) // unwrap .tags if present, else keep object as-is
+              .filter(Boolean)} // remove any null/undefined
             post_type={post_type}
             showDiff={true}
             recommend_dsh={fallbackDishes.find((d) => d.is_recommended)?.name}

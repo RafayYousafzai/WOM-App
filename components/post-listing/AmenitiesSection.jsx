@@ -15,10 +15,16 @@ export const AmenitiesSection = ({
     setShowAllAmenities(!showAllAmenities);
   };
 
-  // Normalize amenities to always have name property
-  const normalizedAmenities = amenities.map((amenity) =>
-    typeof amenity === "string" ? { name: amenity } : amenity
-  );
+  // Normalize amenities to always have { name, type }
+  const normalizedAmenities = amenities.map((amenity) => {
+    if (typeof amenity === "string") {
+      return { name: amenity, type: "generic" };
+    }
+    if (amenity?.tags) {
+      return { ...amenity.tags };
+    }
+    return amenity;
+  });
 
   const displayedAmenities = showAllAmenities
     ? normalizedAmenities
@@ -27,38 +33,31 @@ export const AmenitiesSection = ({
   return (
     <View className="px-1 pb-0">
       <View className="flex-row flex-wrap">
-        {showDiff && (
-          <View>
-            {post_type === "own_review" && (
-              <TouchableOpacity className="flex-row items-center justify-center px-2 py-1 rounded-full bg-[#f39f1e] mr-2 mb-2">
-                <Text className="text-white text-xs">Home Dish</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        {showDiff && post_type === "own_review" && (
+          <TouchableOpacity className="flex-row items-center justify-center px-2 py-1 rounded-full bg-[#f39f1e] mr-2 mb-2">
+            <Text className="text-white text-xs">Home Dish</Text>
+          </TouchableOpacity>
         )}
+
         {recommend_dsh && (
-          <View>
-            {
-              <TouchableOpacity className="flex-row items-center justify-center px-2 py-1 rounded-full bg-[#f39f1e] mr-2 mb-2">
-                <Text className="text-white text-xs">Recommended</Text>
-              </TouchableOpacity>
-            }
-          </View>
+          <TouchableOpacity className="flex-row items-center justify-center px-2 py-1 rounded-full bg-[#f39f1e] mr-2 mb-2">
+            <Text className="text-white text-xs">Recommended</Text>
+          </TouchableOpacity>
         )}
+
         {displayedAmenities?.map((amenity, index) => (
           <TouchableOpacity
-            key={`${amenity.name}-${index}`} // Better key with index to handle duplicates
+            key={`${amenity.id || amenity.name}-${index}`}
             className="flex-row items-center justify-center px-2 py-1 rounded-full bg-gray-100 mr-2 mb-2"
           >
-            {/* Show icon if available */}
-            {amenity.icon && <Text className="mr-1">{amenity.icon}</Text>}
             <Text className="text-gray-700 text-xs">
               {spc}
               {snakeCaseToSentence(amenity.name)}
             </Text>
           </TouchableOpacity>
         ))}
-        {normalizedAmenities?.length > 3 && (
+
+        {normalizedAmenities.length > 3 && (
           <TouchableOpacity
             onPress={toggleAmenities}
             className="flex-row items-center justify-center px-2 py-1 rounded-full bg-gray-100 mr-2 mb-2"
