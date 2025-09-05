@@ -22,6 +22,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 interface RatingStarsProps {
   rating: number;
   setRating: (rating: number) => void;
+  title: string;
 }
 
 const SLIDER_WIDTH = 320;
@@ -29,7 +30,11 @@ const SLIDER_HEIGHT = 12;
 const HANDLE_SIZE = 32;
 const MAX_RATING = 10;
 
-export function RatingStars({ rating, setRating }: RatingStarsProps) {
+export function RatingStars({
+  rating,
+  setRating,
+  title = "Rate this dish",
+}: RatingStarsProps) {
   const [inputValue, setInputValue] = useState(rating.toString());
   const [sliderWidth, setSliderWidth] = useState(SLIDER_WIDTH);
   const translateX = useSharedValue((rating / MAX_RATING) * sliderWidth);
@@ -165,7 +170,7 @@ export function RatingStars({ rating, setRating }: RatingStarsProps) {
             marginLeft: 8,
           }}
         >
-          Rate this dish
+          {title}
         </Text>
         <TextInput
           style={styles.input}

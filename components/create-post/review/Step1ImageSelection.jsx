@@ -84,19 +84,6 @@ export const Step1ImageSelection = () => {
             />
 
             <View style={{ paddingHorizontal: 0, marginBottom: 24 }}>
-              {/* <Title
-                style={{
-                  fontSize: 32,
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                  marginBottom: 8,
-                  letterSpacing: -0.5,
-                  marginLeft: 20,
-                }}
-              >
-                Restaurant Information
-              </Title> */}
-
               <View
                 style={{
                   borderRadius: 16,
@@ -162,22 +149,13 @@ export const Step1ImageSelection = () => {
               </View>
             </View>
 
-            {postType === "homemade" && (
+            {reviewData.is_review === "restaurant" && (
               <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-                <View
-                  style={{
-                    elevation: 4,
-                    borderRadius: 16,
-                    backgroundColor: "#ffffff",
-                  }}
-                >
-                  <View style={{ padding: 20 }}>
-                    <RatingStars
-                      rating={reviewData.rating}
-                      setRating={(rating) => handleChange("rating", rating)}
-                    />
-                  </View>
-                </View>
+                <RatingStars
+                  title="Rate the restaurant"
+                  rating={reviewData.rating}
+                  setRating={(rating) => handleChange("rating", rating)}
+                />
               </View>
             )}
           </ScrollView>
