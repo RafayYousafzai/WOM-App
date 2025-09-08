@@ -197,230 +197,222 @@ export const EditProfileScreen = ({ setIsEditing }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={incomplete ? handleLogout : () => setIsEditing(false)}
+          style={styles.headerButton}
+          activeOpacity={0.7}
+        >
+          {incomplete ? (
+            <LogOut size={20} color="#6B7280" />
+          ) : (
+            <ArrowLeft size={20} color="#6B7280" />
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          {incomplete ? "Complete Profile" : "Edit Profile"}
+        </Text>
+
+        <View style={styles.headerSpacer} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={incomplete ? handleLogout : () => setIsEditing(false)}
-            style={styles.headerButton}
-            activeOpacity={0.7}
-          >
-            {incomplete ? (
-              <LogOut size={20} color="#6B7280" />
-            ) : (
-              <ArrowLeft size={20} color="#6B7280" />
-            )}
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>
-            {incomplete ? "Complete Profile" : "Edit Profile"}
-          </Text>
-
-          <View style={styles.headerSpacer} />
+        {/* Username */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Username *</Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              fieldErrors.username && styles.inputError,
+            ]}
+            value={user.username}
+            onChangeText={(text) => handleInputChange("username", text)}
+            placeholder="Choose a unique username"
+            autoCapitalize="none"
+            placeholderTextColor="#9CA3AF"
+          />
+          {fieldErrors.username && (
+            <Text style={styles.errorText}>{fieldErrors.username}</Text>
+          )}
         </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Username */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Username *</Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                fieldErrors.username && styles.inputError,
-              ]}
-              value={user.username}
-              onChangeText={(text) => handleInputChange("username", text)}
-              placeholder="Choose a unique username"
-              autoCapitalize="none"
-              placeholderTextColor="#9CA3AF"
-            />
-            {fieldErrors.username && (
-              <Text style={styles.errorText}>{fieldErrors.username}</Text>
-            )}
-          </View>
+        {/* First Name */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>First Name *</Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              fieldErrors.firstName && styles.inputError,
+            ]}
+            value={user.firstName}
+            onChangeText={(text) => handleInputChange("firstName", text)}
+            placeholder="Enter your first name"
+            autoCapitalize="words"
+            placeholderTextColor="#9CA3AF"
+          />
+          {fieldErrors.firstName && (
+            <Text style={styles.errorText}>{fieldErrors.firstName}</Text>
+          )}
+        </View>
 
-          {/* First Name */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>First Name *</Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                fieldErrors.firstName && styles.inputError,
-              ]}
-              value={user.firstName}
-              onChangeText={(text) => handleInputChange("firstName", text)}
-              placeholder="Enter your first name"
-              autoCapitalize="words"
-              placeholderTextColor="#9CA3AF"
-            />
-            {fieldErrors.firstName && (
-              <Text style={styles.errorText}>{fieldErrors.firstName}</Text>
-            )}
-          </View>
+        {/* Last Name */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Last Name *</Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              fieldErrors.lastName && styles.inputError,
+            ]}
+            value={user.lastName}
+            onChangeText={(text) => handleInputChange("lastName", text)}
+            placeholder="Enter your last name"
+            autoCapitalize="words"
+            placeholderTextColor="#9CA3AF"
+          />
+          {fieldErrors.lastName && (
+            <Text style={styles.errorText}>{fieldErrors.lastName}</Text>
+          )}
+        </View>
 
-          {/* Last Name */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Last Name *</Text>
-            <TextInput
-              style={[
-                styles.textInput,
-                fieldErrors.lastName && styles.inputError,
-              ]}
-              value={user.lastName}
-              onChangeText={(text) => handleInputChange("lastName", text)}
-              placeholder="Enter your last name"
-              autoCapitalize="words"
-              placeholderTextColor="#9CA3AF"
-            />
-            {fieldErrors.lastName && (
-              <Text style={styles.errorText}>{fieldErrors.lastName}</Text>
-            )}
-          </View>
+        {/* Bio */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Bio</Text>
+          <TextInput
+            style={[
+              styles.textInput,
+              styles.bioInput,
+              fieldErrors.bio && styles.inputError,
+            ]}
+            value={user.bio}
+            onChangeText={(text) => handleInputChange("bio", text)}
+            placeholder="Tell us about yourself and your food preferences..."
+            maxLength={150}
+            multiline
+            textAlignVertical="top"
+            placeholderTextColor="#9CA3AF"
+          />
+          <Text style={styles.charCount}>{user.bio?.length || 0}/150</Text>
+          {fieldErrors.bio && (
+            <Text style={styles.errorText}>{fieldErrors.bio}</Text>
+          )}
+        </View>
 
-          {/* Bio */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
+        {/* Birthday */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Birthday</Text>
+          <TouchableOpacity
+            onPress={() => setShowDateModal(true)}
+            style={[
+              styles.textInput,
+              styles.dateButton,
+              fieldErrors.birthday && styles.inputError,
+            ]}
+            activeOpacity={0.7}
+          >
+            <Text
               style={[
-                styles.textInput,
-                styles.bioInput,
-                fieldErrors.bio && styles.inputError,
+                styles.dateText,
+                !user.birthday && styles.placeholderText,
               ]}
-              value={user.bio}
-              onChangeText={(text) => handleInputChange("bio", text)}
-              placeholder="Tell us about yourself and your food preferences..."
-              maxLength={150}
-              multiline
-              textAlignVertical="top"
-              placeholderTextColor="#9CA3AF"
-            />
-            <Text style={styles.charCount}>{user.bio?.length || 0}/150</Text>
-            {fieldErrors.bio && (
-              <Text style={styles.errorText}>{fieldErrors.bio}</Text>
-            )}
-          </View>
-
-          {/* Birthday */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Birthday</Text>
-            <TouchableOpacity
-              onPress={() => setShowDateModal(true)}
-              style={[
-                styles.textInput,
-                styles.dateButton,
-                fieldErrors.birthday && styles.inputError,
-              ]}
-              activeOpacity={0.7}
             >
-              <Text
-                style={[
-                  styles.dateText,
-                  !user.birthday && styles.placeholderText,
-                ]}
-              >
-                {user.birthday
-                  ? formatDate(user.birthday)
-                  : "Select your birthday"}
-              </Text>
-              <Calendar size={20} color="#6B7280" />
-            </TouchableOpacity>
-            {fieldErrors.birthday && (
-              <Text style={styles.errorText}>{fieldErrors.birthday}</Text>
-            )}
-          </View>
+              {user.birthday
+                ? formatDate(user.birthday)
+                : "Select your birthday"}
+            </Text>
+            <Calendar size={20} color="#6B7280" />
+          </TouchableOpacity>
+          {fieldErrors.birthday && (
+            <Text style={styles.errorText}>{fieldErrors.birthday}</Text>
+          )}
+        </View>
 
-          {/* Favorite Emoji */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Favorite Food Emoji</Text>
-            <View style={styles.emojiContainer}>
-              {FOOD_EMOJIS.map((emoji, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handleInputChange("favoriteEmoji", emoji)}
-                  style={[
-                    styles.emojiButton,
-                    user.favoriteEmoji === emoji && styles.emojiButtonSelected,
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
+        {/* Favorite Emoji */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Favorite Food Emoji</Text>
+          <View style={styles.emojiContainer}>
+            {FOOD_EMOJIS.map((emoji, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleInputChange("favoriteEmoji", emoji)}
+                style={[
+                  styles.emojiButton,
+                  user.favoriteEmoji === emoji && styles.emojiButtonSelected,
+                ]}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.emojiText}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Country */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Country</Text>
+          <SelectCountry
+            onCountrySelect={handleCountrySelect}
+            selectedCountry={user.country}
+          />
+        </View>
+
+        {/* Dietary Restrictions */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Dietary Preferences</Text>
+
+          {/* Selected Options */}
+          {selectedDietaryOptions.length > 0 && (
+            <View style={styles.selectedOptionsContainer}>
+              {selectedDietaryOptions.map((option, index) => (
+                <View key={index} style={styles.selectedOption}>
+                  <Text style={styles.selectedOptionText}>{option}</Text>
+                  <TouchableOpacity
+                    onPress={() => removeDietaryOption(option)}
+                    style={styles.removeButton}
+                  >
+                    <X size={14} color="#6B7280" />
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
-          </View>
+          )}
 
-          {/* Country */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Country</Text>
-            <SelectCountry
-              onCountrySelect={handleCountrySelect}
-              selectedCountry={user.country}
-            />
-          </View>
-
-          {/* Dietary Restrictions */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Dietary Preferences</Text>
-
-            {/* Selected Options */}
-            {selectedDietaryOptions.length > 0 && (
-              <View style={styles.selectedOptionsContainer}>
-                {selectedDietaryOptions.map((option, index) => (
-                  <View key={index} style={styles.selectedOption}>
-                    <Text style={styles.selectedOptionText}>{option}</Text>
-                    <TouchableOpacity
-                      onPress={() => removeDietaryOption(option)}
-                      style={styles.removeButton}
-                    >
-                      <X size={14} color="#6B7280" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Add Options Button */}
-            <TouchableOpacity
-              onPress={() => setShowDietaryModal(true)}
-              style={styles.addOptionsButton}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.addOptionsText}>
-                {selectedDietaryOptions.length > 0
-                  ? "Edit Dietary Preferences"
-                  : "Add Dietary Preferences"}
-              </Text>
-              <ChevronDown size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Save Button */}
+          {/* Add Options Button */}
           <TouchableOpacity
-            style={[
-              styles.saveButton,
-              isSubmitting && styles.saveButtonDisabled,
-            ]}
-            onPress={saveChanges}
-            disabled={isSubmitting}
-            activeOpacity={0.8}
+            onPress={() => setShowDietaryModal(true)}
+            style={styles.addOptionsButton}
+            activeOpacity={0.7}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="white" size="small" />
-            ) : (
-              <Text style={styles.saveButtonText}>
-                {incomplete ? "Complete Profile" : "Save Changes"}
-              </Text>
-            )}
+            <Text style={styles.addOptionsText}>
+              {selectedDietaryOptions.length > 0
+                ? "Edit Dietary Preferences"
+                : "Add Dietary Preferences"}
+            </Text>
+            <ChevronDown size={20} color="#6B7280" />
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
+          onPress={saveChanges}
+          disabled={isSubmitting}
+          activeOpacity={0.8}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text style={styles.saveButtonText}>
+              {incomplete ? "Complete Profile" : "Save Changes"}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
 
       {/* Date Picker Modal */}
       <Modal
@@ -578,8 +570,6 @@ const styles = StyleSheet.create({
   },
   textInput: {
     backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
