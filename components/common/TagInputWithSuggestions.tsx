@@ -102,7 +102,7 @@ const TagInputWithSuggestions = ({
         placeholder={title}
         style={styles.input}
         returnKeyType="done"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor="#343a40"
       />
 
       {/* Suggestions */}

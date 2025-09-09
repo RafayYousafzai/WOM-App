@@ -126,7 +126,7 @@ const TagPeopleInput = ({ tags = [], setTags, title = "Tag people..." }) => {
         value={query}
         onChangeText={setQuery}
         style={styles.input}
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor="#343a40"
         returnKeyType="done"
       />
 
