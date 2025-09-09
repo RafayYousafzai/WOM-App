@@ -44,7 +44,7 @@ export default function AllResultsList({ searchQuery }) {
 
   return (
     <>
-      <UsersList limit={5} searchQuery={searchQuery} />
+      {/* <UsersList limit={5} searchQuery={searchQuery} /> */}
       <PostList limit={5} searchQuery={searchQuery} />
       <ReviewsList limit={5} searchQuery={searchQuery} />
     </>

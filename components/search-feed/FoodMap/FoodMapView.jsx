@@ -13,12 +13,12 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-} from "react-native"; // Changed back to react-native for universal compatibility
+} from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, Heatmap } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useDishesHandler } from "@/hooks/useSearch";
-import { useRouter } from "expo-router"; // Use the actual hook in a real app
+import { useRouter } from "expo-router";
 import { useGlobal } from "@/context/globalContext";
 
 // --- Constants ---
@@ -27,18 +27,36 @@ const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const safeHeatmapRadius = Platform.OS === "android" ? 50 : 30;
+const NEARBY_THRESHOLD_KM = 10; // 10km radius for "nearby" posts
+
+// Helper function to calculate distance between two coordinates
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in km
+  return distance;
+};
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI / 180);
+};
 
 // --- Main Component ---
 const FoodMapView = () => {
   const { setRenderPosts } = useGlobal();
-
   const mapRef = useRef(null);
-  const router = useRouter(); // Use the real router hook
+  const router = useRouter();
   const { posts, loading, error } = useDishesHandler();
 
   const [userLocation, setUserLocation] = useState(null);
-
-  // Default region set to Lahore, a good fallback
   const [region, setRegion] = useState({
     latitude: 31.5204,
     longitude: 74.3587,
@@ -61,26 +79,14 @@ const FoodMapView = () => {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         };
-        // Set user location state
         setUserLocation(newUserLocation);
-        // Animate map to the new location
-        if (mapRef.current) {
-          mapRef.current.animateToRegion(
-            {
-              ...newUserLocation,
-              latitudeDelta: LATITUDE_DELTA,
-              longitudeDelta: LONGITUDE_DELTA,
-            },
-            1000
-          );
-        }
       } catch (e) {
         console.error("Could not fetch location:", e);
       }
     })();
   }, []);
 
-  // Memoized and FILTERED data to prevent crashes from bad data. This is great.
+  // Memoized and FILTERED data to prevent crashes from bad data
   const mapPoints = useMemo(() => {
     if (!posts || posts.length === 0) return [];
     return posts
@@ -103,7 +109,7 @@ const FoodMapView = () => {
       }));
   }, [posts]);
 
-  // Your clustering logic is efficient and correctly uses the sanitized `mapPoints`.
+  // Clustering logic
   const clusterGroups = useMemo(() => {
     if (!mapPoints || mapPoints.length === 0) return [];
 
@@ -133,14 +139,66 @@ const FoodMapView = () => {
     return Array.from(clusters.values());
   }, [mapPoints]);
 
-  // Heatmap data correctly derived from filtered points.
+  // Heatmap data
   const heatmapData = useMemo(() => {
     return mapPoints.map((point) => ({
       latitude: point.location.latitude,
       longitude: point.location.longitude,
-      weight: point.rating || 1, // Default weight to 1 if rating is null
+      weight: point.rating || 1,
     }));
   }, [mapPoints]);
+
+  // Effect to automatically center the map based on the requirements
+  useEffect(() => {
+    if (loading || !userLocation || mapPoints.length === 0) return;
+
+    // Check for posts near user's location
+    const nearbyPosts = mapPoints.filter((point) => {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        point.location.latitude,
+        point.location.longitude
+      );
+      return distance <= NEARBY_THRESHOLD_KM;
+    });
+
+    if (nearbyPosts.length > 0) {
+      // Center on user's location if there are nearby posts
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            ...userLocation,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          },
+          1000
+        );
+      }
+    } else {
+      // Find the area with the highest concentration of posts
+      if (clusterGroups.length === 0) return;
+
+      let highestDensityCluster = clusterGroups[0];
+      for (let i = 1; i < clusterGroups.length; i++) {
+        if (clusterGroups[i].count > highestDensityCluster.count) {
+          highestDensityCluster = clusterGroups[i];
+        }
+      }
+
+      // Center on the highest density area
+      if (mapRef.current && highestDensityCluster) {
+        mapRef.current.animateToRegion(
+          {
+            ...highestDensityCluster.location,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          },
+          1000
+        );
+      }
+    }
+  }, [loading, userLocation, mapPoints, clusterGroups]);
 
   const goToCurrentLocation = useCallback(() => {
     if (userLocation && mapRef.current) {
@@ -161,18 +219,12 @@ const FoodMapView = () => {
 
   const handleClusterPress = useCallback(
     (cluster) => {
-      // Step 1: Get the IDs of all posts within the clicked cluster.
       const postIdsInCluster = new Set(cluster.posts.map((p) => p.id));
-
-      // Step 2: Filter the original, full 'posts' array to get the complete data for this cluster.
-      // This is crucial because cluster.posts only has partial data (id, location, etc.).
       const fullPostsInCluster = posts.filter((p) =>
         postIdsInCluster.has(p.id)
       );
 
-      // Step 3: Normalize the shape of these posts so the '/posts' screen can use them.
       const normalizedPosts = fullPostsInCluster.map((p) => {
-        // Extract all image URLs from the post's dishes
         const images =
           p.post_dishes
             ?.flatMap((dish) => dish.image_urls || [])
@@ -180,10 +232,9 @@ const FoodMapView = () => {
 
         return {
           ...p,
-          images, // An array of all image URLs
+          images,
           dishes: p.post_dishes || [],
-          isLiked: false, // Default 'isLiked' state, you can add your logic here
-          // Standardize the user object
+          isLiked: false,
           user: p.users
             ? {
                 id: p.users.id,
@@ -194,26 +245,21 @@ const FoodMapView = () => {
                 image_url: p.users.image_url ?? null,
               }
             : null,
-          // Rename for consistency on the next screen
           restaurant: p.restaurants,
         };
       });
 
-      // Step 4: Set the state that the '/posts' screen will use to render.
-      // We assume 'setRenderPosts' is a state setter passed into this component.
       setRenderPosts({
         posts: normalizedPosts,
         loading: false,
-        initialScrollIndex: 0, // Always start at the first post in the list
+        initialScrollIndex: 0,
       });
 
-      // Step 5: Navigate to the posts screen.
       router.push("/posts");
     },
-    [router, posts, setRenderPosts] // Add all external dependencies here
+    [router, posts, setRenderPosts]
   );
 
-  // Your loading and error states are perfect.
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
@@ -242,12 +288,8 @@ const FoodMapView = () => {
         initialRegion={region}
         showsUserLocation={true}
         showsMyLocationButton={false}
+        onRegionChangeComplete={(region) => setRegion(region)}
       >
-        {/*
-          // DEBUGGING TIP: If the map still doesn't work,
-          // try commenting out the <Heatmap> component first.
-          // Sometimes, it has compatibility issues on web.
-        */}
         {heatmapData.length > 0 && (
           <Heatmap
             points={heatmapData}
@@ -294,7 +336,7 @@ const FoodMapView = () => {
   );
 };
 
-// --- Styles --- (Your styles are great, no changes needed)
+// --- Styles ---
 const styles = StyleSheet.create({
   centeredContainer: {
     flex: 1,

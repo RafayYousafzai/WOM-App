@@ -24,8 +24,8 @@ import FilterOptions from "../search-feed/FilterOptions";
 
 const FILTER_OPTIONS = [
   { id: 1, name: "All" },
-  { id: 2, name: "Reviews" },
   { id: 3, name: "Dish" },
+  { id: 2, name: "Reviews" },
   { id: 4, name: "Users" },
   { id: 5, name: "Map" },
 ];
