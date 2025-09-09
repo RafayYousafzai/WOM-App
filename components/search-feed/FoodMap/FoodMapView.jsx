@@ -153,56 +153,56 @@ const FoodMapView = () => {
   }, [mapPoints]);
 
   // Effect to automatically center the map based on the requirements
-  useEffect(() => {
-    if (loading || !userLocation || mapPoints.length === 0) return;
+  // useEffect(() => {
+  //   if (loading || !userLocation || mapPoints.length === 0) return;
 
-    // Check for posts near user's location
-    const nearbyPosts = mapPoints.filter((point) => {
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        point.location.latitude,
-        point.location.longitude
-      );
-      return distance <= NEARBY_THRESHOLD_KM;
-    });
+  //   // Check for posts near user's location
+  //   const nearbyPosts = mapPoints.filter((point) => {
+  //     const distance = calculateDistance(
+  //       userLocation.latitude,
+  //       userLocation.longitude,
+  //       point.location.latitude,
+  //       point.location.longitude
+  //     );
+  //     return distance <= NEARBY_THRESHOLD_KM;
+  //   });
 
-    if (nearbyPosts.length > 0) {
-      // Center on user's location if there are nearby posts
-      if (mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            ...userLocation,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
-          },
-          1000
-        );
-      }
-    } else {
-      // Find the area with the highest concentration of posts
-      if (clusterGroups.length === 0) return;
+  //   if (nearbyPosts.length > 0) {
+  //     // Center on user's location if there are nearby posts
+  //     if (mapRef.current) {
+  //       mapRef.current.animateToRegion(
+  //         {
+  //           ...userLocation,
+  //           latitudeDelta: LATITUDE_DELTA,
+  //           longitudeDelta: LONGITUDE_DELTA,
+  //         },
+  //         1000
+  //       );
+  //     }
+  //   } else {
+  //     // Find the area with the highest concentration of posts
+  //     if (clusterGroups.length === 0) return;
 
-      let highestDensityCluster = clusterGroups[0];
-      for (let i = 1; i < clusterGroups.length; i++) {
-        if (clusterGroups[i].count > highestDensityCluster.count) {
-          highestDensityCluster = clusterGroups[i];
-        }
-      }
+  //     let highestDensityCluster = clusterGroups[0];
+  //     for (let i = 1; i < clusterGroups.length; i++) {
+  //       if (clusterGroups[i].count > highestDensityCluster.count) {
+  //         highestDensityCluster = clusterGroups[i];
+  //       }
+  //     }
 
-      // Center on the highest density area
-      if (mapRef.current && highestDensityCluster) {
-        mapRef.current.animateToRegion(
-          {
-            ...highestDensityCluster.location,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
-          },
-          1000
-        );
-      }
-    }
-  }, [loading, userLocation, mapPoints, clusterGroups]);
+  //     // Center on the highest density area
+  //     if (mapRef.current && highestDensityCluster) {
+  //       mapRef.current.animateToRegion(
+  //         {
+  //           ...highestDensityCluster.location,
+  //           latitudeDelta: LATITUDE_DELTA,
+  //           longitudeDelta: LONGITUDE_DELTA,
+  //         },
+  //         1000
+  //       );
+  //     }
+  //   }
+  // }, [loading, userLocation, mapPoints, clusterGroups]);
 
   const goToCurrentLocation = useCallback(() => {
     if (userLocation && mapRef.current) {
