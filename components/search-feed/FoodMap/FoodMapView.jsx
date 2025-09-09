@@ -32,12 +32,12 @@ const { width, height } = Dimensions.get("window");
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
-const safeHeatmapRadius = Platform.OS === "android" ? 50 : 200;
+const safeHeatmapRadius = Platform.OS === "android" ? 50 : 300;
 const NEARBY_THRESHOLD_KM = 10; // 10km radius for "nearby" posts
 
 // Radius selector constants
 const MIN_RADIUS = 1; // 1km minimum
-const MAX_RADIUS = 500; // 50km maximum
+const MAX_RADIUS = 5000; // 50km maximum
 const DEFAULT_RADIUS = 10; // 10km default
 
 // Helper function to calculate distance between two coordinates
@@ -338,10 +338,17 @@ const FoodMapView = () => {
           <Heatmap
             points={heatmapData}
             radius={safeHeatmapRadius}
-            opacity={5}
+            opacity={3}
             gradient={{
-              colors: ["#79E0EE", "#3498db", "#f39c12", "#e74c3c"],
-              startPoints: [0.4, 0.6, 0.8, 0.9],
+              colors: [
+                "rgba(0, 255, 255, 0)", // Transparent cyan (low density)
+                "rgba(0, 255, 255, 0.6)", // Light cyan
+                "rgba(0, 255, 0, 0.8)", // Green
+                "rgba(255, 255, 0, 0.9)", // Yellow
+                "rgba(255, 165, 0, 1)", // Orange
+                "rgba(255, 0, 0, 1)", // Red (high density)
+              ],
+              startPoints: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
               colorMapSize: 256,
             }}
           />
