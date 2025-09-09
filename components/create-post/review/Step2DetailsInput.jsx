@@ -122,7 +122,7 @@ export const Step2DetailsInput = () => {
                   setRating={(value) =>
                     handleRatingChange("staffRating", value)
                   }
-                  title="Staff Service"
+                  title="Staff Service (Optional)"
                 />
 
                 <RatingStars
@@ -130,13 +130,13 @@ export const Step2DetailsInput = () => {
                   setRating={(value) =>
                     handleRatingChange("cleanliness", value)
                   }
-                  title="Cleanliness"
+                  title="Cleanliness (Optional)"
                 />
 
                 <RatingStars
                   rating={reviewData.ambiance || 0}
                   setRating={(value) => handleRatingChange("ambiance", value)}
-                  title="Ambiance"
+                  title="Ambiance (Optional)"
                 />
               </View>
             </View>
