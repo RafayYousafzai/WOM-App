@@ -4,22 +4,38 @@ import { useSupabase } from "@/context/supabaseContext";
 
 /**
  * Custom hook to handle fetching and filtering of posts.
+ * Includes filtering by tags, search query, review status, price range, and minimum rating.
  */
 export const useDishesHandler = () => {
   const { supabase } = useSupabase();
-  const { selectedFilters, searchQuery, setSearchQuery, setSelectedFilters } =
-    useSearch();
+  const {
+    selectedFilters,
+    searchQuery,
+    setSearchQuery,
+    setSelectedFilters,
+    moreFilters = {
+      priceRange: { min: null, max: null },
+      rating: null,
+    },
+  } = useSearch();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // 1. ADD NEW STATE for the review filter. 'all', true, or false.
   const [reviewStatus, setReviewStatus] = useState("all");
 
   const fetchPosts = useCallback(async () => {
-    // 2. UPDATE BAIL-OUT CONDITION to include the new filter.
-    if (selectedFilters.size === 0 && !searchQuery && reviewStatus === "all") {
+    const { priceRange, rating } = moreFilters;
+
+    // 1. UPDATE BAIL-OUT CONDITION to include price and rating filters.
+    if (
+      selectedFilters.size === 0 &&
+      !searchQuery &&
+      reviewStatus === "all" &&
+      !rating &&
+      !priceRange.min &&
+      !priceRange.max
+    ) {
       setPosts([]);
       return;
     }
@@ -28,12 +44,10 @@ export const useDishesHandler = () => {
     setError(null);
 
     try {
-      let postIdsFromTags = null;
-      let postIdsFromSearch = null;
+      const activeIdSets = [];
 
       // Step 1: Get post IDs based on selected tags (no changes here).
       if (selectedFilters.size > 0) {
-        // ... (this logic remains the same)
         const tagIds = Array.from(selectedFilters);
         const { data: postTagsData, error: postTagsError } = await supabase
           .from("post_tags")
@@ -41,20 +55,14 @@ export const useDishesHandler = () => {
           .in("tag_id", tagIds);
 
         if (postTagsError) throw postTagsError;
-        if (!postTagsData || postTagsData.length === 0) {
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
-        postIdsFromTags = new Set(postTagsData.map((pt) => pt.post_id));
+        const postIdsFromTags = new Set(postTagsData.map((pt) => pt.post_id));
+        activeIdSets.push(postIdsFromTags);
       }
 
-      // 3. REFACTOR RPC CALL to handle search query OR review status.
-      // We run the search if a query exists OR if a review filter is active.
+      // Step 2: Get post IDs from search query OR review status filter.
       if (searchQuery || reviewStatus !== "all") {
-        // Prepare parameters for the RPC call
         const rpcParams = {
-          search_term: searchQuery || "", // Pass empty string if no query
+          search_term: searchQuery || "",
           is_review_filter: reviewStatus === "all" ? null : reviewStatus,
         };
 
@@ -64,32 +72,74 @@ export const useDishesHandler = () => {
         );
 
         if (rpcError) throw rpcError;
-        if (!searchData || searchData.length === 0) {
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
-        postIdsFromSearch = new Set(searchData.map((p) => p.id));
+        const postIdsFromSearch = new Set(searchData.map((p) => p.id));
+        activeIdSets.push(postIdsFromSearch);
       }
 
-      // Step 3: Determine the final set of post IDs (logic updated slightly)
-      let finalPostIds;
-      // If ONLY one filter type is active
-      if (postIdsFromTags && !postIdsFromSearch) {
-        finalPostIds = [...postIdsFromTags];
-      } else if (!postIdsFromTags && postIdsFromSearch) {
-        finalPostIds = [...postIdsFromSearch];
-      } else if (postIdsFromTags && postIdsFromSearch) {
-        // If BOTH are active, find the intersection
-        finalPostIds = [...postIdsFromTags].filter((id) =>
-          postIdsFromSearch.has(id)
-        );
-      } else {
-        // This case handles when filters were active but yielded no results
+      // 3. NEW: Get post IDs based on price range filter.
+      if (priceRange.min || priceRange.max) {
+        let priceQuery = supabase.from("post_dishes").select("post_id");
+        if (priceRange.min) {
+          priceQuery = priceQuery.gte("dish_price", priceRange.min);
+        }
+        if (priceRange.max) {
+          priceQuery = priceQuery.lte("dish_price", priceRange.max);
+        }
+        const { data: priceData, error: priceError } = await priceQuery;
+
+        if (priceError) throw priceError;
+        const postIdsFromPrice = new Set(priceData.map((pd) => pd.post_id));
+        activeIdSets.push(postIdsFromPrice);
+      }
+
+      // 4. NEW: Get post IDs based on minimum restaurant rating filter.
+      if (rating) {
+        // First, find restaurants that meet the rating criteria.
+        const { data: restaurantData, error: restaurantError } = await supabase
+          .from("restaurants")
+          .select("id")
+          .gte("rating", rating);
+
+        if (restaurantError) throw restaurantError;
+
+        let postIdsFromRating;
+        if (restaurantData && restaurantData.length > 0) {
+          const restaurantIds = restaurantData.map((r) => r.id);
+          // Then, find all posts associated with those restaurants.
+          const { data: postsData, error: postsError } = await supabase
+            .from("posts")
+            .select("id")
+            .in("restaurant_id", restaurantIds);
+
+          if (postsError) throw postsError;
+          postIdsFromRating = new Set(postsData.map((p) => p.id));
+        } else {
+          // If no restaurants match the rating, no posts can match.
+          postIdsFromRating = new Set();
+        }
+        activeIdSets.push(postIdsFromRating);
+      }
+
+      // 5. REVISED: Determine the final set of post IDs by finding the intersection of all active filters.
+      if (activeIdSets.length === 0) {
+        // This case is hit if filters are selected, but they yield no results individually.
         setPosts([]);
         setLoading(false);
         return;
       }
+
+      // Start with the first set of results and intersect with the rest.
+      let finalIds = new Set(activeIdSets[0]);
+      for (let i = 1; i < activeIdSets.length; i++) {
+        const currentSet = activeIdSets[i];
+        finalIds = new Set([...finalIds].filter((id) => currentSet.has(id)));
+        // If the intersection is ever empty, we can stop early.
+        if (finalIds.size === 0) {
+          break;
+        }
+      }
+
+      const finalPostIds = Array.from(finalIds);
 
       if (finalPostIds.length === 0) {
         setPosts([]);
@@ -97,7 +147,7 @@ export const useDishesHandler = () => {
         return;
       }
 
-      // Step 4: Fetch the full post data (no changes here).
+      // Step 6: Fetch the full post data for the final IDs (no changes here).
       const { data, error: fetchError } = await supabase
         .from("posts")
         .select(
@@ -113,9 +163,8 @@ export const useDishesHandler = () => {
 
       if (fetchError) throw fetchError;
 
-      // Final client-side filter for ALL tags (no changes here).
+      // Final client-side filter to ensure posts have ALL selected tags.
       if (data && selectedFilters.size > 0) {
-        // ... (this logic remains the same)
         const filteredData = data.filter((post) => {
           const postTagIds = new Set(post.post_tags.map((pt) => pt.tags.id));
           return Array.from(selectedFilters).every((filterId) =>
@@ -132,7 +181,7 @@ export const useDishesHandler = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedFilters, supabase, reviewStatus]); // 4. ADD reviewStatus to dependencies.
+  }, [searchQuery, selectedFilters, supabase, reviewStatus, moreFilters]); // 6. ADD moreFilters to dependencies.
 
   useEffect(() => {
     fetchPosts();
@@ -145,7 +194,6 @@ export const useDishesHandler = () => {
     setSearchQuery,
     setSelectedFilters,
     fetchPosts,
-    // 5. EXPOSE the new state and setter.
     reviewStatus,
     setReviewStatus,
   };

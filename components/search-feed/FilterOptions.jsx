@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useCallback, useMemo } from "react";
 import {
   View,
@@ -9,34 +7,33 @@ import {
   Modal,
   FlatList,
   Animated,
-  Dimensions,
   StatusBar,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useReview } from "@/context/reviewContext";
 import { useSearch } from "@/context/searchContext";
-
-const { width: screenWidth } = Dimensions.get("window");
+import Joi from "joi";
 
 const FilterOptions = () => {
   const { tags: tagCategories } = useReview();
 
   const [modalVisible, setModalVisible] = useState(false);
-  const { selectedFilters, setSelectedFilters, searchQuery } = useSearch();
+  const { selectedFilters, setSelectedFilters, setMoreFilters } = useSearch();
   const [tempSelectedFilters, setTempSelectedFilters] = useState(new Set());
   const slideAnim = new Animated.Value(0);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [rating, setRating] = useState("");
 
-  console.log("Tag Categories:", selectedFilters);
+  // Joi validation schemas
+  const priceSchema = Joi.number().min(0).allow(null, "");
+  const ratingSchema = Joi.number().min(1).max(10).allow(null, "");
 
   // Get popular tags for horizontal scroll
   const popularTags = useMemo(
-    () => [
-      { id: "all", name: "All", type: "special", icon: "options" },
-      // ...tagCategories.amenity,
-      // ...tagCategories.cuisine,
-      // ...tagCategories.dietary,
-    ],
+    () => [{ id: "all", name: "All", type: "special", icon: "options" }],
     []
   );
 
@@ -93,20 +90,54 @@ const FilterOptions = () => {
   }, []);
 
   const applyFilters = useCallback(() => {
+    // Helper function to validate and parse values with Joi
+    const validateValue = (value, schema) => {
+      if (!value || value.trim() === "") return null;
+
+      const { error, value: validatedValue } = schema.validate(
+        parseFloat(value)
+      );
+      return error ? null : validatedValue;
+    };
+
+    // Validate using Joi schemas
+    let validMinPrice = validateValue(minPrice, priceSchema);
+    let validMaxPrice = validateValue(maxPrice, priceSchema);
+    let validRating = validateValue(rating, ratingSchema);
+
+    // Validate price range logic - swap if min > max
+    if (
+      validMinPrice !== null &&
+      validMaxPrice !== null &&
+      validMinPrice > validMaxPrice
+    ) {
+      [validMinPrice, validMaxPrice] = [validMaxPrice, validMinPrice];
+    }
+
     setSelectedFilters(new Set(tempSelectedFilters));
+    setMoreFilters({
+      priceRange: {
+        min: validMinPrice,
+        max: validMaxPrice,
+      },
+      rating: validRating,
+    });
     closeModal();
-  }, [tempSelectedFilters, closeModal]);
+  }, [
+    tempSelectedFilters,
+    minPrice,
+    maxPrice,
+    rating,
+    closeModal,
+    priceSchema,
+    ratingSchema,
+  ]);
 
   const resetFilters = useCallback(() => {
     setTempSelectedFilters(new Set());
-  }, []);
-
-  const removeFilter = useCallback((filterId) => {
-    setSelectedFilters((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(filterId);
-      return newSet;
-    });
+    setMinPrice("");
+    setMaxPrice("");
+    setRating("");
   }, []);
 
   // Render horizontal filter chip
@@ -142,39 +173,6 @@ const FilterOptions = () => {
     [selectedFilters, toggleFilter]
   );
 
-  // Render selected filter chips (removable)
-  const renderSelectedChip = useCallback(
-    (filterId) => {
-      const allTags = [
-        ...tagCategories.amenity,
-        ...tagCategories.cuisine,
-        ...tagCategories.dietary,
-      ];
-      const tag = allTags.find((t) => t.id === filterId);
-      if (!tag) return null;
-
-      return (
-        <TouchableOpacity
-          key={filterId}
-          onPress={() => removeFilter(filterId)}
-          style={{
-            marginBottom: 8,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            backgroundColor: "#FEF3C7",
-            borderRadius: 20,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="close-outline" size={16} color="#92400E" />
-        </TouchableOpacity>
-      );
-    },
-    [removeFilter, tagCategories]
-  );
-
   return (
     <View style={{ backgroundColor: "#FFFFFF" }}>
       {/* Horizontal Scrollable Tags */}
@@ -199,6 +197,12 @@ const FilterOptions = () => {
         tempSelectedFilters={tempSelectedFilters}
         toggleTempFilter={toggleTempFilter}
         slideAnim={slideAnim}
+        minPrice={minPrice}
+        setMinPrice={setMinPrice}
+        maxPrice={maxPrice}
+        setMaxPrice={setMaxPrice}
+        rating={rating}
+        setRating={setRating}
       />
     </View>
   );
@@ -213,7 +217,35 @@ const FilterModal = ({
   tempSelectedFilters,
   toggleTempFilter,
   slideAnim,
+  minPrice,
+  setMinPrice,
+  maxPrice,
+  setMaxPrice,
+  rating,
+  setRating,
 }) => {
+  const validateNumericInput = (value, min, max) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) return false;
+    return num >= min && num <= max;
+  };
+
+  const handlePriceInput = (value, setter, isMin = false) => {
+    // Allow empty string, decimal point, and valid numbers
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setter(value);
+    }
+  };
+
+  const handleRatingInput = (value) => {
+    // Allow empty string, decimal point, and valid numbers between 1-10
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      const num = parseFloat(value);
+      if (value === "" || (num >= 1 && num <= 10)) {
+        setRating(value);
+      }
+    }
+  };
   const renderCategorySection = useCallback(
     ({ item: [categoryName, tags] }) => (
       <View style={{ marginBottom: 32 }}>
@@ -305,8 +337,6 @@ const FilterModal = ({
                 alignItems: "center",
                 paddingHorizontal: 20,
                 paddingVertical: 20,
-                borderBottomWidth: 1,
-                borderBottomColor: "#E5E7EB",
               }}
             >
               <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
@@ -326,14 +356,108 @@ const FilterModal = ({
               </TouchableOpacity>
             </View>
 
-            {/* Categories */}
-            <FlatList
-              data={categoryData}
-              keyExtractor={([categoryName]) => categoryName}
-              renderItem={renderCategorySection}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingVertical: 20 }}
-            />
+            <ScrollView>
+              {/* Price and Rating Inputs */}
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "700",
+                    color: "#111827",
+                    marginBottom: 16,
+                  }}
+                >
+                  Price Range
+                </Text>
+
+                {/* Price Range */}
+                <View style={{ marginBottom: 16 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View style={{ flex: 1 }}>
+                      <TextInput
+                        value={minPrice}
+                        onChangeText={(value) =>
+                          handlePriceInput(value, setMinPrice, true)
+                        }
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        style={{
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          fontSize: 16,
+                          backgroundColor: "#F9FAFB",
+                        }}
+                      />
+                    </View>
+                    <Text style={{ color: "#6B7280", marginHorizontal: 8 }}>
+                      to
+                    </Text>
+                    <View style={{ flex: 1, marginHorizontal: 8 }}>
+                      <TextInput
+                        value={maxPrice}
+                        onChangeText={(value) =>
+                          handlePriceInput(value, setMaxPrice)
+                        }
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        style={{
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          fontSize: 16,
+                          backgroundColor: "#F9FAFB",
+                        }}
+                      />
+                    </View>
+                  </View>
+                </View>
+                {/* Rating */}
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "700",
+                      color: "#111827",
+                      marginBottom: 16,
+                    }}
+                  >
+                    Minimum Rating
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View style={{ flex: 1 }}>
+                      <TextInput
+                        value={rating}
+                        onChangeText={handleRatingInput}
+                        placeholder="3.4"
+                        keyboardType="decimal-pad"
+                        style={{
+                          borderRadius: 12,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          fontSize: 16,
+                          backgroundColor: "#F9FAFB",
+                        }}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Categories */}
+              <FlatList
+                data={categoryData}
+                keyExtractor={([categoryName]) => categoryName}
+                renderItem={renderCategorySection}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 20 }}
+                scrollEnabled={false}
+              />
+            </ScrollView>
 
             {/* Apply Button */}
             <SafeAreaView

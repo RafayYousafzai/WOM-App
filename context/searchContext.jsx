@@ -12,6 +12,10 @@ export const SearchProvider = ({ children }) => {
   const [filterCategories, setFilterCategories] = useState(FILTER_CATEGORIES);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState(new Set());
+  const [moreFilters, setMoreFilters] = useState({
+    priceRange: { min: null, max: null },
+    rating: null,
+  });
 
   return (
     <SearchContext.Provider
@@ -28,6 +32,8 @@ export const SearchProvider = ({ children }) => {
         setModalVisible,
         selectedFilters,
         setSelectedFilters,
+        setMoreFilters,
+        moreFilters,
       }}
     >
       {children}
