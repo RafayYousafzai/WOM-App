@@ -14,7 +14,13 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE, Heatmap } from "react-native-maps";
+import MapView, {
+  Marker,
+  PROVIDER_GOOGLE,
+  Heatmap,
+  Circle,
+} from "react-native-maps";
+import Slider from "@react-native-community/slider";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useDishesHandler } from "@/hooks/useSearch";
@@ -28,6 +34,11 @@ const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const safeHeatmapRadius = Platform.OS === "android" ? 50 : 200;
 const NEARBY_THRESHOLD_KM = 10; // 10km radius for "nearby" posts
+
+// Radius selector constants
+const MIN_RADIUS = 1; // 1km minimum
+const MAX_RADIUS = 500; // 50km maximum
+const DEFAULT_RADIUS = 10; // 10km default
 
 // Helper function to calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -63,6 +74,8 @@ const FoodMapView = () => {
     latitudeDelta: LATITUDE_DELTA,
     longitudeDelta: LONGITUDE_DELTA,
   });
+  const [selectedRadius, setSelectedRadius] = useState(DEFAULT_RADIUS);
+  const [showRadiusSelector, setShowRadiusSelector] = useState(false);
 
   // Effect to get user's current location
   useEffect(() => {
@@ -92,7 +105,8 @@ const FoodMapView = () => {
 
   // Memoized and FILTERED data to prevent crashes from bad data
   const mapPoints = useMemo(() => {
-    if (!posts || posts.length === 0) return [];
+    if (!posts || posts.length === 0 || !userLocation) return [];
+
     return posts
       .filter(
         (post) =>
@@ -110,8 +124,15 @@ const FoodMapView = () => {
         rating: post.restaurants.rating,
         review: post.review,
         user: post.users?.full_name || "Unknown User",
-      }));
-  }, [posts]);
+        distance: calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          post.restaurants.latitude,
+          post.restaurants.longitude
+        ),
+      }))
+      .filter((post) => post.distance <= selectedRadius); // Filter by selected radius
+  }, [posts, userLocation, selectedRadius]);
 
   // Clustering logic
   const clusterGroups = useMemo(() => {
@@ -153,56 +174,56 @@ const FoodMapView = () => {
   }, [mapPoints]);
 
   // Effect to automatically center the map based on the requirements
-  // useEffect(() => {
-  //   if (loading || !userLocation || mapPoints.length === 0) return;
+  useEffect(() => {
+    if (loading || !userLocation || mapPoints.length === 0) return;
 
-  //   // Check for posts near user's location
-  //   const nearbyPosts = mapPoints.filter((point) => {
-  //     const distance = calculateDistance(
-  //       userLocation.latitude,
-  //       userLocation.longitude,
-  //       point.location.latitude,
-  //       point.location.longitude
-  //     );
-  //     return distance <= NEARBY_THRESHOLD_KM;
-  //   });
+    // Check for posts near user's location
+    const nearbyPosts = mapPoints.filter((point) => {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        point.location.latitude,
+        point.location.longitude
+      );
+      return distance <= NEARBY_THRESHOLD_KM;
+    });
 
-  //   if (nearbyPosts.length > 0) {
-  //     // Center on user's location if there are nearby posts
-  //     if (mapRef.current) {
-  //       mapRef.current.animateToRegion(
-  //         {
-  //           ...userLocation,
-  //           latitudeDelta: LATITUDE_DELTA,
-  //           longitudeDelta: LONGITUDE_DELTA,
-  //         },
-  //         1000
-  //       );
-  //     }
-  //   } else {
-  //     // Find the area with the highest concentration of posts
-  //     if (clusterGroups.length === 0) return;
+    if (nearbyPosts.length > 0) {
+      // Center on user's location if there are nearby posts
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            ...userLocation,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          },
+          1000
+        );
+      }
+    } else {
+      // Find the area with the highest concentration of posts
+      if (clusterGroups.length === 0) return;
 
-  //     let highestDensityCluster = clusterGroups[0];
-  //     for (let i = 1; i < clusterGroups.length; i++) {
-  //       if (clusterGroups[i].count > highestDensityCluster.count) {
-  //         highestDensityCluster = clusterGroups[i];
-  //       }
-  //     }
+      let highestDensityCluster = clusterGroups[0];
+      for (let i = 1; i < clusterGroups.length; i++) {
+        if (clusterGroups[i].count > highestDensityCluster.count) {
+          highestDensityCluster = clusterGroups[i];
+        }
+      }
 
-  //     // Center on the highest density area
-  //     if (mapRef.current && highestDensityCluster) {
-  //       mapRef.current.animateToRegion(
-  //         {
-  //           ...highestDensityCluster.location,
-  //           latitudeDelta: LATITUDE_DELTA,
-  //           longitudeDelta: LONGITUDE_DELTA,
-  //         },
-  //         1000
-  //       );
-  //     }
-  //   }
-  // }, [loading, userLocation, mapPoints, clusterGroups]);
+      // Center on the highest density area
+      if (mapRef.current && highestDensityCluster) {
+        mapRef.current.animateToRegion(
+          {
+            ...highestDensityCluster.location,
+            latitudeDelta: LATITUDE_DELTA,
+            longitudeDelta: LONGITUDE_DELTA,
+          },
+          1000
+        );
+      }
+    }
+  }, [loading, userLocation, mapPoints, clusterGroups]);
 
   const goToCurrentLocation = useCallback(() => {
     if (userLocation && mapRef.current) {
@@ -220,6 +241,14 @@ const FoodMapView = () => {
       );
     }
   }, [userLocation]);
+
+  const handleRadiusChange = useCallback((radius) => {
+    setSelectedRadius(radius);
+  }, []);
+
+  const toggleRadiusSelector = useCallback(() => {
+    setShowRadiusSelector(!showRadiusSelector);
+  }, [showRadiusSelector]);
 
   const handleClusterPress = useCallback(
     (cluster) => {
@@ -294,6 +323,17 @@ const FoodMapView = () => {
         showsMyLocationButton={false}
         onRegionChangeComplete={(region) => setRegion(region)}
       >
+        {/* Radius Circle */}
+        {userLocation && (
+          <Circle
+            center={userLocation}
+            radius={selectedRadius * 1000} // Convert km to meters
+            strokeColor="rgba(251, 146, 60, 0.8)"
+            strokeWidth={2}
+            fillColor="rgba(251, 146, 60, 0.1)"
+          />
+        )}
+
         {heatmapData.length > 0 && (
           <Heatmap
             points={heatmapData}
@@ -329,6 +369,52 @@ const FoodMapView = () => {
           </Marker>
         ))}
       </MapView>
+
+      {/* Radius Control Button */}
+      <TouchableOpacity
+        style={styles.radiusButton}
+        onPress={toggleRadiusSelector}
+      >
+        <Ionicons name="resize-outline" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Radius Selector Panel */}
+      {showRadiusSelector && (
+        <View style={styles.radiusPanel}>
+          <View style={styles.radiusPanelHeader}>
+            <Text style={styles.radiusTitle}>Search Radius</Text>
+            <TouchableOpacity onPress={toggleRadiusSelector}>
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.radiusSliderContainer}>
+            <Text style={styles.radiusValue}>{selectedRadius} km</Text>
+            <Slider
+              style={styles.radiusSlider}
+              minimumValue={MIN_RADIUS}
+              maximumValue={MAX_RADIUS}
+              value={selectedRadius}
+              onValueChange={handleRadiusChange}
+              step={1}
+              minimumTrackTintColor="#fb923c"
+              maximumTrackTintColor="#e5e7eb"
+              thumbStyle={styles.sliderThumb}
+              trackStyle={styles.sliderTrack}
+            />
+            <View style={styles.radiusLabels}>
+              <Text style={styles.radiusLabel}>{MIN_RADIUS} km</Text>
+              <Text style={styles.radiusLabel}>{MAX_RADIUS} km</Text>
+            </View>
+          </View>
+
+          <Text style={styles.radiusDescription}>
+            Showing {mapPoints.length}{" "}
+            {mapPoints.length === 1 ? "restaurant" : "restaurants"} within{" "}
+            {selectedRadius} km
+          </Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={styles.locationButton}
@@ -406,6 +492,85 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  radiusButton: {
+    position: "absolute",
+    bottom: 120,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#6366f1",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  radiusPanel: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 40,
+    left: 20,
+    right: 20,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  radiusPanelHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  radiusTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  radiusSliderContainer: {
+    marginBottom: 15,
+  },
+  radiusValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fb923c",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  radiusSlider: {
+    width: "100%",
+    height: 40,
+  },
+  sliderThumb: {
+    backgroundColor: "#fb923c",
+    width: 20,
+    height: 20,
+  },
+  sliderTrack: {
+    height: 4,
+    borderRadius: 2,
+  },
+  radiusLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 5,
+  },
+  radiusLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  radiusDescription: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
 
