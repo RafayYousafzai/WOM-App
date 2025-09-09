@@ -13,6 +13,7 @@ import RenderFilteredPosts from "./RenderFilteredPosts";
 const FILTER_TITLES = {
   reviews: "Reviews",
   own_reviews: "Homemade",
+  tags: "Tags",
   about: "About",
 };
 
@@ -107,6 +108,27 @@ const ProfileFilters = ({
           )}
           <Text className="text-xs mt-1">
             {activeFilter === "own_reviews" ? "Homemade" : ""}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setActiveFilter("tags")}
+          className={`flex-1 py-3 items-center ${
+            activeFilter === "tags" ? "border-b-2 border-[#f39f1e]" : ""
+          }`}
+        >
+          {activeFilter === "tags" ? (
+            <Image
+              source={require("../../assets/home-icons/user-tag.png")}
+              className="w-7 h-7"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/home-icons/user-tag-outline.png")}
+              className="w-7 h-7"
+            />
+          )}
+          <Text className="text-xs mt-1">
+            {activeFilter === "tags" ? "Tagged Posts" : ""}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

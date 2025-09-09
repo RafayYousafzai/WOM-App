@@ -27,29 +27,72 @@ export default function RenderFilteredPosts({
       setPosts([]);
       setError(null);
 
-      const isReview = activeFilter === "reviews" ? true : false;
+      let postsData;
 
-      const { data: postsData, error: postsError } = await supabase
-        .from("posts")
-        .select(
-          `*,
-      user:user_id (
-        username,
-        first_name,
-        last_name,
-        image_url
-      ),
-      restaurant:restaurant_id (*),
-      post_dishes (*),
-      post_likes(user_id)
-    `
-        )
-        .eq("user_id", profileUserId) // 👈 yahan fix
-        .eq("is_review", isReview)
-        .order("created_at", { ascending: false });
+      if (activeFilter === "tags") {
+        // Get the profile user's username first
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("username")
+          .eq("id", profileUserId)
+          .single();
 
-      if (postsError) {
-        throw postsError;
+        if (userError) throw userError;
+
+        if (!userData?.username) {
+          // If user doesn't have a username, return empty array
+          setPosts([]);
+          setLoading(false);
+          return;
+        }
+
+        // Find posts where the profile user's username is in the 'people' array
+        const { data: taggedPosts, error: postsError } = await supabase
+          .from("posts")
+          .select(
+            `*,
+            user:user_id (
+              username,
+              first_name,
+              last_name,
+              image_url
+            ),
+            restaurant:restaurant_id (*),
+            post_dishes (*),
+            post_likes(user_id)
+          `
+          )
+          .contains("people", [userData.username]) // Check if username is in the people array
+          .neq("user_id", profileUserId) // Exclude posts by the profile user themselves
+          .order("created_at", { ascending: false });
+
+        if (postsError) throw postsError;
+        postsData = taggedPosts || [];
+      } else {
+        // Original logic for reviews and own_reviews
+        const isReview = activeFilter === "reviews" ? true : false;
+
+        const { data: fetchedPosts, error: postsError } = await supabase
+          .from("posts")
+          .select(
+            `*,
+            user:user_id (
+              username,
+              first_name,
+              last_name,
+              image_url
+            ),
+            restaurant:restaurant_id (*),
+            post_dishes (*),
+            post_likes(user_id)
+          `
+          )
+          .eq("user_id", profileUserId)
+          .eq("is_review", isReview)
+          .order("created_at", { ascending: false });
+
+        if (postsError) throw postsError;
+        postsData = fetchedPosts;
       }
 
       // Process posts to extract images from dishes
@@ -64,7 +107,7 @@ export default function RenderFilteredPosts({
           dishes: post.post_dishes || [],
           isLiked:
             post.post_likes?.some((like) => like.user_id === user.id) || false,
-          likesCount: post.post_likes?.length || 0, // 👈 add this
+          likesCount: post.post_likes?.length || 0,
         };
       });
 
@@ -101,7 +144,11 @@ export default function RenderFilteredPosts({
       ) : (
         <View className="items-center justify-center py-10">
           <Feather name="image" size={50} color="#ccc" />
-          <Text className="text-gray-400 mt-4 text-center">No posts found</Text>
+          <Text className="text-gray-400 mt-4 text-center">
+            {activeFilter === "tags"
+              ? "No tagged posts found"
+              : "No posts found"}
+          </Text>
         </View>
       )}
     </View>
