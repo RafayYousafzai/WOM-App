@@ -18,7 +18,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Heatmap } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import { useDishesHandler } from "@/hooks/useSearch";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useGlobal } from "@/context/globalContext";
 
 // --- Constants ---
@@ -26,7 +26,7 @@ const { width, height } = Dimensions.get("window");
 const ASPECT_RATIO = width / height;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
-const safeHeatmapRadius = Platform.OS === "android" ? 50 : 30;
+const safeHeatmapRadius = Platform.OS === "android" ? 50 : 200;
 const NEARBY_THRESHOLD_KM = 10; // 10km radius for "nearby" posts
 
 // Helper function to calculate distance between two coordinates
@@ -58,8 +58,8 @@ const FoodMapView = () => {
 
   const [userLocation, setUserLocation] = useState(null);
   const [region, setRegion] = useState({
-    latitude: 31.5204,
-    longitude: 74.3587,
+    latitude: null,
+    longitude: null,
     latitudeDelta: LATITUDE_DELTA,
     longitudeDelta: LONGITUDE_DELTA,
   });
@@ -80,6 +80,10 @@ const FoodMapView = () => {
           longitude: location.coords.longitude,
         };
         setUserLocation(newUserLocation);
+        setRegion((prev) => ({
+          ...prev,
+          ...newUserLocation,
+        }));
       } catch (e) {
         console.error("Could not fetch location:", e);
       }
@@ -260,7 +264,7 @@ const FoodMapView = () => {
     [router, posts, setRenderPosts]
   );
 
-  if (loading) {
+  if (loading || !region.latitude || !region.longitude) {
     return (
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#fb923c" />
@@ -294,10 +298,10 @@ const FoodMapView = () => {
           <Heatmap
             points={heatmapData}
             radius={safeHeatmapRadius}
-            opacity={10}
+            opacity={5}
             gradient={{
               colors: ["#79E0EE", "#3498db", "#f39c12", "#e74c3c"],
-              startPoints: [0.1, 0.4, 0.7, 0.9],
+              startPoints: [0.4, 0.6, 0.8, 0.9],
               colorMapSize: 256,
             }}
           />
