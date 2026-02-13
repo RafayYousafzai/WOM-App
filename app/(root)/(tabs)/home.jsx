@@ -54,7 +54,7 @@ export default function Home() {
   // Show network error if there's a network issue
   if (networkError && !loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView edges={['top']} className="flex-1 bg-white">
         <View className="flex-1">
           <TogglePosts
             activeTab={activeTab}
@@ -68,7 +68,7 @@ export default function Home() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={['top']} className="flex-1 bg-white">
       <View className="flex-1">
         <TogglePosts
           activeTab={activeTab}

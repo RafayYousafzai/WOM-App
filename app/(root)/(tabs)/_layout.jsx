@@ -1,4 +1,5 @@
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
+import { Platform } from "react-native";
 
 const ORANGE = "#f39f1e";
 
@@ -29,16 +30,18 @@ export default function TabLayout() {
         <Label>Home</Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="search">
-        <Icon
-          sf={{ default: "fork.knife", selected: "fork.knife" }}
-          androidSrc={{
-            default: require("@/assets/icons/fork.png"),
-            selected: require("@/assets/icons/fork-solid.png"),
-          }}
-        />
-        <Label>Search</Label>
-      </NativeTabs.Trigger>
+      {Platform.OS === "android" && (
+        <NativeTabs.Trigger name="search">
+          <Icon
+            sf={{ default: "fork.knife", selected: "fork.knife" }}
+            androidSrc={{
+              default: require("@/assets/icons/fork.png"),
+              selected: require("@/assets/icons/fork-solid.png"),
+            }}
+          />
+          <Label>Search</Label>
+        </NativeTabs.Trigger>
+      )}
 
       <NativeTabs.Trigger name="create-review">
         <Icon
@@ -72,6 +75,12 @@ export default function TabLayout() {
         />
         <Label>Profile</Label>
       </NativeTabs.Trigger>
+
+      {Platform.OS === "ios" && (
+        <NativeTabs.Trigger name="search" role="search">
+          <Label>Search</Label>
+        </NativeTabs.Trigger>
+      )}
 
       <NativeTabs.Trigger name="draft-manager" hidden />
     </NativeTabs>
