@@ -9,11 +9,16 @@
     "orientation": "portrait",
     "icon": "./assets/images/Icon.png",
     "scheme": "wordofmouth",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "associatedDomains": ["applinks:wordofmouth.vercel.app"],
+      "associatedDomains": [
+        "applinks:wordofmouth.vercel.app"
+      ],
       "supportsTablet": true,
       "bundleIdentifier": "com.wordofmouth.limited",
       "infoPlist": {
@@ -64,7 +69,12 @@
         "react-native-share",
         {
           "platforms": {
-            "ios": ["fb", "instagram", "twitter", "tiktoksharesdk"],
+            "ios": [
+              "fb",
+              "instagram",
+              "twitter",
+              "tiktoksharesdk"
+            ],
             "android": [
               "com.facebook.katana",
               "com.instagram.android",
@@ -114,7 +124,8 @@
       "expo-font",
       "expo-secure-store",
       "expo-build-properties",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
