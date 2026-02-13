@@ -55,7 +55,7 @@ export default function PostListing({
       // ✅ Only clear after successful save
       postIds.forEach((id) => viewedPostsRef.current.delete(id));
     }, 1000),
-    [user, supabase]
+    [user, supabase],
   );
 
   // 🚨 Flush pending views when component unmounts
@@ -76,7 +76,7 @@ export default function PostListing({
         debouncedTrackViews(newViewedIds);
       }
     },
-    [debouncedTrackViews]
+    [debouncedTrackViews],
   );
 
   const viewabilityConfig = {
@@ -86,7 +86,7 @@ export default function PostListing({
 
   const handleGatekeepingUpdate = (postId, newGatekeepingValue) => {
     console.log(
-      `PostListing: Gatekeeping updated for post ${postId}: ${newGatekeepingValue}`
+      `PostListing: Gatekeeping updated for post ${postId}: ${newGatekeepingValue}`,
     );
 
     handleRefresh();
@@ -140,7 +140,7 @@ export default function PostListing({
       item.dishes?.reduce((images, dish) => {
         if (dish.image_urls && Array.isArray(dish.image_urls)) {
           const validUrls = dish.image_urls.filter(
-            (url) => url && typeof url === "string" && url.trim().length > 0
+            (url) => url && typeof url === "string" && url.trim().length > 0,
           );
           return [...images, ...validUrls];
         }
