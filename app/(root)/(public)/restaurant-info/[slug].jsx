@@ -23,11 +23,15 @@ import { useGlobal } from "@/context/globalContext";
 // For a real application, you should fetch this from a secure backend server
 // or use a service like Firebase Cloud Functions to make the API call.
 // This example includes it for simplicity.
-const Maps_API_KEY = "AIzaSyDLcdnqXezTGgGv_-ylE-CjywMLiP6-yUs"; // <-- PASTE YOUR KEY HERE
+const Maps_API_KEY = "AIzaSyCGY13_ngkgRv9o0Otx63iLrbEcG-DJp6U"; // <-- PASTE YOUR KEY HERE
 
 export default function VisitProfileScreen() {
   const { slug } = useLocalSearchParams();
-  const location = decodeURIComponent(slug);
+  const slugValue = Array.isArray(slug) ? slug[0] : slug;
+  const location =
+    typeof slugValue === "string"
+      ? decodeURIComponent(slugValue).replace(/\+/g, " ").trim()
+      : "";
   const { setRenderPosts } = useGlobal();
 
   const [restaurantData, setRestaurantData] = useState(null);
@@ -38,7 +42,11 @@ export default function VisitProfileScreen() {
   const [postsLoading, setPostsLoading] = useState(false);
   const { supabase } = useSupabase();
   useEffect(() => {
-    if (!location) return;
+    if (!location) {
+      setError("Missing location in route params.");
+      setLoading(false);
+      return;
+    }
 
     const fetchRestaurantData = async () => {
       setLoading(true);
@@ -48,14 +56,19 @@ export default function VisitProfileScreen() {
       try {
         // --- Step 1: Text Search to find the Place ID ---
         const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
-          location
+          location,
         )}&key=${Maps_API_KEY}`;
 
         const searchResponse = await fetch(searchUrl);
         const searchResult = await searchResponse.json();
 
         if (searchResult.status !== "OK" || searchResult.results.length === 0) {
-          throw new Error("Could not find a matching location.");
+          const statusDetail = searchResult?.error_message
+            ? `${searchResult.status}: ${searchResult.error_message}`
+            : searchResult?.status || "Unknown status";
+          throw new Error(
+            `Place search failed (${statusDetail}). Query: "${location}"`,
+          );
         }
 
         const placeId = searchResult.results[0].place_id;
@@ -96,7 +109,7 @@ export default function VisitProfileScreen() {
       console.log("[v0] Fetching posts for location:", restaurantLocation);
       const posts = await getPostsByRestaurantLocation(
         supabase,
-        restaurantLocation
+        restaurantLocation,
       );
       console.log("[v0] Fetched posts:", posts.length);
       setWordOfMouthPosts(posts);
@@ -123,7 +136,7 @@ export default function VisitProfileScreen() {
 
     if (hasHalfStar) {
       stars.push(
-        <Ionicons key="half" name="star-half" size={16} color="#fbbf24" />
+        <Ionicons key="half" name="star-half" size={16} color="#fbbf24" />,
       );
     }
 
@@ -135,7 +148,7 @@ export default function VisitProfileScreen() {
           name="star-outline"
           size={16}
           color="#d1d5db"
-        />
+        />,
       );
     }
 
@@ -313,7 +326,7 @@ export default function VisitProfileScreen() {
                 className="flex-row items-center py-3 border-b border-gray-100"
                 onPress={() =>
                   Linking.openURL(
-                    `tel:${restaurantData.formatted_phone_number}`
+                    `tel:${restaurantData.formatted_phone_number}`,
                   )
                 }
               >
@@ -455,7 +468,7 @@ export default function VisitProfileScreen() {
                               </View>
                               <View className="flex-row">
                                 {renderStars(
-                                  convertGoogleRating(review.rating)
+                                  convertGoogleRating(review.rating),
                                 )}
                               </View>
                             </View>

@@ -27,12 +27,12 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(
-    initialLocation?.address || ""
+    initialLocation?.address || "",
   );
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  const API = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+  const API = "AIzaSyCGY13_ngkgRv9o0Otx63iLrbEcG-DJp6U";
 
   useEffect(() => {
     if (isModalVisible) {
@@ -65,8 +65,8 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          query
-        )}&key=${API}&language=en`
+          query,
+        )}&key=${API}&language=en`,
       );
       const data = await response.json();
       if (data.status === "OK") {
@@ -86,7 +86,7 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
   const fetchPlaceDetails = async (placeId) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${API}`
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${API}`,
       );
       const data = await response.json();
       if (data.status === "OK") {
