@@ -5,20 +5,15 @@
     },
     "name": "Word of Mouth",
     "slug": "word_of_mouth",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/Icon.png",
     "scheme": "wordofmouth",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "associatedDomains": [
-        "applinks:wordofmouth.vercel.app"
-      ],
+      "associatedDomains": ["applinks:wordofmouth.vercel.app"],
       "supportsTablet": true,
       "bundleIdentifier": "com.wordofmouth.limited",
       "infoPlist": {
@@ -29,7 +24,7 @@
       }
     },
     "android": {
-      "versionCode": 4,
+      "versionCode": 5,
       "package": "com.wordofmouth.limited",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Icon.png",
@@ -69,12 +64,7 @@
         "react-native-share",
         {
           "platforms": {
-            "ios": [
-              "fb",
-              "instagram",
-              "twitter",
-              "tiktoksharesdk"
-            ],
+            "ios": ["fb", "instagram", "twitter", "tiktoksharesdk"],
             "android": [
               "com.facebook.katana",
               "com.instagram.android",

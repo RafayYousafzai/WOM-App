@@ -10,7 +10,7 @@ export default function TabLayout() {
       blurEffect="systemThinMaterial"
       shadowColor="rgba(0, 0, 0, 0.15)"
       backBehavior="history"
-      labelVisibilityMode="selected"
+      labelVisibilityMode="always"
       badgeBackgroundColor={"#f39f1e4d"}
       indicatorColor={"#f39f1e33"}
       tintColor={ORANGE}
