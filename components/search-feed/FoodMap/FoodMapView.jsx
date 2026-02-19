@@ -34,6 +34,9 @@ const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const safeHeatmapRadius = Platform.OS === "android" ? 50 : 300;
 const NEARBY_THRESHOLD_KM = 10; // 10km radius for "nearby" posts
+const MAX_HEATMAP_POINTS_ANDROID = 1000;
+const MIN_HEATMAP_WEIGHT_ANDROID = 0.5;
+const MAX_HEATMAP_WEIGHT_ANDROID = 5;
 
 // Radius selector constants
 const MIN_RADIUS = 1; // 1km minimum
@@ -58,6 +61,10 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 
 const deg2rad = (deg) => {
   return deg * (Math.PI / 180);
+};
+
+const clampNumber = (value, min, max) => {
+  return Math.max(min, Math.min(max, value));
 };
 
 // --- Main Component ---
@@ -166,11 +173,24 @@ const FoodMapView = () => {
 
   // Heatmap data
   const heatmapData = useMemo(() => {
-    return mapPoints.map((point) => ({
+    const basePoints = mapPoints.map((point) => ({
       latitude: point.location.latitude,
       longitude: point.location.longitude,
-      weight: point.rating || 1,
+      weight:
+        Platform.OS === "android"
+          ? clampNumber(
+              Number.isFinite(point.rating) ? point.rating : 1,
+              MIN_HEATMAP_WEIGHT_ANDROID,
+              MAX_HEATMAP_WEIGHT_ANDROID
+            )
+          : point.rating || 1,
     }));
+
+    if (Platform.OS === "android") {
+      return basePoints.slice(0, MAX_HEATMAP_POINTS_ANDROID);
+    }
+
+    return basePoints;
   }, [mapPoints]);
 
   // Effect to automatically center the map based on the requirements
@@ -338,7 +358,7 @@ const FoodMapView = () => {
           <Heatmap
             points={heatmapData}
             radius={safeHeatmapRadius}
-            opacity={3}
+            opacity={Platform.OS === "android" ? 0.8 : 3}
             gradient={{
               colors: [
                 "rgba(0, 255, 255, 0)", // Transparent cyan (low density)
