@@ -114,7 +114,7 @@ export const EditProfileScreen = ({ setIsEditing }) => {
       if (!isValid) {
         Alert.alert(
           "Validation Error",
-          "Please fill in all required fields correctly."
+          "Please fill in all required fields correctly.",
         );
         return;
       }

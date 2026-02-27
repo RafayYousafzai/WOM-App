@@ -23,6 +23,7 @@ export const useEditProfile = (clerkUser, isLoaded) => {
     dietaryRestrictions: [],
     country: null,
     birthday: null,
+    favoriteEmoji: "",
   });
 
   const initializeUserData = useCallback(() => {
@@ -54,7 +55,7 @@ export const useEditProfile = (clerkUser, isLoaded) => {
         dietaryRestrictions: dietaryRestrictions,
         country: metadata.country || null,
         birthday: storedBirthday,
-        favoriteEmoji: clerkUser.unsafeMetadata?.favoriteEmoji || "",
+        favoriteEmoji: metadata.favoriteEmoji || "",
       });
     }
   }, [clerkUser, isLoaded]);

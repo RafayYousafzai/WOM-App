@@ -34,7 +34,7 @@ export default function NotificationConfig() {
               id: user.id,
               token: token,
             },
-            { onConflict: ["id"] } // if already exists, update it
+            { onConflict: ["id"] }, // if already exists, update it
           );
 
           if (user.unsafeMetadata?.notifications_tokens !== token) {
@@ -58,7 +58,7 @@ export default function NotificationConfig() {
 
     if (Platform.OS === "android") {
       Notifications.getNotificationChannelsAsync().then((value) =>
-        console.info("Notification channels", value ?? [])
+        console.info("Notification channels", value ?? []),
       );
     }
 
@@ -73,12 +73,12 @@ export default function NotificationConfig() {
       });
 
     return () => {
-      notificationListener.current &&
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      responseListener.current &&
-        Notifications.removeNotificationSubscription(responseListener.current);
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
     };
   }, [user]);
 }
