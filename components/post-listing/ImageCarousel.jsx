@@ -1,20 +1,32 @@
 import { Image } from "expo-image";
-import React, { useState, useRef, useEffect } from "react";
-import { View, FlatList, StyleSheet, useWindowDimensions } from "react-native";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  useWindowDimensions,
+  TouchableOpacity,
+} from "react-native";
 
-const PaginationDots = ({ data, currentIndex }) => {
+const PaginationDots = ({ data, currentIndex, onDotPress }) => {
   if (data.length <= 1) return null;
 
   return (
     <View style={styles.paginationContainer}>
       {data.map((_, index) => (
-        <View
+        <TouchableOpacity
           key={`dot-${index}`}
-          style={[
-            styles.dot,
-            index === currentIndex ? styles.dotActive : styles.dotInactive,
-          ]}
-        />
+          onPress={() => onDotPress(index)}
+          activeOpacity={0.7}
+          style={styles.dotTouchable}
+        >
+          <View
+            style={[
+              styles.dot,
+              index === currentIndex ? styles.dotActive : styles.dotInactive,
+            ]}
+          />
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -42,27 +54,35 @@ export const ImageCarousel = ({ images, onImageChange, currentIndex = 0 }) => {
         });
       }
     }
-  }, [currentIndex, currentImageIndex, images.length]);
+  }, [currentIndex, images.length]); // ✅ Removed currentImageIndex from deps to avoid loops
 
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      const newIndex = viewableItems[0].index ?? 0;
-      if (newIndex !== currentImageIndex) {
-        setCurrentImageIndex(newIndex);
-        // Notify parent component about the image change
-        if (onImageChange) {
-          onImageChange(newIndex);
-        }
+  // ✅ FIXED: Use useCallback with proper deps to avoid stale closure
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }) => {
+      if (viewableItems.length > 0) {
+        const newIndex = viewableItems[0].index ?? 0;
+        setCurrentImageIndex((prevIndex) => {
+          // Only update if actually changed
+          if (newIndex !== prevIndex) {
+            // Notify parent component about the image change
+            if (onImageChange) {
+              onImageChange(newIndex);
+            }
+            return newIndex;
+          }
+          return prevIndex;
+        });
       }
-    }
-  }).current;
+    },
+    [onImageChange],
+  ); // ✅ Added onImageChange as dependency
 
   // Handle scroll to index errors gracefully
-  const onScrollToIndexFailed = (info) => {
+  const onScrollToIndexFailed = useCallback((info) => {
     const wait = new Promise((resolve) => setTimeout(resolve, 500));
     wait.then(() => {
       flatListRef.current?.scrollToIndex({
@@ -70,21 +90,38 @@ export const ImageCarousel = ({ images, onImageChange, currentIndex = 0 }) => {
         animated: true,
       });
     });
-  };
+  }, []);
+
+  // ✅ NEW: Handle dot press
+  const handleDotPress = useCallback(
+    (index) => {
+      if (flatListRef.current && index >= 0 && index < images.length) {
+        flatListRef.current.scrollToIndex({
+          index: index,
+          animated: true,
+        });
+        // The onViewableItemsChanged will handle updating the state
+      }
+    },
+    [images.length],
+  );
 
   const normalizedImages = images.map((img, index) => ({
     uri: typeof img === "string" ? img : img.uri,
     key: `image-${index}`,
   }));
 
-  const renderItem = ({ item }) => (
-    <View style={{ width, maxHeight: width }}>
-      <Image
-        source={{ uri: item.uri }}
-        style={[styles.image, { width }]}
-        onError={(e) => console.warn("Image error:", e.nativeEvent.error)}
-      />
-    </View>
+  const renderItem = useCallback(
+    ({ item }) => (
+      <View style={{ width, maxHeight: width }}>
+        <Image
+          source={{ uri: item.uri }}
+          style={[styles.image, { width }]}
+          onError={(e) => console.warn("Image error:", e.nativeEvent.error)}
+        />
+      </View>
+    ),
+    [width],
   );
 
   return (
@@ -105,10 +142,15 @@ export const ImageCarousel = ({ images, onImageChange, currentIndex = 0 }) => {
           offset: width * index,
           index,
         })}
+        // ✅ Add maintainVisibleContentPosition to help with scroll position tracking
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
       <PaginationDots
         data={normalizedImages}
         currentIndex={currentImageIndex}
+        onDotPress={handleDotPress} // ✅ Pass the handler
       />
     </View>
   );
@@ -127,6 +169,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     width: "100%",
+  },
+  dotTouchable: {
+    padding: 4, // Larger touch target
   },
   dot: {
     height: 8,
