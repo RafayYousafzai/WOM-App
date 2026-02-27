@@ -75,7 +75,7 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
           size={22}
           color={i <= safeRating ? "#FFD700" : "#BBBBBB"}
           style={{ marginRight: 2 }}
-        />
+        />,
       );
     }
     return stars;
@@ -143,14 +143,6 @@ export const Step3 = ({ handleSubmit, submission, handleChange }) => {
                   <Text className="text-yellow-500 ml-1 font-medium">
                     {tag}
                   </Text>
-                </View>
-              ))}
-              {safeSubmission.cuisines.map((cuisine, index) => (
-                <View
-                  key={`cuisine-${index}`}
-                  className="bg-orange-50 px-4 py-2 rounded-full mr-2"
-                >
-                  <Text className="text-orange-500 font-medium">{cuisine}</Text>
                 </View>
               ))}
             </ScrollView>
