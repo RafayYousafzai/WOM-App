@@ -107,7 +107,6 @@ export const Step1ImageSelection = () => {
                 style={{
                   borderRadius: 16,
                   backgroundColor: "#ffffff",
-                  minHeight: 200,
                 }}
               >
                 <View style={{ padding: 20 }}>
@@ -116,7 +115,7 @@ export const Step1ImageSelection = () => {
                       elevation: 4,
                       borderRadius: 16,
                       backgroundColor: "#ffffff",
-                      minHeight: 200,
+                      // minHeight: 200,
                     }}
                   >
                     <View style={{}}>
@@ -148,7 +147,7 @@ export const Step1ImageSelection = () => {
                 style={{
                   paddingHorizontal: 20,
                   marginBottom: 24,
-                  marginTop: -60,
+                  marginTop: 5,
                 }}
               >
                 <RatingStars
