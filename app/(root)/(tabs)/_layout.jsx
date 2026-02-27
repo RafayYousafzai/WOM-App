@@ -23,8 +23,8 @@ export default function TabLayout() {
         <Icon
           sf={{ default: "house", selected: "house.fill" }}
           androidSrc={{
-            default: require("@/assets/icons/home.png"),
-            selected: require("@/assets/icons/home-solid.png"),
+            default: require("../../../assets/icons/home.png"),
+            selected: require("../../../assets/icons/home-solid.png"),
           }}
         />
         <Label>Home</Label>
@@ -35,8 +35,8 @@ export default function TabLayout() {
           <Icon
             sf={{ default: "fork.knife", selected: "fork.knife" }}
             androidSrc={{
-              default: require("@/assets/icons/fork.png"),
-              selected: require("@/assets/icons/fork-solid.png"),
+              default: require("../../../assets/icons/fork.png"),
+              selected: require("../../../assets/icons/fork-solid.png"),
             }}
           />
           <Label>Search</Label>
@@ -47,8 +47,8 @@ export default function TabLayout() {
         <Icon
           sf={{ default: "plus.circle", selected: "plus.circle.fill" }}
           androidSrc={{
-            default: require("@/assets/icons/upload.png"),
-            selected: require("@/assets/icons/upload.png"),
+            default: require("../../../assets/icons/upload.png"),
+            selected: require("../../../assets/icons/upload.png"),
           }}
         />
         <Label>Create</Label>
@@ -58,8 +58,8 @@ export default function TabLayout() {
         <Icon
           sf={{ default: "heart", selected: "heart.fill" }}
           androidSrc={{
-            default: require("@/assets/icons/heart.png"),
-            selected: require("@/assets/icons/heart-solid.png"),
+            default: require("../../../assets/icons/heart.png"),
+            selected: require("../../../assets/icons/heart-solid.png"),
           }}
         />
         <Label>Favorites</Label>
@@ -69,8 +69,8 @@ export default function TabLayout() {
         <Icon
           sf={{ default: "person", selected: "person.fill" }}
           androidSrc={{
-            default: require("@/assets/icons/account.png"),
-            selected: require("@/assets/icons/account-solid.png"),
+            default: require("../../../assets/icons/account.png"),
+            selected: require("../../../assets/icons/account-solid.png"),
           }}
         />
         <Label>Profile</Label>
