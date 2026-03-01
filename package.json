@@ -1,7 +1,7 @@
 {
   "name": "wom",
   "main": "expo-router/entry",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "scripts": {
     "start": "expo start",
     "ios-build-dev": "eas build --platform ios --profile development",
