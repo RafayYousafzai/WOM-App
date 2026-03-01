@@ -135,33 +135,33 @@ export const usePosts = () => {
     longitude: number;
   } | null>(null);
 
-  
-
   const retryWithBackoff = async <T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> => {
-  let attempt = 0;
-  while (attempt < maxRetries) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      if (
-        !error?.message?.includes("connect error") && 
-        !error?.message?.includes("timeout")
-      ) {
-        throw error; // Rethrow non-retryable errors
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000,
+  ): Promise<T> => {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        if (
+          !error?.message?.includes("connect error") &&
+          !error?.message?.includes("timeout")
+        ) {
+          throw error; // Rethrow non-retryable errors
+        }
+        attempt++;
+        const delay = baseDelay * Math.pow(2, attempt); // Exponential: 1s, 2s, 4s
+        console.warn(
+          `Retry ${attempt}/${maxRetries} after ${delay}ms: ${error.message}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
-      attempt++;
-      const delay = baseDelay * Math.pow(2, attempt); // Exponential: 1s, 2s, 4s
-      console.warn(`Retry ${attempt}/${maxRetries} after ${delay}ms: ${error.message}`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
     }
-  }
-  throw new Error("Max retries exceeded");
+    throw new Error("Max retries exceeded");
   };
-  
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -172,7 +172,7 @@ export const usePosts = () => {
         toast.show(
           "Location permission denied. Feed won't prioritize nearby posts.",
 
-          { type: "warning" }
+          { type: "warning" },
         );
 
         return;
@@ -207,7 +207,7 @@ export const usePosts = () => {
 
 id, review, user_id, is_review, anonymous, gatekeeping, people, created_at, updated_at,
 
-restaurants (id, location, rating),
+restaurants (id, name, location, rating),
 
 users (id, username, first_name, last_name, image_url, updated_at),
 
@@ -228,7 +228,10 @@ post_comments (id)
     return rawPosts.map((post) => ({
       ...post,
 
-      restaurant_name: post.restaurants?.location || "Unknown Restaurant",
+      restaurant_name:
+        post.restaurants?.name ||
+        post.restaurants?.location ||
+        "Unknown Restaurant",
 
       location: { address: post.restaurants?.location },
 
@@ -311,15 +314,16 @@ post_comments (id)
             user_longitude: safeLongitude,
           });
 
-        const { data: rankedPosts, error: rpcError } = await retryWithBackoff(() =>
-  supabase.rpc("get_for_you_feed", {
-    page_limit: PAGE_SIZE,
-    page_offset: (pageRef.current - 1) * PAGE_SIZE,
-    requesting_user_id: safeUserId,
-    user_latitude: safeLatitude,
-    user_longitude: safeLongitude,
-  })
-) as { data: any[]; error: any };
+          const { data: rankedPosts, error: rpcError } =
+            (await retryWithBackoff(() =>
+              supabase.rpc("get_for_you_feed", {
+                page_limit: PAGE_SIZE,
+                page_offset: (pageRef.current - 1) * PAGE_SIZE,
+                requesting_user_id: safeUserId,
+                user_latitude: safeLatitude,
+                user_longitude: safeLongitude,
+              }),
+            )) as { data: any[]; error: any };
 
           if (rpcError) {
             console.error("RPC Error:", rpcError);
@@ -341,9 +345,10 @@ post_comments (id)
 
           console.log("Post IDs to fetch:", postIds);
 
-         const { data: postsData, error: postsError } = await retryWithBackoff(() =>
-  buildPostsQuery().in("id", postIds)
-) as { data: any[]; error: any };
+          const { data: postsData, error: postsError } =
+            (await retryWithBackoff(() =>
+              buildPostsQuery().in("id", postIds),
+            )) as { data: any[]; error: any };
 
           if (postsError) {
             console.error("Posts fetch error:", postsError);
@@ -356,7 +361,7 @@ post_comments (id)
           // Re-order the fetched posts to match the ranked order from the RPC
 
           const postsById = new Map(
-            postsData?.map((p: any) => [p.id.toString(), p]) || []
+            postsData?.map((p: any) => [p.id.toString(), p]) || [],
           );
 
           const orderedPosts = postIds
@@ -377,7 +382,7 @@ post_comments (id)
             toast.show(
               "You need to be logged in to view your following feed.",
 
-              { type: "info" }
+              { type: "info" },
             );
 
             return { data: [], fetchId: currentFetchId };
@@ -470,7 +475,7 @@ post_comments (id)
       userLocation,
 
       hasInternet,
-    ]
+    ],
   );
 
   const loadPosts = useCallback(
@@ -482,7 +487,7 @@ post_comments (id)
       const { data: newPosts, fetchId } = await fetchPosts(
         activeTab,
 
-        isLoadMore
+        isLoadMore,
       );
 
       // Prevent race conditions from old fetches
@@ -500,7 +505,7 @@ post_comments (id)
       }
     },
 
-    [activeTab, fetchPosts, user]
+    [activeTab, fetchPosts, user],
   );
 
   const handleTabChange = useCallback(
@@ -511,7 +516,7 @@ post_comments (id)
 
           "You need to be logged in to view posts from users you follow.",
 
-          [{ text: "OK" }]
+          [{ text: "OK" }],
         );
 
         return;
@@ -530,7 +535,7 @@ post_comments (id)
       await loadPosts(false);
     },
 
-    [user, loadPosts]
+    [user, loadPosts],
   );
 
   const handleEndReached = useCallback(() => {
@@ -543,16 +548,21 @@ post_comments (id)
     loadPosts(false);
   }, [loadPosts]);
 
-const handleNetworkRetry = useCallback(async () => {
-  const networkState = await checkConnectivity();
-  if (networkState.isConnected && networkState.isInternetReachable !== false) {
-    setNetworkError(false);
-    loadPosts(false); // Auto-retry once
-  } else {
-    toast.show("Still no internet. Trying again in 5s...", { type: "warning" });
-    setTimeout(() => handleNetworkRetry(), 5000); // Auto-retry loop
-  }
-}, [checkConnectivity, loadPosts, toast]);
+  const handleNetworkRetry = useCallback(async () => {
+    const networkState = await checkConnectivity();
+    if (
+      networkState.isConnected &&
+      networkState.isInternetReachable !== false
+    ) {
+      setNetworkError(false);
+      loadPosts(false); // Auto-retry once
+    } else {
+      toast.show("Still no internet. Trying again in 5s...", {
+        type: "warning",
+      });
+      setTimeout(() => handleNetworkRetry(), 5000); // Auto-retry loop
+    }
+  }, [checkConnectivity, loadPosts, toast]);
 
   return {
     activeTab,

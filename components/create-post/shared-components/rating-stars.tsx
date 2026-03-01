@@ -57,7 +57,7 @@ export function RatingStars({
       setRating(rounded);
       setInputValue(rounded.toString());
     },
-    [setRating]
+    [setRating],
   );
 
   const panGesture = Gesture.Pan()
@@ -122,7 +122,7 @@ export function RatingStars({
     const glowColor = interpolateColor(
       translateX.value / sliderWidth,
       [0, 0.5, 1],
-      ["#fbbf24", "#f59e0b", "#d97706"]
+      ["#fbbf24", "#f59e0b", "#d97706"],
     );
 
     return {
@@ -152,7 +152,7 @@ export function RatingStars({
         setRating(value);
       }
     },
-    [setRating, translateX, sliderWidth]
+    [setRating, translateX, sliderWidth],
   );
 
   const onSliderLayout = useCallback((event: LayoutChangeEvent) => {
@@ -166,15 +166,27 @@ export function RatingStars({
       className="bg-slate-50 rounded-2xl py-2 px-3"
     >
       <View style={styles.topRow}>
-        <Text
-          style={{
-            fontSize: 18.5,
-            color: "#374151",
-            marginLeft: 8,
-          }}
-        >
-          {title}
-        </Text>
+        <View>
+          <Text
+            style={{
+              fontSize: 18.5,
+              color: "#374151",
+              marginLeft: 8,
+            }}
+          >
+            {title}
+          </Text>
+          <Text
+            style={{
+              fontSize: 11,
+              color: "#9ca3af",
+              marginLeft: 8,
+              marginTop: 2,
+            }}
+          >
+            Range: 0-10
+          </Text>
+        </View>
         <TextInput
           style={styles.input}
           className="border border-gray-200"

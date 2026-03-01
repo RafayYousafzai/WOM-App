@@ -125,6 +125,7 @@ export const Step1ImageSelection = () => {
                         placeholder={`Share your experience...`}
                         placeholderTextColor="#343a40" // pure black
                         multiline
+                        maxLength={500}
                         style={{
                           backgroundColor: "#f9fafb",
                           borderRadius: 16,
@@ -137,6 +138,26 @@ export const Step1ImageSelection = () => {
                           textAlignVertical: "top", // keeps text at the top for multiline
                         }}
                       />
+                      <View
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingTop: 8,
+                          paddingBottom: 8,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color:
+                              (reviewData.review?.length || 0) < 10
+                                ? "#ef4444"
+                                : "#6b7280",
+                          }}
+                        >
+                          {reviewData.review?.length || 0}/500 characters (min:
+                          10)
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>

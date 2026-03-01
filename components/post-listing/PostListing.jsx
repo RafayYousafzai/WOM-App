@@ -160,6 +160,16 @@ export default function PostListing({
       item.all_tags?.filter((tag) => tag.type === "amenity") || [];
     const cuisine = cuisineTags.map((tag) => tag.name).join(", ");
     const amenities = amenityTags.map((tag) => tag.name);
+    const restaurantAddress =
+      item.restaurant?.location ||
+      item.restaurants?.location ||
+      item.location?.address ||
+      "";
+    const restaurantDisplayName =
+      item.restaurant_name ||
+      item.restaurant?.name ||
+      item.restaurants?.name ||
+      (restaurantAddress ? restaurantAddress.split(",")[0].trim() : "Unknown Restaurant");
 
     return (
       <View className="mb-4">
@@ -167,11 +177,8 @@ export default function PostListing({
         <View className="mx-3 mb-2">
           <EditPostHeader
             username={fullName}
-            location={
-              item.gatekeeping
-                ? null
-                : item.restaurant?.location || item.location?.address
-            }
+            location={item.gatekeeping ? null : restaurantDisplayName}
+            locationRoute={restaurantAddress}
             userAvatar={item.user?.image_url}
             user_id={item.user_id}
             postTimeAgo={formatDate(item.created_at)}
@@ -196,8 +203,8 @@ export default function PostListing({
           postTimeAgo={formatDate(item.created_at)}
           title={dishName}
           user_id={item.user_id}
-          restaurantName={item.restaurant_name}
-          location={item.location?.address}
+          restaurantName={restaurantDisplayName}
+          location={restaurantAddress}
           description={description}
           rating={dishRating}
           price={dishPrice}
@@ -215,7 +222,7 @@ export default function PostListing({
           onFavorite={() => console.log("Favorite post:", item.id)}
           onShare={() => console.log("Share post:", item.id)}
           onRestaurantPress={() =>
-            console.log("Restaurant press:", item.restaurant_name)
+            console.log("Restaurant press:", restaurantDisplayName)
           }
         />
       </View>

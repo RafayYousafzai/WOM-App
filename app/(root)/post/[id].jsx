@@ -23,7 +23,10 @@ const formatDate = (dateString) =>
 // 🔧 normalize Supabase result to what PostCard expects
 const transformPost = (post, userId) => ({
   ...post,
-  restaurant_name: post.restaurants?.location || "Unknown Restaurant",
+  restaurant_name:
+    post.restaurants?.name ||
+    post.restaurants?.location ||
+    "Unknown Restaurant",
   location: { address: post.restaurants?.location },
   rating: post.restaurants?.rating,
   dishes: post.post_dishes || [],
@@ -70,6 +73,7 @@ export default function ViewPost() {
               updated_at,
               restaurants (
                 id,
+                name,
                 location,
                 rating
               ),
@@ -101,7 +105,7 @@ export default function ViewPost() {
               post_comments (
                 id
               )
-            `
+            `,
           )
           .eq("id", id)
           .single();
@@ -192,7 +196,8 @@ export default function ViewPost() {
       <View className="mx-3 mb-2">
         <EditPostHeader
           username={fullName}
-          location={post.location?.address}
+          location={post.restaurant_name || post.location?.address}
+          locationRoute={post.location?.address}
           userAvatar={post.user?.image_url}
           user_id={post.user_id}
           postTimeAgo={formatDate(post.created_at)}

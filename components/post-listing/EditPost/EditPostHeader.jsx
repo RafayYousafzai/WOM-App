@@ -36,6 +36,7 @@ export const EditPostHeader = ({
   anonymous,
   onDelete,
   location,
+  locationRoute,
   onRestaurantPress,
   post,
   onGatekeepingUpdate,
@@ -53,7 +54,7 @@ export const EditPostHeader = ({
   const [gatekeepingEnabled, setGatekeepingEnabled] = useState(() => {
     const initial = post?.gatekeeping === true;
     console.log(
-      `Initial gatekeeping for post ${post_id}: ${post?.gatekeeping} -> ${initial}`
+      `Initial gatekeeping for post ${post_id}: ${post?.gatekeeping} -> ${initial}`,
     );
     return initial;
   });
@@ -70,7 +71,7 @@ export const EditPostHeader = ({
       const isUserFollowing = await checkIfFollowing(
         supabase,
         user.id,
-        user_id
+        user_id,
       );
       if (isMounted) setFollowing(isUserFollowing);
     };
@@ -85,7 +86,7 @@ export const EditPostHeader = ({
     if (post && post.gatekeeping !== undefined) {
       const newGatekeeping = post.gatekeeping === true;
       console.log(
-        `Post ${post_id} gatekeeping changed from props: ${post.gatekeeping} -> ${newGatekeeping}`
+        `Post ${post_id} gatekeeping changed from props: ${post.gatekeeping} -> ${newGatekeeping}`,
       );
 
       // Only update if different to avoid unnecessary re-renders
@@ -111,7 +112,7 @@ export const EditPostHeader = ({
 
             if (dbGatekeeping !== gatekeepingEnabled) {
               console.log(
-                `Syncing gatekeeping state: ${gatekeepingEnabled} -> ${dbGatekeeping}`
+                `Syncing gatekeeping state: ${gatekeepingEnabled} -> ${dbGatekeeping}`,
               );
               setGatekeepingEnabled(dbGatekeeping);
             }
@@ -180,7 +181,7 @@ export const EditPostHeader = ({
         Alert.alert(
           "Error",
           result.error || "Failed to update gatekeeping setting",
-          [{ text: "OK" }]
+          [{ text: "OK" }],
         );
       }
     } catch (error) {
@@ -311,7 +312,7 @@ export const EditPostHeader = ({
           await sendPushNotification(
             data.token,
             `${user.firstName} ${user.lastName} is now following you.`,
-            ""
+            "",
           );
           console.log(`Push notification sent to user ${user_id}`);
         } else {
@@ -343,7 +344,8 @@ export const EditPostHeader = ({
 
   const navigateToLocation = () => {
     hideBottomModal();
-    router.push(`/restaurant-info/${encodeURIComponent(location)}`);
+    const targetLocation = locationRoute || location;
+    router.push(`/restaurant-info/${encodeURIComponent(targetLocation)}`);
   };
 
   const handleEdit = () => {
@@ -383,7 +385,7 @@ export const EditPostHeader = ({
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -408,7 +410,7 @@ export const EditPostHeader = ({
                   Alert.alert(
                     "Already Blocked",
                     "You have already blocked this user.",
-                    [{ text: "OK" }]
+                    [{ text: "OK" }],
                   );
                 } else {
                   throw error;
@@ -417,7 +419,7 @@ export const EditPostHeader = ({
                 Alert.alert(
                   "User Blocked",
                   "The user has been successfully blocked.",
-                  [{ text: "OK" }]
+                  [{ text: "OK" }],
                 );
               }
             } catch (err) {
@@ -425,12 +427,12 @@ export const EditPostHeader = ({
               Alert.alert(
                 "Error",
                 "Something went wrong while blocking the user.",
-                [{ text: "OK" }]
+                [{ text: "OK" }],
               );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -461,7 +463,7 @@ export const EditPostHeader = ({
                   Alert.alert(
                     "Already Reported",
                     "You have already reported this post.",
-                    [{ text: "OK" }]
+                    [{ text: "OK" }],
                   );
                 } else {
                   throw error;
@@ -470,7 +472,7 @@ export const EditPostHeader = ({
                 Alert.alert(
                   "Reported",
                   "Post has been reported successfully.",
-                  [{ text: "OK" }]
+                  [{ text: "OK" }],
                 );
               }
             } catch (error) {
@@ -478,12 +480,12 @@ export const EditPostHeader = ({
               Alert.alert(
                 "Error",
                 "Failed to report the post. Please try again.",
-                [{ text: "OK" }]
+                [{ text: "OK" }],
               );
             }
           },
         },
-      ]
+      ],
     );
   };
 

@@ -41,6 +41,16 @@ export const DishForm = ({ dishData, onDishChange }) => {
               }}
               required
             />
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                marginTop: 4,
+                marginLeft: 4,
+              }}
+            >
+              {dishData.dishName?.length || 0} characters
+            </Text>
           </View>
 
           <View className="mb-6">
@@ -66,6 +76,16 @@ export const DishForm = ({ dishData, onDishChange }) => {
                 borderWidth: 0,
               }}
             />
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                marginTop: 4,
+                marginLeft: 4,
+              }}
+            >
+              {dishData.price?.length || 0} characters
+            </Text>
           </View>
 
           {/* <Divider className="mb-6" /> */}

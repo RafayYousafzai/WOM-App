@@ -86,15 +86,20 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
   const fetchPlaceDetails = async (placeId) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry,formatted_address&key=${API}`,
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,geometry,formatted_address&key=${API}`,
       );
       const data = await response.json();
       if (data.status === "OK") {
         const { lat, lng } = data.result.geometry.location;
+        console.log(data.result);
+
         return {
           latitude: lat,
           longitude: lng,
           address: data.result.formatted_address,
+          name:
+            data.result.name ||
+            data.result.formatted_address.split(",")[0].trim(),
         };
       } else {
         console.error("Place Details API error:", data);
@@ -127,6 +132,9 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
           latitude: null,
           longitude: null,
           address: item.description,
+          name:
+            item.structured_formatting?.main_text ||
+            item.description.split(",")[0].trim(),
         });
       }
     }
@@ -143,6 +151,7 @@ const GoogleTextInput = ({ initialLocation, handlePress, containerStyle }) => {
         latitude: null,
         longitude: null,
         address: null,
+        name: null,
       });
     }
     setIsModalVisible(false);
